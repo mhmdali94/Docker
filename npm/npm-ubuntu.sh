@@ -223,25 +223,33 @@ fi
 # ------------------------------------
 # Done
 # ------------------------------------
+
+# Detect server IP for display
+SERVER_IP=$(hostname -I | awk '{print $1}')
+ADMIN_URL="http://$SERVER_IP:81"
+
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
+echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  Admin Panel  : http://$(hostname -I | awk '{print $1}'):81"
-echo "  ║  Directory    : $NPM_DIR"
+echo "  ║  🌐  Open the admin panel in your browser:          ║"
 echo "  ║                                                      ║"
-echo "  ║  🔑 Default Login Credentials:                      ║"
-echo "  ║     Email    : admin@example.com                    ║"
-echo "  ║     Password : changeme                             ║"
+echo "  ║      👉  $ADMIN_URL"
 echo "  ║                                                      ║"
-echo "  ║  ⚠️  Change credentials immediately after login!    ║"
+echo "  ║  On first visit you will be asked to:               ║"
+echo "  ║    1. Enter your email address                       ║"
+echo "  ║    2. Set your own password                          ║"
 echo "  ║                                                      ║"
 echo "  ║  🗄️  Database Credentials (save these!):            ║"
 echo "  ║     DB User     : $DB_USER"
 echo "  ║     DB Name     : $DB_NAME"
 echo "  ║     DB Password : $DB_PASSWORD"
 echo "  ║                                                      ║"
+echo "  ║  Directory : $NPM_DIR"
+echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: prismatechwork.com                   ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
+
