@@ -175,7 +175,7 @@ fi
 # ------------------------------------
 # Done
 # ------------------------------------
-SERVER_IP=$(hostname -I | awk '{print $1}')
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 ADMIN_URL="http://$SERVER_IP:8090/guacamole"
 
 echo ""

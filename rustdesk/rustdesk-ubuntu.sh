@@ -94,7 +94,7 @@ fi
 # ------------------------------------
 section "Step 4: Server Address Configuration"
 info "Detecting WAN IP address..."
-DEFAULT_IP=$(curl -s --max-time 5 ifconfig.me 2>/dev/null || curl -s --max-time 5 api.ipify.org 2>/dev/null || echo "")
+DEFAULT_IP=$(curl -4 -s --max-time 5 ifconfig.me 2>/dev/null || curl -4 -s --max-time 5 api4.ipify.org 2>/dev/null || echo "")
 
 if [ -z "$DEFAULT_IP" ]; then
     warn "Could not auto-detect WAN IP. You must enter it manually."

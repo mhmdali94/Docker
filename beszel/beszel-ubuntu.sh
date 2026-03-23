@@ -105,7 +105,7 @@ else
     info "Container running: $RUNNING"
 fi
 
-SERVER_IP=$(hostname -I | awk '{print $1}')
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
