@@ -14,6 +14,7 @@ A collection of Docker-based automation scripts for self-hosted services.
 |--------|-------------|
 | [`rustdesk/`](./rustdesk/) | Self-hosted RustDesk remote desktop server using Docker Compose |
 | [`npm/`](./npm/) | Nginx Proxy Manager deployment using Docker Compose |
+| [`guacamole/`](./guacamole/) | Apache Guacamole clientless remote desktop gateway using Docker Compose |
 
 ---
 
