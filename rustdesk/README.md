@@ -31,14 +31,19 @@ This script (`rustdesk-ubuntu.sh`) provides a fully automated way to install and
 
 ---
 
-## 🛠 Usage
+## 🛠 Usage Instructions
 
-**1. Make the script executable**
+**1. Download the script**
+```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/rustdesk/rustdesk-ubuntu.sh
+```
+
+**2. Make the script executable**
 ```bash
 chmod +x rustdesk-ubuntu.sh
 ```
 
-**2. Run as root**
+**3. Run as root**
 ```bash
 sudo bash rustdesk-ubuntu.sh
 ```

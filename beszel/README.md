@@ -11,6 +11,7 @@ Automated installer for [Beszel](https://github.com/henrygd/beszel) — a lightw
 ## 🛠 Usage
 
 ```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/beszel/beszel-ubuntu.sh
 chmod +x beszel-ubuntu.sh
 sudo bash beszel-ubuntu.sh
 ```

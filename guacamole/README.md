@@ -23,6 +23,7 @@ Automated installer for [Apache Guacamole](https://guacamole.apache.org/) — a 
 ## 🛠 Usage
 
 ```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/guacamole/guacamole-ubuntu.sh
 chmod +x guacamole-ubuntu.sh
 sudo bash guacamole-ubuntu.sh
 ```

@@ -25,6 +25,7 @@ Automated installer for [Nginx Proxy Manager](https://nginxproxymanager.com/) â€
 ## ðŸ›  Usage
 
 ```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/npm/npm-ubuntu.sh
 chmod +x npm-ubuntu.sh
 sudo bash npm-ubuntu.sh
 ```

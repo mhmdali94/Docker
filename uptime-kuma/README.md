@@ -11,6 +11,7 @@ Automated installer for [Uptime Kuma](https://github.com/louislam/uptime-kuma) â
 ## ðŸ›  Usage
 
 ```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/uptime-kuma/uptime-kuma-ubuntu.sh
 chmod +x uptime-kuma-ubuntu.sh
 sudo bash uptime-kuma-ubuntu.sh
 ```

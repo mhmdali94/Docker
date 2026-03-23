@@ -11,6 +11,7 @@ Automated installer for [PostgreSQL](https://www.postgresql.org/) — a powerful
 ## 🛠 Usage
 
 ```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/postgres/postgres-ubuntu.sh
 chmod +x postgres-ubuntu.sh
 sudo bash postgres-ubuntu.sh
 ```

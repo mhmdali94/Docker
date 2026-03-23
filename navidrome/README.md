@@ -11,6 +11,7 @@ Automated installer for [Navidrome](https://www.navidrome.org/) — a self-hoste
 ## 🛠 Usage
 
 ```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/navidrome/navidrome-ubuntu.sh
 chmod +x navidrome-ubuntu.sh
 sudo bash navidrome-ubuntu.sh
 ```

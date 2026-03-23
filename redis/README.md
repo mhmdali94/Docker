@@ -11,6 +11,7 @@ Automated installer for [Redis](https://redis.io/) — an in-memory data store u
 ## 🛠 Usage
 
 ```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/redis/redis-ubuntu.sh
 chmod +x redis-ubuntu.sh
 sudo bash redis-ubuntu.sh
 ```

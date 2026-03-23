@@ -11,6 +11,7 @@ Automated installer for [Netdata](https://www.netdata.cloud/) — real-time perf
 ## 🛠 Usage
 
 ```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/netdata/netdata-ubuntu.sh
 chmod +x netdata-ubuntu.sh
 sudo bash netdata-ubuntu.sh
 ```

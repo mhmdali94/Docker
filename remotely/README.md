@@ -11,6 +11,7 @@ Automated installer for [Remotely](https://github.com/immense/Remotely) — a se
 ## 🛠 Usage
 
 ```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/remotely/remotely-ubuntu.sh
 chmod +x remotely-ubuntu.sh
 sudo bash remotely-ubuntu.sh
 ```

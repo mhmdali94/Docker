@@ -11,6 +11,7 @@ Automated installer for [Portainer-CE](https://www.portainer.io/) — the most p
 ## 🛠 Usage
 
 ```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/portainer/portainer-ubuntu.sh
 chmod +x portainer-ubuntu.sh
 sudo bash portainer-ubuntu.sh
 ```
