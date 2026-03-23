@@ -12,9 +12,17 @@ A collection of Docker-based automation scripts for self-hosted services.
 
 | Folder | Description |
 |--------|-------------|
-| [`rustdesk/`](./rustdesk/) | Self-hosted RustDesk remote desktop server using Docker Compose |
-| [`npm/`](./npm/) | Nginx Proxy Manager deployment using Docker Compose |
-| [`guacamole/`](./guacamole/) | Apache Guacamole clientless remote desktop gateway using Docker Compose |
+| [`rustdesk/`](./rustdesk/) | Self-hosted RustDesk remote desktop server |
+| [`npm/`](./npm/) | Nginx Proxy Manager — reverse proxy with SSL |
+| [`guacamole/`](./guacamole/) | Apache Guacamole — clientless remote desktop gateway |
+| [`navidrome/`](./navidrome/) | Navidrome — self-hosted music streaming server |
+| [`portainer/`](./portainer/) | Portainer-CE — Docker management web UI |
+| [`remotely/`](./remotely/) | Remotely — browser-based remote desktop support |
+| [`uptime-kuma/`](./uptime-kuma/) | Uptime Kuma — self-hosted uptime monitoring |
+| [`beszel/`](./beszel/) | Beszel — lightweight server monitoring hub |
+| [`netdata/`](./netdata/) | Netdata — real-time performance monitoring |
+| [`redis/`](./redis/) | Redis — in-memory database with auto-generated password |
+| [`postgres/`](./postgres/) | PostgreSQL — relational database with auto-generated credentials |
 
 ---
 
