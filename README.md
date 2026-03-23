@@ -1,5 +1,7 @@
 # 🐳 Docker Scripts Collection
 
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+
 A collection of Docker-based automation scripts for self-hosted services.
 
 **Made by:** [prismatechwork.com](https://prismatechwork.com)
