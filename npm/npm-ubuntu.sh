@@ -2,7 +2,7 @@
 #
 # ============================================================
 #   Nginx Proxy Manager (NPM) Auto-Installer
-#   Made by: prismatechwork.com
+#   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
 #   This script is NOT intended for production use.
@@ -26,7 +26,7 @@ clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
 echo "  ║    Nginx Proxy Manager (NPM) Auto-Installer      ║"
-echo "  ║    Made by: prismatechwork.com                   ║"
+echo "  ║    Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ║     Not intended for production use.             ║"
@@ -249,7 +249,7 @@ echo "  ║                                                      ║"
 echo "  ║  Directory : $NPM_DIR"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

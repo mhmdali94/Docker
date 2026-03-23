@@ -4,7 +4,7 @@
 
 Automated installer for [Nginx Proxy Manager](https://nginxproxymanager.com/) — a powerful reverse proxy with a web UI and built-in Let's Encrypt SSL support.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
@@ -64,4 +64,4 @@ sudo bash npm-ubuntu.sh
 
 ---
 
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

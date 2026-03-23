@@ -2,7 +2,7 @@
 #
 # ============================================================
 #   Remotely Remote Desktop Support Auto-Installer
-#   Made by: prismatechwork.com
+#   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
 #   This script is NOT intended for production use.
@@ -19,7 +19,7 @@ clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
 echo "  ║    Remotely Remote Desktop Support Installer     ║"
-echo "  ║    Made by: prismatechwork.com                   ║"
+echo "  ║    Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
@@ -117,6 +117,6 @@ echo "  ║                                                      ║"
 echo "  ║  🔑  On first visit, register your admin account.  ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""

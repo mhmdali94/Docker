@@ -4,7 +4,7 @@
 
 Automated installer for [Navidrome](https://www.navidrome.org/) — a self-hosted music server and streamer, compatible with Subsonic/Airsonic clients.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
@@ -36,4 +36,4 @@ Place music files in:
 | `4533` | Navidrome Web UI |
 
 ---
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

@@ -4,7 +4,7 @@
 
 Automated installer for [Apache Guacamole](https://guacamole.apache.org/) — a clientless remote desktop gateway that supports VNC, RDP, and SSH entirely through a web browser.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
@@ -67,4 +67,4 @@ It is **not hardened for production environments**.
 
 ---
 
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

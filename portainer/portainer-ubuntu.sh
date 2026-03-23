@@ -2,7 +2,7 @@
 #
 # ============================================================
 #   Portainer-CE Auto-Installer
-#   Made by: prismatechwork.com
+#   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
 #   This script is NOT intended for production use.
@@ -19,7 +19,7 @@ clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
 echo "  ║       Portainer-CE Auto-Installer                ║"
-echo "  ║       Made by: prismatechwork.com                ║"
+echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
@@ -120,6 +120,6 @@ echo "  ║  🔑  On first visit, create your admin account.    ║"
 echo "  ║      (you have 5 minutes before it locks)           ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""

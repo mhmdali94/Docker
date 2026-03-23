@@ -2,7 +2,7 @@
 #
 # ============================================================
 #   RustDesk Server Auto-Installer
-#   Made by: prismatechwork.com
+#   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
 #   This script is NOT intended for production use.
@@ -26,7 +26,7 @@ clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
 echo "  ║       RustDesk Server Auto-Installer             ║"
-echo "  ║       Made by: prismatechwork.com                ║"
+echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ║     Not intended for production use.             ║"
@@ -259,6 +259,6 @@ echo "  ║  Server Address : $DOMAIN_OR_IP"
 echo "  ║  Directory      : $RUSTDESK_DIR"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
-echo "  ║       Made by: prismatechwork.com                ║"
+echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""

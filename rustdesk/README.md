@@ -4,7 +4,7 @@
 
 This script (`rustdesk-ubuntu.sh`) provides a fully automated way to install and configure a [RustDesk Self-Hosted Server](https://rustdesk.com/docs/en/self-host/) using Docker Compose.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
@@ -82,4 +82,4 @@ It is **not hardened for production environments**.
 
 ---
 
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

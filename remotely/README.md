@@ -4,7 +4,7 @@
 
 Automated installer for [Remotely](https://github.com/immense/Remotely) — a self-hosted remote desktop and support tool accessible through a browser.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
@@ -29,4 +29,4 @@ On first visit, register your admin account.
 | `5000` | Remotely Web UI |
 
 ---
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

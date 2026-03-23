@@ -2,7 +2,7 @@
 #
 # ============================================================
 #   Netdata Auto-Installer
-#   Made by: prismatechwork.com
+#   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
 #   This script is NOT intended for production use.
@@ -19,7 +19,7 @@ clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
 echo "  ║       Netdata Real-Time Monitoring Installer     ║"
-echo "  ║       Made by: prismatechwork.com                ║"
+echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
@@ -132,6 +132,6 @@ echo "  ║                                                      ║"
 echo "  ║  📊  No login required - dashboard loads directly. ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""

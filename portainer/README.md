@@ -4,7 +4,7 @@
 
 Automated installer for [Portainer-CE](https://www.portainer.io/) — the most popular Docker management web UI.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
@@ -30,4 +30,4 @@ sudo bash portainer-ubuntu.sh
 | `8000` | Edge agent tunnel |
 
 ---
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

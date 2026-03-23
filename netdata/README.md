@@ -4,7 +4,7 @@
 
 Automated installer for [Netdata](https://www.netdata.cloud/) — real-time performance and health monitoring for servers, containers, and applications.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
@@ -29,4 +29,4 @@ No login required — dashboard loads directly.
 | `19999` | Netdata Web Dashboard |
 
 ---
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

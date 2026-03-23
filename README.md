@@ -4,7 +4,7 @@
 
 A collection of Docker-based automation scripts for self-hosted services.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 > ⚠️ Scripts in this repository are provided for **demo and testing purposes only** and are not intended for production use.
 
@@ -36,4 +36,4 @@ A collection of Docker-based automation scripts for self-hosted services.
 
 ---
 
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

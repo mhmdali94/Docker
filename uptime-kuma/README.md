@@ -4,7 +4,7 @@
 
 Automated installer for [Uptime Kuma](https://github.com/louislam/uptime-kuma) — a self-hosted monitoring tool to track uptime for websites and services with a beautiful UI.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
@@ -29,4 +29,4 @@ On first visit, create your admin account.
 | `3001` | Uptime Kuma Web UI |
 
 ---
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

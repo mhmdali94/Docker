@@ -4,7 +4,7 @@
 
 Automated installer for [Redis](https://redis.io/) — an in-memory data store used as a database, cache, and message broker.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
@@ -32,4 +32,4 @@ redis-cli -h <server-ip> -p 6379 -a <generated-password>
 ```
 
 ---
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

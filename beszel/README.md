@@ -4,7 +4,7 @@
 
 Automated installer for [Beszel](https://github.com/henrygd/beszel) — a lightweight server monitoring hub with a clean web dashboard.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
@@ -29,4 +29,4 @@ On first visit, register your admin account.
 | `8090` | Beszel Web UI |
 
 ---
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

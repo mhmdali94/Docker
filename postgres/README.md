@@ -4,7 +4,7 @@
 
 Automated installer for [PostgreSQL](https://www.postgresql.org/) — a powerful, open source object-relational database system.
 
-**Made by:** [prismatechwork.com](https://prismatechwork.com)
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
@@ -39,4 +39,4 @@ psql -h <server-ip> -U pgadmin -d pgdb
 ```
 
 ---
-**Made by [prismatechwork.com](https://prismatechwork.com)**
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
