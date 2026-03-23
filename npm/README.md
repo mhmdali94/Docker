@@ -2,54 +2,43 @@
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-This folder contains a Docker Compose setup for [Nginx Proxy Manager](https://nginxproxymanager.com/), a simple and powerful reverse proxy with a web UI.
+Automated installer for [Nginx Proxy Manager](https://nginxproxymanager.com/) — a powerful reverse proxy with a web UI and built-in Let's Encrypt SSL support.
 
 **Made by:** [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
-## 🚀 What is Nginx Proxy Manager?
+## 🚀 What the Script Does
 
-Nginx Proxy Manager lets you manage Nginx proxy hosts with a beautiful web interface and includes built-in support for free SSL certificates via Let's Encrypt.
-
----
-
-## 📋 Prerequisites
-
-| Requirement | Details |
-|---|---|
-| **OS** | Ubuntu 22.04 or 24.04 |
-| **Permissions** | Root / sudo access |
-| **Ports** | 80, 443, 81 must be open |
+1. **OS Check** — Verifies Ubuntu 22.04 or 24.04
+2. **Docker Check** — Installs Docker if missing
+3. **Docker Compose V2 Check** — Installs if missing
+4. **Cleanup** — Removes any existing NPM containers and directory
+5. **Auto-generates DB credentials** — Secure random passwords
+6. **Generates `config.json`** — DB connection config for NPM
+7. **Generates `docker-compose.yml`** — Ready to run stack
+8. **Starts Containers** — `docker compose up -d`
+9. **Shows login info** — Admin URL and DB credentials
 
 ---
 
 ## 🛠 Usage
 
-> *(Setup script coming soon)*
-
-Manual setup:
-
-**1. Navigate to this directory**
 ```bash
-cd npm/
+chmod +x npm-ubuntu.sh
+sudo bash npm-ubuntu.sh
 ```
 
-**2. Start the stack**
-```bash
-docker compose up -d
-```
+---
 
-**3. Open the admin panel**
-```
-http://<your-server-ip>:81
-```
+## 🔑 Default Login Credentials
 
-Default credentials:
-- **Email:** `admin@example.com`
-- **Password:** `changeme`
+| Field | Value |
+|-------|-------|
+| **Email** | `admin@example.com` |
+| **Password** | `changeme` |
 
-> Change these immediately after first login!
+> ⚠️ Change these immediately after first login!
 
 ---
 
@@ -63,10 +52,15 @@ Default credentials:
 
 ---
 
-## ⚠️ Disclaimer
+## 📁 Files Location
 
-This setup is provided **strictly for demo and testing purposes**.
-It is **not hardened for production environments**.
+```
+/root/docker/npm/
+├── docker-compose.yml
+├── config.json
+├── data/
+└── letsencrypt/
+```
 
 ---
 
