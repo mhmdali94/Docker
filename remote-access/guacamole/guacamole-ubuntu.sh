@@ -136,7 +136,7 @@ services:
     volumes:
       - ./postgres:/config
     ports:
-      - 8090:8080
+      - 8085:8080
 
 volumes:
   postgres:
@@ -176,7 +176,7 @@ fi
 # Done
 # ------------------------------------
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
-ADMIN_URL="http://$SERVER_IP:8090/guacamole"
+ADMIN_URL="http://$SERVER_IP:8085/guacamole"
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
