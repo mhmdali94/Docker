@@ -139,6 +139,33 @@ else
     info "Container running: $RUNNING"
 fi
 
+section "Step 10: Health Check"
+info "Waiting for Navidrome to be ready on port 4533..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if curl -sf -o /dev/null -w "%{http_code}" http://127.0.0.1:4533/ping 2>/dev/null | grep -qE '^(200|302)'; then
+        info "Port 4533 is responding — Navidrome is healthy. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+
+if [ "$HEALTH_OK" -eq 0 ]; then
+    # Fallback: check if port is at least open even if /ping isn't 200
+    if curl -sf --max-time 3 http://127.0.0.1:4533 &>/dev/null || \
+       nc -z 127.0.0.1 4533 2>/dev/null; then
+        warn "Port 4533 is open but /ping did not return 200. Service may still be starting."
+        warn "Check logs: docker logs navidrome"
+    else
+        warn "Port 4533 is NOT responding after 60s."
+        warn "Check logs: docker logs navidrome"
+        docker logs --tail 20 navidrome 2>&1 || true
+    fi
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
