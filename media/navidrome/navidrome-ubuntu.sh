@@ -121,7 +121,15 @@ else
     docker-compose up -d
 fi
 
-section "Step 8: Verifying Container"
+section "Step 8: Opening Firewall Port 4533"
+if command -v ufw &> /dev/null; then
+    ufw allow 4533/tcp
+    info "UFW: port 4533/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule. Open port 4533 manually if needed."
+fi
+
+section "Step 9: Verifying Container"
 sleep 4
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E 'navidrome' || true)
 if [ -z "$RUNNING" ]; then
