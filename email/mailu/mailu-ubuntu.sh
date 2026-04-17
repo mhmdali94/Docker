@@ -233,6 +233,30 @@ else
     info "Containers running: $(echo "$RUNNING" | wc -l) mailu services"
 fi
 
+section "Step 10: Health Check"
+info "Waiting for Mailu front-end to respond on port 80..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if curl -sf --max-time 3 -o /dev/null -w "%{http_code}" http://127.0.0.1 2>/dev/null | grep -qE '^(200|301|302)'; then
+        info "Port 80 is responding — Mailu is healthy. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    if nc -z 127.0.0.1 80 2>/dev/null; then
+        warn "Port 80 is open but HTTP did not respond. Services may still be starting."
+        warn "Check logs: docker logs mailu-front"
+    else
+        warn "Port 80 is NOT responding after 60s."
+        warn "Check logs: docker logs mailu-front"
+        docker logs --tail 20 mailu-front 2>&1 || true
+    fi
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"

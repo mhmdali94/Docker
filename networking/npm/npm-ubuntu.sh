@@ -242,6 +242,30 @@ fi
 # Done
 # ------------------------------------
 
+section "Step 11: Health Check"
+info "Waiting for Nginx Proxy Manager to be ready on port 81..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if curl -sf --max-time 3 http://127.0.0.1:81 &>/dev/null; then
+        info "Port 81 is responding — Nginx Proxy Manager is healthy. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    if nc -z 127.0.0.1 81 2>/dev/null; then
+        warn "Port 81 is open but HTTP did not respond. Service may still be starting."
+        warn "Check logs: docker logs npm_app"
+    else
+        warn "Port 81 is NOT responding after 60s."
+        warn "Check logs: docker logs npm_app"
+        docker logs --tail 20 npm_app 2>&1 || true
+    fi
+fi
+
 # Detect server IP for display
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 ADMIN_URL="http://$SERVER_IP:81"

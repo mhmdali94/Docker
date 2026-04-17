@@ -144,6 +144,30 @@ else
     info "Container running: $RUNNING"
 fi
 
+section "Step 10: Health Check"
+info "Waiting for Outline to be ready on port $API_PORT..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if curl -sf -k --max-time 3 https://127.0.0.1:$API_PORT/$SECRET_KEY/access-keys &>/dev/null; then
+        info "Port $API_PORT is responding — Outline is healthy. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    if nc -z 127.0.0.1 $API_PORT 2>/dev/null; then
+        warn "Port $API_PORT is open but API did not respond. Service may still be starting."
+        warn "Check logs: docker logs outline-shadowbox"
+    else
+        warn "Port $API_PORT is NOT responding after 60s."
+        warn "Check logs: docker logs outline-shadowbox"
+        docker logs --tail 20 outline-shadowbox 2>&1 || true
+    fi
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 API_URL="https://$WAN_IP:$API_PORT/$SECRET_KEY"
 echo ""

@@ -127,6 +127,30 @@ else
     info "Container running: $RUNNING"
 fi
 
+section "Step 9: Health Check"
+info "Waiting for Redis to be ready on port 6379..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if docker exec redis redis-cli -a "$REDIS_PASSWORD" ping 2>/dev/null | grep -q "PONG"; then
+        info "Redis is responding to PING. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    if nc -z 127.0.0.1 6379 2>/dev/null; then
+        warn "Port 6379 is open but Redis PING timed out. Service may still be starting."
+        warn "Check logs: docker logs redis"
+    else
+        warn "Port 6379 is NOT responding after 60s."
+        warn "Check logs: docker logs redis"
+        docker logs --tail 20 redis 2>&1 || true
+    fi
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"

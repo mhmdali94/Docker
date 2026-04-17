@@ -125,6 +125,30 @@ else
     info "Container running: $RUNNING"
 fi
 
+section "Step 9: Health Check"
+info "Waiting for Portainer to be ready on port 9443..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if curl -sf -k --max-time 3 https://127.0.0.1:9443 &>/dev/null; then
+        info "Port 9443 is responding — Portainer is healthy. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    if nc -z 127.0.0.1 9443 2>/dev/null; then
+        warn "Port 9443 is open but HTTPS did not respond. Service may still be starting."
+        warn "Check logs: docker logs portainer"
+    else
+        warn "Port 9443 is NOT responding after 60s."
+        warn "Check logs: docker logs portainer"
+        docker logs --tail 20 portainer 2>&1 || true
+    fi
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"

@@ -133,6 +133,25 @@ else
     info "Container running: $RUNNING"
 fi
 
+section "Step 9: Health Check"
+info "Checking SoftEther management port 5555 (TCP)..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if nc -z 127.0.0.1 5555 2>/dev/null; then
+        info "Port 5555 is open — SoftEther VPN is healthy. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    warn "Port 5555 is NOT responding after 60s."
+    warn "Check logs: docker logs softether"
+    docker logs --tail 20 softether 2>&1 || true
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"

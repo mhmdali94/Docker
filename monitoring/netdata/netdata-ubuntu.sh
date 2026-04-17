@@ -138,6 +138,30 @@ else
     info "Container running: $RUNNING"
 fi
 
+section "Step 9: Health Check"
+info "Waiting for Netdata to be ready on port 19999..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if curl -sf --max-time 3 http://127.0.0.1:19999/api/v1/info &>/dev/null; then
+        info "Port 19999 is responding — Netdata is healthy. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    if nc -z 127.0.0.1 19999 2>/dev/null; then
+        warn "Port 19999 is open but /api/v1/info did not respond. Service may still be starting."
+        warn "Check logs: docker logs netdata"
+    else
+        warn "Port 19999 is NOT responding after 60s."
+        warn "Check logs: docker logs netdata"
+        docker logs --tail 20 netdata 2>&1 || true
+    fi
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"

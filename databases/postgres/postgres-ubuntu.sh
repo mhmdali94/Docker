@@ -134,6 +134,30 @@ else
     info "Container running: $RUNNING"
 fi
 
+section "Step 9: Health Check"
+info "Waiting for PostgreSQL to be ready on port 5432..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if docker exec postgres pg_isready -U pgadmin &>/dev/null; then
+        info "PostgreSQL is ready and accepting connections. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    if nc -z 127.0.0.1 5432 2>/dev/null; then
+        warn "Port 5432 is open but pg_isready timed out. Service may still be starting."
+        warn "Check logs: docker logs postgres"
+    else
+        warn "Port 5432 is NOT responding after 60s."
+        warn "Check logs: docker logs postgres"
+        docker logs --tail 20 postgres 2>&1 || true
+    fi
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"

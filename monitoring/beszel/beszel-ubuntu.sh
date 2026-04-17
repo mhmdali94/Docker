@@ -123,6 +123,30 @@ else
     info "Container running: $RUNNING"
 fi
 
+section "Step 9: Health Check"
+info "Waiting for Beszel to be ready on port 8090..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if curl -sf --max-time 3 http://127.0.0.1:8090 &>/dev/null; then
+        info "Port 8090 is responding — Beszel is healthy. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    if nc -z 127.0.0.1 8090 2>/dev/null; then
+        warn "Port 8090 is open but HTTP did not respond. Service may still be starting."
+        warn "Check logs: docker logs beszel"
+    else
+        warn "Port 8090 is NOT responding after 60s."
+        warn "Check logs: docker logs beszel"
+        docker logs --tail 20 beszel 2>&1 || true
+    fi
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"

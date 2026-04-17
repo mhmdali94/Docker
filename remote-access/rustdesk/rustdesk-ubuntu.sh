@@ -266,6 +266,25 @@ else
     echo "  cat $KEY_FILE"
 fi
 
+section "Step 11: Health Check"
+info "Checking RustDesk relay port 21117 (TCP)..."
+HEALTH_OK=0
+for i in $(seq 1 8); do
+    if nc -z 127.0.0.1 21117 2>/dev/null; then
+        info "Port 21117 (relay) is open — RustDesk server is healthy. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/8 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    warn "Port 21117 is NOT responding after 40s."
+    warn "Check logs: docker logs hbbr"
+    docker logs --tail 20 hbbr 2>&1 || true
+fi
+
 # ------------------------------------
 # Done
 # ------------------------------------

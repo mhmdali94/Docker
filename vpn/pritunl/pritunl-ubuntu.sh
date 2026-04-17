@@ -162,6 +162,30 @@ else
     info "Containers running: $RUNNING"
 fi
 
+section "Step 10: Health Check"
+info "Waiting for Pritunl to be ready on port 443..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if curl -sf -k --max-time 3 https://127.0.0.1 &>/dev/null; then
+        info "Port 443 is responding — Pritunl is healthy. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    if nc -z 127.0.0.1 443 2>/dev/null; then
+        warn "Port 443 is open but HTTPS did not respond. Service may still be starting."
+        warn "Check logs: docker logs pritunl"
+    else
+        warn "Port 443 is NOT responding after 60s."
+        warn "Check logs: docker logs pritunl"
+        docker logs --tail 20 pritunl 2>&1 || true
+    fi
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"

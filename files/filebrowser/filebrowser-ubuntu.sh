@@ -125,6 +125,38 @@ else
     info "Container running: $RUNNING"
 fi
 
+section "Step 9: Health Check"
+info "Waiting for FileBrowser to be ready on port 8082..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if curl -sf --max-time 3 http://127.0.0.1:8082 &>/dev/null; then
+        info "Port 8082 is responding — FileBrowser is healthy. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    if nc -z 127.0.0.1 8082 2>/dev/null; then
+        warn "Port 8082 is open but HTTP did not respond. Service may still be starting."
+        warn "Check logs: docker logs filebrowser"
+    else
+        warn "Port 8082 is NOT responding after 60s."
+        warn "Check logs: docker logs filebrowser"
+        docker logs --tail 20 filebrowser 2>&1 || true
+    fi
+fi
+
+section "Step 10: Opening Firewall Port 8082"
+if command -v ufw &> /dev/null; then
+    ufw allow 8082/tcp
+    info "UFW: port 8082/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
