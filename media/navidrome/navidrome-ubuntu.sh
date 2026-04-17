@@ -89,7 +89,8 @@ if [ -d "$NAVIDROME_DIR" ]; then
     warn "Removing old directory $NAVIDROME_DIR..."
     rm -rf "$NAVIDROME_DIR"
 fi
-mkdir -p "$NAVIDROME_DIR/music"
+mkdir -p "$NAVIDROME_DIR/music" "$NAVIDROME_DIR/data"
+chown -R 1000:1000 "$NAVIDROME_DIR/music" "$NAVIDROME_DIR/data"
 cd "$NAVIDROME_DIR" || error "Cannot navigate to $NAVIDROME_DIR"
 info "Directory ready: $NAVIDROME_DIR"
 
