@@ -1,148 +1,158 @@
 # 🐳 Docker Self-Hosted Services Collection
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Services](https://img.shields.io/badge/Services-29-brightgreen)
+![Services](https://img.shields.io/badge/Services-51-brightgreen)
+![Categories](https://img.shields.io/badge/Categories-15-purple)
 ![Platform](https://img.shields.io/badge/Platform-Ubuntu%2022.04%20%7C%2024.04-orange)
 
-A collection of one-command Docker installer scripts for the most popular self-hosted services — organized by category.
+A collection of one-command Docker installer scripts for self-hosted services, organized by category.
 
-**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+Each service directory contains:
+
+- a `README.md` with usage, ports, credentials, and access notes
+- a `*-ubuntu.sh` installer script for Ubuntu `22.04` and `24.04`
+
+**Made by:** Mohammed Ali Elshikh - [prismatechwork.com](https://prismatechwork.com)
 
 > ⚠️ Scripts in this repository are provided for **demo and testing purposes only** and are not intended for production use.
 
 ---
 
+## 📌 At A Glance
+
+- 51 services across 15 categories
+- Ubuntu-focused installers with Docker and Docker Compose V2 checks built in
+- Per-service deployments are typically created under `/root/docker/<service>`
+- Most scripts generate credentials, start the stack, and run a basic health check
+- Re-running a script often removes the previous deployment for a clean reinstall
+
+---
+
 ## 📂 Categories
 
-| Category | Services |
-|----------|---------|
-| [🔒 VPN](#-vpn) | 8 services |
-| [📧 Email](#-email) | 3 services |
-| [🎬 Media](#-media) | 2 services |
-| [📊 Monitoring](#-monitoring) | 3 services |
-| [🌐 Networking](#-networking) | 3 services |
-| [🖥️ Remote Access](#️-remote-access) | 3 services |
-| [🗄️ Databases](#️-databases) | 2 services |
-| [🔐 Security](#-security) | 1 service |
-| [📁 Files](#-files) | 1 service |
-| [🛠️ Tools](#️-tools) | 2 services |
-| [⚙️ Management](#️-management) | 1 service |
+| Category | Count | Services |
+| --- | ---: | --- |
+| Analytics | 2 | [Plausible](./analytics/plausible/), [Umami](./analytics/umami/) |
+| Backup | 1 | [Duplicati](./backup/duplicati/) |
+| Communication | 2 | [Mattermost](./communication/mattermost/), [ntfy](./communication/ntfy/) |
+| Databases | 6 | [InfluxDB](./databases/influxdb/), [MariaDB](./databases/mariadb/), [MinIO](./databases/minio/), [MongoDB](./databases/mongodb/), [PostgreSQL](./databases/postgres/), [Redis](./databases/redis/) |
+| Dev | 3 | [Gitea](./dev/gitea/), [Harbor](./dev/harbor/), [Woodpecker](./dev/woodpecker/) |
+| Email | 3 | [Listmonk](./email/listmonk/), [Mailcow](./email/mailcow/), [Mailu](./email/mailu/) |
+| Files | 3 | [FileBrowser](./files/filebrowser/), [Nextcloud](./files/nextcloud/), [Paperless-ngx](./files/paperless-ngx/) |
+| Management | 1 | [Portainer](./management/portainer/) |
+| Media | 5 | [Audiobookshelf](./media/audiobookshelf/), [Immich](./media/immich/), [Jellyfin](./media/jellyfin/), [Kavita](./media/kavita/), [Navidrome](./media/navidrome/) |
+| Monitoring | 6 | [Beszel](./monitoring/beszel/), [Grafana](./monitoring/grafana/), [Graylog](./monitoring/graylog/), [Netdata](./monitoring/netdata/), [Prometheus](./monitoring/prometheus/), [Uptime Kuma](./monitoring/uptime-kuma/) |
+| Networking | 3 | [AdGuard Home](./networking/adguardhome/), [Nginx Proxy Manager](./networking/npm/), [Pi-hole](./networking/pihole/) |
+| Remote Access | 3 | [Guacamole](./remote-access/guacamole/), [Remotely](./remote-access/remotely/), [RustDesk](./remote-access/rustdesk/) |
+| Security | 3 | [Authentik](./security/authentik/), [Authelia](./security/authelia/), [Vaultwarden](./security/vaultwarden/) |
+| Tools | 2 | [IT-Tools](./tools/it-tools/), [Stirling-PDF](./tools/stirling-pdf/) |
+| VPN | 8 | [3X-UI](./vpn/3x-ui/), [Headscale](./vpn/headscale/), [NetBird](./vpn/netbird/), [OpenVPN AS](./vpn/openvpn-as/), [Outline](./vpn/outline/), [Pritunl](./vpn/pritunl/), [SoftEther](./vpn/softether/), [WireGuard Easy](./vpn/wireguard-easy/) |
 
 ---
 
-## 🔒 VPN
+## 🛠 Usage
 
-| Service | Description | Port(s) |
-|---------|-------------|---------|
-| [WireGuard Easy](./vpn/wireguard-easy/) | WireGuard VPN with a clean web UI — create and manage clients via browser | `51821` UI, `51820/UDP` VPN |
-| [3X-UI](./vpn/3x-ui/) | Xray/V2Ray multi-protocol panel supporting VMess, VLESS, Trojan, Shadowsocks | `2053` |
-| [OpenVPN AS](./vpn/openvpn-as/) | Official OpenVPN Access Server with admin panel and client portal | `943`, `443`, `1194` |
-| [Pritunl](./vpn/pritunl/) | Enterprise-grade OpenVPN + WireGuard server with polished web dashboard | `80`, `443`, `1194` |
-| [Netbird](./vpn/netbird/) | WireGuard mesh VPN that works behind NAT — no port forwarding needed | `8089` UI, `8080` API |
-| [Headscale](./vpn/headscale/) | Self-hosted Tailscale control server — use all Tailscale clients with your own server | `8090` API, `8091` UI |
-| [Outline](./vpn/outline/) | Simple Shadowsocks VPN by Google Jigsaw — managed via Outline Manager desktop app | `8092`, `12345` |
-| [SoftEther](./vpn/softether/) | Multi-protocol VPN supporting L2TP/IPsec, SSTP, OpenVPN and SoftEther in one server | `5555`, `443`, `1194` |
+Pick a service folder, then run its installer script.
 
----
+```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/<category>/<service>/<service>-ubuntu.sh
+chmod +x <service>-ubuntu.sh
+sudo bash <service>-ubuntu.sh
+```
 
-## 📧 Email
+Examples:
 
-| Service | Description | Port(s) |
-|---------|-------------|---------|
-| [Mailcow](./email/mailcow/) | Complete email suite — Postfix, Dovecot, SOGo webmail, Rspamd antispam, and ClamAV | `80`, `443`, `25`, `587`, `143` |
-| [Mailu](./email/mailu/) | Simple full email stack with Roundcube webmail, Rspamd, and a clean admin panel | `80`, `443`, `25`, `587`, `143` |
-| [Listmonk](./email/listmonk/) | High-performance newsletter and mailing list manager — requires external SMTP | `9000` |
+```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/media/jellyfin/jellyfin-ubuntu.sh
+chmod +x jellyfin-ubuntu.sh
+sudo bash jellyfin-ubuntu.sh
+```
 
----
+```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/security/vaultwarden/vaultwarden-ubuntu.sh
+chmod +x vaultwarden-ubuntu.sh
+sudo bash vaultwarden-ubuntu.sh
+```
 
-## 🎬 Media
-
-| Service | Description | Port(s) |
-|---------|-------------|---------|
-| [Jellyfin](./media/jellyfin/) | Free open-source media server for movies, TV, music, and photos — no subscription needed | `8096` |
-| [Navidrome](./media/navidrome/) | Modern self-hosted music streaming server compatible with Subsonic/Airsonic clients | `4533` |
-
----
-
-## 📊 Monitoring
-
-| Service | Description | Port(s) |
-|---------|-------------|---------|
-| [Uptime Kuma](./monitoring/uptime-kuma/) | Beautiful self-hosted uptime and status page monitor for websites and services | `3001` |
-| [Beszel](./monitoring/beszel/) | Lightweight server monitoring hub with agents for multi-server tracking | `8090` |
-| [Netdata](./monitoring/netdata/) | Real-time performance and health monitoring with hundreds of built-in metrics | host network |
-
----
-
-## 🌐 Networking
-
-| Service | Description | Port(s) |
-|---------|-------------|---------|
-| [Nginx Proxy Manager](./networking/npm/) | Reverse proxy with a web UI for managing domains, SSL certificates, and forwarding rules | `80`, `81`, `443` |
-| [AdGuard Home](./networking/adguardhome/) | Network-wide DNS ad and tracker blocker — protects all devices on your network | `53`, `8083`, `3000` |
-| [Pi-hole](./networking/pihole/) | DNS-based network ad blocker with a built-in dashboard and query log | `53`, `8084` |
-
----
-
-## 🖥️ Remote Access
-
-| Service | Description | Port(s) |
-|---------|-------------|---------|
-| [RustDesk](./remote-access/rustdesk/) | Self-hosted remote desktop server — relay and ID server for RustDesk clients | `21115–21119` |
-| [Guacamole](./remote-access/guacamole/) | Clientless remote desktop gateway supporting RDP, VNC, and SSH from any browser | `8085` |
-| [Remotely](./remote-access/remotely/) | Browser-based remote desktop support tool for managing remote computers | `5000` |
-
----
-
-## 🗄️ Databases
-
-| Service | Description | Port(s) |
-|---------|-------------|---------|
-| [PostgreSQL](./databases/postgres/) | Powerful open-source relational database — auto-generated credentials on install | `5432` |
-| [Redis](./databases/redis/) | Fast in-memory key-value store used for caching and queues — password protected | `6379` |
-
----
-
-## 🔐 Security
-
-| Service | Description | Port(s) |
-|---------|-------------|---------|
-| [Vaultwarden](./security/vaultwarden/) | Lightweight self-hosted Bitwarden-compatible password manager — works with all Bitwarden clients | `8086` |
-
----
-
-## 📁 Files
-
-| Service | Description | Port(s) |
-|---------|-------------|---------|
-| [FileBrowser](./files/filebrowser/) | Clean web-based file manager for browsing, uploading, and managing server files | `8082` |
-
----
-
-## 🛠️ Tools
-
-| Service | Description | Port(s) |
-|---------|-------------|---------|
-| [Stirling-PDF](./tools/stirling-pdf/) | 50+ PDF tools in one self-hosted app — merge, split, compress, convert, OCR, and more | `8087` |
-| [IT-Tools](./tools/it-tools/) | 100+ developer utilities — UUID, JWT, hash, base64, cron parser, QR code, and more | `8088` |
-
----
-
-## ⚙️ Management
-
-| Service | Description | Port(s) |
-|---------|-------------|---------|
-| [Portainer CE](./management/portainer/) | Web UI for managing Docker containers, images, volumes, and networks | `9443`, `8000` |
+For exact ports, credentials, and post-install steps, use the `README.md` inside the selected service folder.
 
 ---
 
 ## 📋 Requirements
 
 - Ubuntu `22.04` or `24.04`
-- Root / sudo access
-- Docker & Docker Compose V2 (auto-installed by scripts if missing)
-- Open firewall ports as required per service
+- Root or sudo access
+- Internet access for package installs and Docker image pulls
+- Open firewall ports as required by the selected service
 
 ---
 
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+## 🧱 Repository Structure
+
+```text
+.
+|- analytics/
+|- backup/
+|- communication/
+|- databases/
+|- dev/
+|- email/
+|- files/
+|- gpt.md
+|- management/
+|- media/
+|- monitoring/
+|- networking/
+|- remote-access/
+|- security/
+|- tools/
+|- vpn/
+|- CONTRIBUTING.md
+|- LICENSE
+`- README.md
+```
+
+Per-service layout:
+
+```text
+category/service-name/
+|- README.md
+`- service-name-ubuntu.sh
+```
+
+---
+
+## ⚙️ Common Script Behavior
+
+Most scripts follow the same high-level flow:
+
+1. check for root privileges
+2. verify supported Ubuntu version
+3. install or verify Docker
+4. install or verify Docker Compose V2
+5. clean up old containers and previous service data
+6. prepare `/root/docker/<service>`
+7. generate credentials and write configuration
+8. start the stack with Docker Compose
+9. verify the container is running
+10. perform a basic health check
+
+---
+
+## ⚠️ Important Notes
+
+- These setups are intended for demos, testing, and lab use.
+- Some scripts expose default or generated credentials during installation.
+- Some services require additional manual configuration after install, such as DNS, SMTP, OAuth, or client-side setup.
+- Some installers use broad host mounts, Docker socket access, host networking, or elevated capabilities where the service requires it.
+- If you need production-grade deployments, treat these scripts as starting points rather than final hardened setups.
+
+---
+
+## 🤝 Contributing
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the script structure, naming conventions, cleanup rules, health check patterns, and port allocation guidance used in this repository.
+
+---
+
+**Made by Mohammed Ali Elshikh - [prismatechwork.com](https://prismatechwork.com)**
