@@ -123,14 +123,20 @@ else
 fi
 
 info "Waiting for 3X-UI to initialize database..."
-sleep 8
+sleep 10
 
-info "Setting credentials via CLI..."
-docker exec 3x-ui x-ui setting -username "$XUI_USER" -password "$XUI_PASS" -port "$XUI_PORT" || \
-    error "Failed to set 3X-UI credentials. Check: docker logs 3x-ui"
+info "Installing sqlite3 and apache2-utils..."
+apt-get install -y sqlite3 apache2-utils -qq
+
+info "Setting credentials directly in database..."
+XUI_DB="$XUI_DIR/db/x-ui.db"
+XUI_HASH=$(htpasswd -bnBC 10 "" "$XUI_PASS" | tr -d ':\n')
+sqlite3 "$XUI_DB" "UPDATE users SET username='$XUI_USER', password='$XUI_HASH' WHERE id=1;" || \
+    error "Failed to update credentials in database."
+info "Credentials set."
 
 info "Restarting to apply credentials..."
-docker compose restart 2>/dev/null || docker-compose restart
+docker restart 3x-ui
 
 section "Step 8: Opening Firewall Port $XUI_PORT"
 if command -v ufw &> /dev/null; then
