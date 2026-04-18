@@ -108,8 +108,9 @@ grpc_allow_insecure: true
 private_key_path: /var/lib/headscale/private.key
 noise:
   private_key_path: /var/lib/headscale/noise_private.key
-ip_prefixes:
-  - 100.64.0.0/10
+prefixes:
+  v4: 100.64.0.0/10
+  allocation: sequential
 derp:
   server:
     enabled: false
@@ -119,16 +120,16 @@ derp:
   update_frequency: 24h
 disable_check_updates: true
 ephemeral_node_inactivity_timeout: 30m
-db_type: sqlite3
-db_path: /var/lib/headscale/db.sqlite
+database:
+  type: sqlite
+  sqlite:
+    path: /var/lib/headscale/db.sqlite
 log:
   level: info
-dns_config:
-  override_local_dns: true
-  nameservers:
-    - 1.1.1.1
+dns:
   magic_dns: true
   base_domain: headscale.local
+  override_local_dns: false
 unix_socket: /var/run/headscale/headscale.sock
 unix_socket_permission: "0770"
 EOF
@@ -164,7 +165,16 @@ else
     docker-compose up -d
 fi
 
-section "Step 9: Verifying Containers"
+section "Step 9: Opening Firewall Ports"
+if command -v ufw &> /dev/null; then
+    ufw allow 8090/tcp
+    ufw allow 8091/tcp
+    info "UFW: ports 8090/tcp and 8091/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
+fi
+
+section "Step 10: Verifying Containers"
 sleep 6
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E 'headscale' || true)
 if [ -z "$RUNNING" ]; then
@@ -173,12 +183,13 @@ else
     info "Containers running: $RUNNING"
 fi
 
-section "Step 10: Health Check"
+section "Step 11: Health Check"
 info "Waiting for Headscale to be ready on port 8090..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8090/health &>/dev/null; then
-        info "Port 8090 is responding — Headscale is healthy. ✅"
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 http://127.0.0.1:8090/health 2>/dev/null || echo "000")
+    if echo "$STATUS" | grep -qE '^(200|301|302|303)$'; then
+        info "Port 8090 is responding (HTTP $STATUS) — Headscale is healthy. ✅"
         HEALTH_OK=1
         break
     fi
