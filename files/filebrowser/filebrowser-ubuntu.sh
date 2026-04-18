@@ -101,10 +101,6 @@ cd "$FILEBROWSER_DIR" || error "Cannot navigate to $FILEBROWSER_DIR"
 info "Directory ready: $FILEBROWSER_DIR"
 
 section "Step 6: Building FileBrowser Image & Generating docker-compose.yml"
-FB_ADMIN_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)
-info "Admin User     : admin"
-info "Admin Password : $FB_ADMIN_PASS"
-
 cat > "$FILEBROWSER_DIR/Dockerfile" <<'DOCKERFILE'
 FROM alpine:latest
 RUN apk add --no-cache wget tar && \
@@ -114,15 +110,16 @@ RUN apk add --no-cache wget tar && \
     rm /tmp/fb.tar.gz && \
     chmod +x /usr/local/bin/filebrowser
 RUN mkdir -p /tmp/init /tmp/srv && \
-    sh -c 'filebrowser -d /tmp/init/fb.db -r /tmp/srv -a 127.0.0.1 -p 18099 >/dev/null 2>&1 & echo $! > /tmp/fb.pid && sleep 8 && kill $(cat /tmp/fb.pid) 2>/dev/null; true'
-ARG FB_ADMIN_PASS
-RUN filebrowser -d /tmp/init/fb.db users update admin --password "$FB_ADMIN_PASS"
+    sh -c 'filebrowser -d /tmp/init/fb.db -r /tmp/srv -a 127.0.0.1 -p 18099 >/dev/null 2>&1 & echo $! > /tmp/fb.pid && sleep 8 && kill $(cat /tmp/fb.pid) 2>/dev/null; true' && \
+    filebrowser -d /tmp/init/fb.db users update admin --password "AdminDemo1234"
 EXPOSE 80
 CMD ["filebrowser", "-d", "/config/filebrowser.db", "-r", "/srv", "-a", "0.0.0.0", "-p", "80"]
 DOCKERFILE
 
+info "Admin User     : admin"
+info "Admin Password : AdminDemo1234"
 info "Building FileBrowser image (downloads binary from GitHub)..."
-docker build --no-cache --build-arg FB_ADMIN_PASS="$FB_ADMIN_PASS" -t filebrowser-local "$FILEBROWSER_DIR" || error "Docker build failed."
+docker build --no-cache -t filebrowser-local "$FILEBROWSER_DIR" || error "Docker build failed."
 info "Image built successfully."
 
 info "Pre-populating database with admin/admin credentials..."
