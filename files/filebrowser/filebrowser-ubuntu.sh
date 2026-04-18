@@ -102,8 +102,15 @@ RUN apk add --no-cache wget tar && \
     tar -xzf /tmp/fb.tar.gz -C /usr/local/bin filebrowser && \
     rm /tmp/fb.tar.gz && \
     chmod +x /usr/local/bin/filebrowser
+RUN printf '#!/bin/sh\n\
+if [ ! -f /config/filebrowser.db ]; then\n\
+  filebrowser config init -d /config/filebrowser.db\n\
+  filebrowser config set -d /config/filebrowser.db --address 0.0.0.0 --port 80 --root /srv --log stdout\n\
+  filebrowser users add admin admin --perm.admin -d /config/filebrowser.db\n\
+fi\n\
+exec filebrowser -d /config/filebrowser.db\n' > /entrypoint.sh && chmod +x /entrypoint.sh
 EXPOSE 80
-CMD ["filebrowser", "--database", "/config/filebrowser.db", "--root", "/srv", "--address", "0.0.0.0", "--port", "80"]
+ENTRYPOINT ["/entrypoint.sh"]
 DOCKERFILE
 
 info "Building FileBrowser image (downloads binary from GitHub)..."
