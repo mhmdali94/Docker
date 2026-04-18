@@ -122,21 +122,33 @@ else
     docker-compose up -d
 fi
 
-info "Waiting for 3X-UI to initialize database..."
-sleep 10
-
 info "Installing sqlite3 and apache2-utils..."
 apt-get install -y sqlite3 apache2-utils -qq
 
-info "Setting credentials directly in database..."
+info "Waiting for 3X-UI to initialize database..."
 XUI_DB="$XUI_DIR/db/x-ui.db"
+for i in $(seq 1 30); do
+    if [ -f "$XUI_DB" ] && sqlite3 "$XUI_DB" "SELECT COUNT(*) FROM users;" 2>/dev/null | grep -q '[1-9]'; then
+        info "Database ready."
+        break
+    fi
+    echo -n "  Waiting for DB... attempt $i/30"
+    sleep 2
+    echo ""
+done
+[ -f "$XUI_DB" ] || error "Database not created after 60s. Check: docker logs 3x-ui"
+
+info "Stopping container to safely update credentials..."
+docker stop 3x-ui
+
+info "Setting credentials in database..."
 XUI_HASH=$(htpasswd -bnBC 10 "" "$XUI_PASS" | tr -d ':\n')
-sqlite3 "$XUI_DB" "UPDATE users SET username='$XUI_USER', password='$XUI_HASH' WHERE id=1;" || \
-    error "Failed to update credentials in database."
+SQL=$(printf "UPDATE users SET username='%s', password='%s' WHERE id=1;" "$XUI_USER" "$XUI_HASH")
+sqlite3 "$XUI_DB" "$SQL" || error "Failed to update credentials in database."
 info "Credentials set."
 
-info "Restarting to apply credentials..."
-docker restart 3x-ui
+info "Starting container..."
+docker start 3x-ui
 
 section "Step 8: Opening Firewall Port $XUI_PORT"
 if command -v ufw &> /dev/null; then
