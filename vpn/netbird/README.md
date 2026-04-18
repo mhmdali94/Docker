@@ -1,79 +1,70 @@
-# Netbird
-
-WireGuard-based mesh VPN that connects your devices into a secure private network — even behind NAT.
-
-**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+# Netbird — Docker Setup
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
+Automated installer for [Netbird](https://netbird.io/) — a WireGuard-based mesh VPN with a self-hosted control plane. Includes a bundled **Dex OIDC** identity provider so login works out of the box with no external accounts required.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
 ---
 
-## 🚀 Quick Install
+## 🛠 Usage
 
 ```bash
-wget https://raw.githubusercontent.com/yourusername/docker/main/vpn/netbird/netbird-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/vpn/netbird/netbird-ubuntu.sh
+chmod +x netbird-ubuntu.sh
 sudo bash netbird-ubuntu.sh
 ```
 
-Or:
+## 🔑 Credentials
+
+| Field | Value |
+|-------|-------|
+| Email | `admin@netbird.local` |
+| Password | Auto-generated (shown at install) |
+
+## 🌐 Ports
+
+| Port | Purpose |
+|------|---------|
+| `8089` | Netbird Web Dashboard |
+| `8080` | Management API |
+| `10000` | Signal Server |
+| `5556` | Dex OIDC Identity Provider |
+
+## 💻 Connect
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/docker/main/vpn/netbird/netbird-ubuntu.sh | sudo bash
+# Web Dashboard
+http://SERVER_IP:8089
+
+# Connect a peer (after installing netbird client)
+netbird up --management-url http://SERVER_IP:8080
 ```
 
----
+## 🔐 How Authentication Works
 
-## 📖 What is Netbird?
+This installer bundles **[Dex](https://dexidp.io/)** — a lightweight self-hosted OIDC provider — so you don't need Auth0, Google, or any external service to log in.
 
-Netbird is a WireGuard-based mesh VPN that creates a peer-to-peer private network between your devices. It works behind NAT and firewalls without requiring port forwarding, making it ideal for connecting remote devices securely.
-
-## ✨ Features
-
-- Zero-config peer-to-peer WireGuard tunnels
-- Works behind NAT without port forwarding
-- Web dashboard for peer management
-- Access control policies
-- Works on Linux, macOS, Windows, Android, iOS
-- Self-hosted control plane (signal + management servers)
-
-## 🌐 Access
-
-| Dashboard | `http://<server-ip>:8089` |
-|-----------|--------------------------|
-| Management API | `http://<server-ip>:8080` |
-| Signal Server | `<server-ip>:10000` |
-
-## 🔌 Ports
-
-| Port | Protocol | Purpose |
-|------|----------|---------|
-| `8089` | TCP | Web dashboard |
-| `8080` | TCP | Management API |
-| `10000` | TCP | Signal server |
-
-## 📱 Connect a Peer
-
-Install the Netbird client on any device and point it to your server:
-```bash
-netbird up --management-url http://<server-ip>:8080
-```
-
-Download clients at: [netbird.io/downloads](https://netbird.io/downloads)
+On first visit to the dashboard, click **Login** and you will be redirected to Dex. Enter the email and password shown at the end of the install.
 
 ## 📁 Directory Structure
 
 ```
 /root/docker/netbird/
 ├── docker-compose.yml
+├── dex/           # Dex OIDC config
 ├── signal/        # Signal server data
-└── management/    # Management server data
+└── management/    # Management server data + management.json
 ```
 
-## 📚 Documentation
+## 📱 Install Netbird Client
 
-- [Netbird Documentation](https://docs.netbird.io)
-- [Netbird GitHub](https://github.com/netbirdio/netbird)
+Download from [netbird.io/downloads](https://netbird.io/downloads) and connect:
+
+```bash
+netbird up --management-url http://SERVER_IP:8080
+```
 
 ---
-
 **Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
