@@ -108,7 +108,11 @@ fi
 WG_PASSWORD_HASH=$(htpasswd -bnBC 10 "" "$WG_PASSWORD" | tr -d ':\n')
 info "Bcrypt hash generated."
 
-# Write compose in two parts to avoid bcrypt $ signs being expanded in heredoc
+# Escape bcrypt dollar signs so Docker Compose does not treat parts of the hash
+# as environment-variable interpolation when it parses docker-compose.yml.
+WG_PASSWORD_HASH_ESCAPED=${WG_PASSWORD_HASH//$/$$}
+
+# Write compose in two parts to keep the generated values explicit.
 cat > "$WG_DIR/docker-compose.yml" <<'COMPOSE'
 services:
   wireguard-easy:
@@ -134,7 +138,7 @@ cat >> "$WG_DIR/docker-compose.yml" <<EOF
       - WG_DEFAULT_DNS=1.1.1.1
       - WG_DEFAULT_ADDRESS=10.8.0.x
 EOF
-printf "      - PASSWORD_HASH=%s\n" "$WG_PASSWORD_HASH" >> "$WG_DIR/docker-compose.yml"
+printf "      - PASSWORD_HASH=%s\n" "$WG_PASSWORD_HASH_ESCAPED" >> "$WG_DIR/docker-compose.yml"
 info "docker-compose.yml created."
 
 section "Step 8: Starting WireGuard Easy"
