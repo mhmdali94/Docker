@@ -91,23 +91,38 @@ if [ -d "$FILEBROWSER_DIR" ]; then
 fi
 mkdir -p "$FILEBROWSER_DIR/config"
 cd "$FILEBROWSER_DIR" || error "Cannot navigate to $FILEBROWSER_DIR"
+touch "$FILEBROWSER_DIR/config/filebrowser.db"
 info "Directory ready: $FILEBROWSER_DIR"
 
-section "Step 6: Generating docker-compose.yml"
+section "Step 6: Building FileBrowser Image & Generating docker-compose.yml"
+cat > "$FILEBROWSER_DIR/Dockerfile" <<'DOCKERFILE'
+FROM alpine:latest
+RUN apk add --no-cache wget tar && \
+    wget -qO /tmp/fb.tar.gz \
+      "https://github.com/filebrowser/filebrowser/releases/latest/download/linux-amd64-filebrowser.tar.gz" && \
+    tar -xzf /tmp/fb.tar.gz -C /usr/local/bin filebrowser && \
+    rm /tmp/fb.tar.gz && \
+    chmod +x /usr/local/bin/filebrowser
+EXPOSE 80
+CMD ["filebrowser", "--database", "/config/filebrowser.db", "--root", "/srv", "--address", "0.0.0.0", "--port", "80"]
+DOCKERFILE
+
+info "Building FileBrowser image (downloads binary from GitHub)..."
+docker build -t filebrowser-local "$FILEBROWSER_DIR" || error "Docker build failed."
+info "Image built successfully."
+
 cat > "$FILEBROWSER_DIR/docker-compose.yml" <<EOF
 services:
   filebrowser:
-    image: ghcr.io/filebrowser/filebrowser:latest
+    image: filebrowser-local
     container_name: filebrowser
     restart: unless-stopped
     user: "0:0"
     ports:
-      - "8082:8080"
+      - "8082:80"
     volumes:
-      - /root:/data
+      - /root:/srv
       - ./config:/config
-    environment:
-      - FB_BASEURL=/
 EOF
 info "docker-compose.yml created."
 
