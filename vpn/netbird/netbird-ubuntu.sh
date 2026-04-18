@@ -123,6 +123,7 @@ web:
   http: 0.0.0.0:5556
 oauth2:
   skipApprovalScreen: true
+enablePasswordDB: true
 staticClients:
   - id: netbird
     redirectURIs:
