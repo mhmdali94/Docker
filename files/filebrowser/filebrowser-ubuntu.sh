@@ -89,34 +89,27 @@ if [ -d "$FILEBROWSER_DIR" ]; then
     warn "Removing old directory $FILEBROWSER_DIR..."
     rm -rf "$FILEBROWSER_DIR"
 fi
-mkdir -p "$FILEBROWSER_DIR"
+mkdir -p "$FILEBROWSER_DIR/config" "$FILEBROWSER_DIR/srv"
+touch "$FILEBROWSER_DIR/config/filebrowser.db"
 cd "$FILEBROWSER_DIR" || error "Cannot navigate to $FILEBROWSER_DIR"
-touch "$FILEBROWSER_DIR/filebrowser.db"
-cat > "$FILEBROWSER_DIR/settings.json" <<EOF
-{
-  "port": 80,
-  "baseURL": "",
-  "address": "",
-  "log": "stdout",
-  "database": "/database.db",
-  "root": "/srv"
-}
-EOF
 info "Directory ready: $FILEBROWSER_DIR"
 
 section "Step 6: Generating docker-compose.yml"
 cat > "$FILEBROWSER_DIR/docker-compose.yml" <<EOF
 services:
   filebrowser:
-    image: filebrowser/filebrowser:latest
+    image: filebrowser/filebrowser:s6
     container_name: filebrowser
     restart: unless-stopped
     ports:
       - "8082:80"
+    environment:
+      PUID: 0
+      PGID: 0
+      TZ: UTC
     volumes:
       - /root:/srv
-      - ./filebrowser.db:/database.db
-      - ./settings.json:/.filebrowser.json
+      - ./config/filebrowser.db:/config/filebrowser.db
 EOF
 info "docker-compose.yml created."
 
@@ -148,8 +141,9 @@ section "Step 10: Health Check"
 info "Waiting for FileBrowser to be ready on port 8082..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8082 &>/dev/null; then
-        info "Port 8082 is responding — FileBrowser is healthy. ✅"
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 http://127.0.0.1:8082 2>/dev/null || echo "000")
+    if echo "$STATUS" | grep -qE '^(200|301|302|303)$'; then
+        info "Port 8082 is responding (HTTP $STATUS) — FileBrowser is healthy. ✅"
         HEALTH_OK=1
         break
     fi
