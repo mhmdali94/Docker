@@ -92,7 +92,7 @@ fi
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-mkdir -p "$NB_DIR/dex" "$NB_DIR/management" "$NB_DIR/signal"
+mkdir -p "$NB_DIR/dex" "$NB_DIR/management" "$NB_DIR/signal" "$NB_DIR/config"
 cd "$NB_DIR" || error "Cannot navigate to $NB_DIR"
 info "Directory ready: $NB_DIR"
 
@@ -150,8 +150,8 @@ with open(path, 'w') as f:
 " "$NB_DIR/dex/config.yaml" "$NB_ADMIN_HASH"
 info "Dex OIDC config created."
 
-# Write management.json
-cat > "$NB_DIR/management/management.json" <<EOF
+# Write management.json to config dir (mounted as /etc/netbird inside container)
+cat > "$NB_DIR/config/management.json" <<EOF
 {
   "Stuns": [{"Proto": "udp", "URI": "stun:stun.cloudflare.com:3478", "Username": "", "Password": null}],
   "TURNConfig": {
@@ -203,6 +203,7 @@ services:
       - "8080:8080"
     volumes:
       - ./management:/var/lib/netbird
+      - ./config:/etc/netbird
     command: [
       "--port", "8080",
       "--log-file", "console",
