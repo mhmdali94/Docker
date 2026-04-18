@@ -97,7 +97,7 @@ section "Step 6: Generating docker-compose.yml"
 cat > "$FILEBROWSER_DIR/docker-compose.yml" <<EOF
 services:
   filebrowser:
-    image: hurlenko/filebrowser:latest
+    image: ghcr.io/filebrowser/filebrowser:latest
     container_name: filebrowser
     restart: unless-stopped
     user: "0:0"
