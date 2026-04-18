@@ -154,7 +154,7 @@ services:
     container_name: headscale-ui
     restart: unless-stopped
     ports:
-      - "8091:80"
+      - "8091:8080"
 EOF
 info "Config and docker-compose.yml created."
 
