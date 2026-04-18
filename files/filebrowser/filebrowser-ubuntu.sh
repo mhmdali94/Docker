@@ -73,22 +73,29 @@ else
     info "Docker Compose: $(docker compose version)"
 fi
 
-section "Step 4: Cleaning Up Existing Containers"
+section "Step 4: Cleaning Up Existing Containers & Data"
+FILEBROWSER_DIR="/root/docker/filebrowser"
 EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E 'filebrowser' || true)
 if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
+    warn "Stopping and removing existing containers..."
     echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
+    info "Containers removed."
 else
     info "No existing FileBrowser containers found."
+fi
+if docker image inspect filebrowser-local &>/dev/null 2>&1; then
+    warn "Removing existing filebrowser-local image..."
+    docker rmi -f filebrowser-local 2>/dev/null || true
+    info "Image removed."
+fi
+if [ -d "$FILEBROWSER_DIR" ]; then
+    warn "Removing existing configuration at $FILEBROWSER_DIR..."
+    rm -rf "$FILEBROWSER_DIR"
+    info "Configuration removed."
 fi
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-FILEBROWSER_DIR="/root/docker/filebrowser"
-if [ -d "$FILEBROWSER_DIR" ]; then
-    warn "Removing old directory $FILEBROWSER_DIR..."
-    rm -rf "$FILEBROWSER_DIR"
-fi
 mkdir -p "$FILEBROWSER_DIR/config"
 cd "$FILEBROWSER_DIR" || error "Cannot navigate to $FILEBROWSER_DIR"
 info "Directory ready: $FILEBROWSER_DIR"
@@ -102,19 +109,16 @@ RUN apk add --no-cache wget tar && \
     tar -xzf /tmp/fb.tar.gz -C /usr/local/bin filebrowser && \
     rm /tmp/fb.tar.gz && \
     chmod +x /usr/local/bin/filebrowser
-RUN printf '#!/bin/sh\n\
-if [ ! -f /config/filebrowser.db ]; then\n\
-  filebrowser config init -d /config/filebrowser.db\n\
-  filebrowser config set -d /config/filebrowser.db --address 0.0.0.0 --port 80 --root /srv --log stdout\n\
-  filebrowser users add admin admin --perm.admin -d /config/filebrowser.db\n\
-fi\n\
-exec filebrowser -d /config/filebrowser.db\n' > /entrypoint.sh && chmod +x /entrypoint.sh
+RUN mkdir -p /tmp/init /tmp/srv && \
+    sh -c 'filebrowser -d /tmp/init/fb.db -r /tmp/srv -a 127.0.0.1 -p 18099 >/tmp/fb.log 2>&1 & echo $! > /tmp/fb.pid && sleep 8 && kill $(cat /tmp/fb.pid) 2>/dev/null; test -s /tmp/init/fb.db || { echo "=== FB LOG ===" && cat /tmp/fb.log && exit 1; }'
+RUN printf '#!/bin/sh\nDB=/config/filebrowser.db\nif [ ! -s "$DB" ]; then\n  cp /tmp/init/fb.db "$DB"\nfi\nexec filebrowser -d "$DB" -r /srv -a 0.0.0.0 -p 80\n' \
+    > /entrypoint.sh && chmod +x /entrypoint.sh
 EXPOSE 80
 ENTRYPOINT ["/entrypoint.sh"]
 DOCKERFILE
 
 info "Building FileBrowser image (downloads binary from GitHub)..."
-docker build -t filebrowser-local "$FILEBROWSER_DIR" || error "Docker build failed."
+docker build --no-cache -t filebrowser-local "$FILEBROWSER_DIR" || error "Docker build failed."
 info "Image built successfully."
 
 cat > "$FILEBROWSER_DIR/docker-compose.yml" <<EOF
