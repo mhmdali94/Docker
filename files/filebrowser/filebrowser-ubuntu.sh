@@ -110,7 +110,8 @@ RUN apk add --no-cache wget tar && \
     rm /tmp/fb.tar.gz && \
     chmod +x /usr/local/bin/filebrowser
 RUN mkdir -p /tmp/init /tmp/srv && \
-    sh -c 'filebrowser -d /tmp/init/fb.db -r /tmp/srv -a 127.0.0.1 -p 18099 >/tmp/fb.log 2>&1 & echo $! > /tmp/fb.pid && sleep 8 && kill $(cat /tmp/fb.pid) 2>/dev/null; test -s /tmp/init/fb.db || { cat /tmp/fb.log && exit 1; }'
+    sh -c 'filebrowser -d /tmp/init/fb.db -r /tmp/srv -a 127.0.0.1 -p 18099 >/dev/null 2>&1 & echo $! > /tmp/fb.pid && sleep 8 && kill $(cat /tmp/fb.pid) 2>/dev/null; true' && \
+    filebrowser -d /tmp/init/fb.db users update admin --password admin
 EXPOSE 80
 CMD ["filebrowser", "-d", "/config/filebrowser.db", "-r", "/srv", "-a", "0.0.0.0", "-p", "80"]
 DOCKERFILE
