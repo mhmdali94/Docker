@@ -110,16 +110,20 @@ RUN apk add --no-cache wget tar && \
     rm /tmp/fb.tar.gz && \
     chmod +x /usr/local/bin/filebrowser
 RUN mkdir -p /tmp/init /tmp/srv && \
-    sh -c 'filebrowser -d /tmp/init/fb.db -r /tmp/srv -a 127.0.0.1 -p 18099 >/tmp/fb.log 2>&1 & echo $! > /tmp/fb.pid && sleep 8 && kill $(cat /tmp/fb.pid) 2>/dev/null; test -s /tmp/init/fb.db || { echo "=== FB LOG ===" && cat /tmp/fb.log && exit 1; }'
-RUN printf '#!/bin/sh\nDB=/config/filebrowser.db\nif [ ! -s "$DB" ]; then\n  cp /tmp/init/fb.db "$DB"\nfi\nexec filebrowser -d "$DB" -r /srv -a 0.0.0.0 -p 80\n' \
-    > /entrypoint.sh && chmod +x /entrypoint.sh
+    sh -c 'filebrowser -d /tmp/init/fb.db -r /tmp/srv -a 127.0.0.1 -p 18099 >/tmp/fb.log 2>&1 & echo $! > /tmp/fb.pid && sleep 8 && kill $(cat /tmp/fb.pid) 2>/dev/null; test -s /tmp/init/fb.db || { cat /tmp/fb.log && exit 1; }'
 EXPOSE 80
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["filebrowser", "-d", "/config/filebrowser.db", "-r", "/srv", "-a", "0.0.0.0", "-p", "80"]
 DOCKERFILE
 
 info "Building FileBrowser image (downloads binary from GitHub)..."
 docker build --no-cache -t filebrowser-local "$FILEBROWSER_DIR" || error "Docker build failed."
 info "Image built successfully."
+
+info "Pre-populating database with admin/admin credentials..."
+TEMP_CID=$(docker create filebrowser-local)
+docker cp "$TEMP_CID":/tmp/init/fb.db "$FILEBROWSER_DIR/config/filebrowser.db" || error "Failed to extract database from image."
+docker rm "$TEMP_CID" &>/dev/null
+info "Database ready."
 
 cat > "$FILEBROWSER_DIR/docker-compose.yml" <<EOF
 services:
