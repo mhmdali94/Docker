@@ -98,10 +98,18 @@ WAN_IP=$(curl -4 -s --max-time 5 https://ifconfig.me || curl -4 -s --max-time 5 
 info "Detected IP: $WAN_IP"
 
 section "Step 7: Generating Password & docker-compose.yml"
-WG_PASSWORD=$(tr -dc 'A-Za-z0-9!@#$%' < /dev/urandom | head -c 20)
-info "Admin password generated."
+WG_PASSWORD=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+info "Admin password: $WG_PASSWORD"
 
-cat > "$WG_DIR/docker-compose.yml" <<EOF
+# Generate bcrypt hash (wg-easy v14+ requires bcrypt, not sha256)
+if ! command -v htpasswd &>/dev/null; then
+    apt-get install -y apache2-utils -qq
+fi
+WG_PASSWORD_HASH=$(htpasswd -bnBC 10 "" "$WG_PASSWORD" | tr -d ':\n')
+info "Bcrypt hash generated."
+
+# Write compose in two parts to avoid bcrypt $ signs being expanded in heredoc
+cat > "$WG_DIR/docker-compose.yml" <<'COMPOSE'
 services:
   wireguard-easy:
     image: ghcr.io/wg-easy/wg-easy:latest
@@ -119,11 +127,14 @@ services:
     volumes:
       - ./data:/etc/wireguard
     environment:
+COMPOSE
+
+cat >> "$WG_DIR/docker-compose.yml" <<EOF
       - WG_HOST=$WAN_IP
-      - PASSWORD_HASH=$(echo -n "$WG_PASSWORD" | sha256sum | cut -d' ' -f1)
       - WG_DEFAULT_DNS=1.1.1.1
       - WG_DEFAULT_ADDRESS=10.8.0.x
 EOF
+printf "      - PASSWORD_HASH=%s\n" "$WG_PASSWORD_HASH" >> "$WG_DIR/docker-compose.yml"
 info "docker-compose.yml created."
 
 section "Step 8: Starting WireGuard Easy"
@@ -133,7 +144,16 @@ else
     docker-compose up -d
 fi
 
-section "Step 9: Verifying Container"
+section "Step 9: Opening Firewall Ports"
+if command -v ufw &> /dev/null; then
+    ufw allow 51820/udp
+    ufw allow 51821/tcp
+    info "UFW: ports 51820/UDP and 51821/TCP opened."
+else
+    warn "UFW not found — skipping firewall rule."
+fi
+
+section "Step 10: Verifying Container"
 sleep 4
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^wireguard-easy$' || true)
 if [ -z "$RUNNING" ]; then
@@ -142,12 +162,13 @@ else
     info "Container running: $RUNNING"
 fi
 
-section "Step 10: Health Check"
+section "Step 11: Health Check"
 info "Waiting for WireGuard Easy to be ready on port 51821..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:51821 &>/dev/null; then
-        info "Port 51821 is responding — WireGuard Easy is healthy. ✅"
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 http://127.0.0.1:51821 2>/dev/null || echo "000")
+    if echo "$STATUS" | grep -qE '^(200|301|302|303)$'; then
+        info "Port 51821 is responding (HTTP $STATUS) — WireGuard Easy is healthy. ✅"
         HEALTH_OK=1
         break
     fi
@@ -173,12 +194,12 @@ echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
 echo "  ║  🌐  Open WireGuard Easy in your browser:          ║"
-echo "  ║      👉  http://$SERVER_IP:51821"
+echo "  ║      👉  http://$SERVER_IP:51821                   ║"
 echo "  ║                                                      ║"
 echo "  ║  🔑  Admin Password (save this!):                  ║"
-echo "  ║      $WG_PASSWORD"
+echo "  ║      $WG_PASSWORD                                   ║"
 echo "  ║                                                      ║"
-echo "  ║  🌍  VPN Server (WAN IP): $WAN_IP"
+echo "  ║  🌍  VPN Server (WAN IP): $WAN_IP                  ║"
 echo "  ║  📡  VPN Port: 51820/UDP                            ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  Ensure UDP port 51820 is open in your firewall ║"
