@@ -108,9 +108,10 @@ fi
 WG_PASSWORD_HASH=$(htpasswd -bnBC 10 "" "$WG_PASSWORD" | tr -d ':\n')
 info "Bcrypt hash generated."
 
-# Write hash to wg.env — env_file is NOT interpolated by Docker Compose,
-# so bcrypt's literal $ signs are passed through unchanged.
-printf "PASSWORD_HASH=%s\n" "$WG_PASSWORD_HASH" > "$WG_DIR/wg.env"
+# Docker Compose interpolates $VAR in env_file; escape every $ as $$ so
+# the bcrypt literal dollar signs survive and reach the container intact.
+WG_PASSWORD_HASH_ESCAPED=$(printf '%s' "$WG_PASSWORD_HASH" | sed 's/\$/\$\$/g')
+printf "PASSWORD_HASH=%s\n" "$WG_PASSWORD_HASH_ESCAPED" > "$WG_DIR/wg.env"
 
 cat > "$WG_DIR/docker-compose.yml" <<EOF
 services:
