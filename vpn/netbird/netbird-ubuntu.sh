@@ -166,6 +166,7 @@ cat > "$NB_DIR/config/management.json" <<EOF
     "Address": "0.0.0.0:8080",
     "AuthIssuer": "http://$WAN_IP:5556/dex",
     "AuthAudience": "netbird",
+    "AuthClientID": "netbird",
     "OIDCConfigEndpoint": "http://netbird-dex:5556/dex/.well-known/openid-configuration"
   },
   "IdpManagerConfig": null,
@@ -222,11 +223,13 @@ services:
     ports:
       - "8089:80"
     environment:
+      - USE_AUTH0=false
       - AUTH_AUDIENCE=netbird
       - AUTH_CLIENT_ID=netbird
       - AUTH_AUTHORITY=http://$WAN_IP:5556/dex
       - AUTH_REDIRECT_URI=http://$WAN_IP:8089/callback
       - AUTH_SILENT_REDIRECT_URI=http://$WAN_IP:8089/silent-callback
+      - AUTH_SUPPORTED_SCOPES=openid profile email
       - NETBIRD_MGMT_API_ENDPOINT=http://$WAN_IP:8080
       - NETBIRD_SIGNAL_URL=grpc://$WAN_IP:10000
     depends_on:
