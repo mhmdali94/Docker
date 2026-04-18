@@ -89,8 +89,7 @@ if [ -d "$FILEBROWSER_DIR" ]; then
     warn "Removing old directory $FILEBROWSER_DIR..."
     rm -rf "$FILEBROWSER_DIR"
 fi
-mkdir -p "$FILEBROWSER_DIR/config" "$FILEBROWSER_DIR/srv"
-touch "$FILEBROWSER_DIR/config/filebrowser.db"
+mkdir -p "$FILEBROWSER_DIR/config"
 cd "$FILEBROWSER_DIR" || error "Cannot navigate to $FILEBROWSER_DIR"
 info "Directory ready: $FILEBROWSER_DIR"
 
@@ -98,7 +97,7 @@ section "Step 6: Generating docker-compose.yml"
 cat > "$FILEBROWSER_DIR/docker-compose.yml" <<EOF
 services:
   filebrowser:
-    image: filebrowser/filebrowser:s6
+    image: lscr.io/linuxserver/filebrowser:latest
     container_name: filebrowser
     restart: unless-stopped
     ports:
@@ -109,7 +108,7 @@ services:
       TZ: UTC
     volumes:
       - /root:/srv
-      - ./config/filebrowser.db:/config/filebrowser.db
+      - ./config:/config
 EOF
 info "docker-compose.yml created."
 
