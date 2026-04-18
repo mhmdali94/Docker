@@ -112,9 +112,6 @@ services:
       - ./certs:/root/certs
     environment:
       - XRAY_VMESS_AEAD_FORCED=false
-      - XUI_USERNAME=$XUI_USER
-      - XUI_PASSWORD=$XUI_PASS
-      - XUI_PORT=$XUI_PORT
 EOF
 info "docker-compose.yml created."
 
@@ -124,6 +121,16 @@ if docker compose version &> /dev/null; then
 else
     docker-compose up -d
 fi
+
+info "Waiting for 3X-UI to initialize database..."
+sleep 8
+
+info "Setting credentials via CLI..."
+docker exec 3x-ui x-ui setting -username "$XUI_USER" -password "$XUI_PASS" -port "$XUI_PORT" || \
+    error "Failed to set 3X-UI credentials. Check: docker logs 3x-ui"
+
+info "Restarting to apply credentials..."
+docker compose restart 2>/dev/null || docker-compose restart
 
 section "Step 8: Opening Firewall Port $XUI_PORT"
 if command -v ufw &> /dev/null; then
