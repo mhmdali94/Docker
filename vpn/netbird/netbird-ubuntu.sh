@@ -208,9 +208,7 @@ services:
       "--log-file", "console",
       "--disable-anonymous-metrics=true",
       "--single-account-mode-domain=netbird.local",
-      "--dns-domain=netbird.selfhosted",
-      "--auth-audience=netbird",
-      "--auth-oidc-configuration-endpoint=http://netbird-dex:5556/dex/.well-known/openid-configuration"
+      "--dns-domain=netbird.selfhosted"
     ]
     depends_on:
       - netbird-signal
