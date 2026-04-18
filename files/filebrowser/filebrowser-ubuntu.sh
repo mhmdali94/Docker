@@ -91,7 +91,6 @@ if [ -d "$FILEBROWSER_DIR" ]; then
 fi
 mkdir -p "$FILEBROWSER_DIR/config"
 cd "$FILEBROWSER_DIR" || error "Cannot navigate to $FILEBROWSER_DIR"
-touch "$FILEBROWSER_DIR/config/filebrowser.db"
 info "Directory ready: $FILEBROWSER_DIR"
 
 section "Step 6: Building FileBrowser Image & Generating docker-compose.yml"
