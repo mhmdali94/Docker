@@ -95,9 +95,10 @@ info "Directory ready: $XUI_DIR"
 
 section "Step 6: Generating Credentials & docker-compose.yml"
 XUI_USER=$(tr -dc 'a-z0-9' < /dev/urandom | head -c 10)
-XUI_PASS=$(tr -dc 'A-Za-z0-9!@#$%' < /dev/urandom | head -c 20)
+XUI_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 XUI_PORT=2053
-info "Credentials generated."
+info "Username : $XUI_USER"
+info "Password : $XUI_PASS"
 
 cat > "$XUI_DIR/docker-compose.yml" <<EOF
 services:
@@ -124,7 +125,15 @@ else
     docker-compose up -d
 fi
 
-section "Step 8: Verifying Container"
+section "Step 8: Opening Firewall Port $XUI_PORT"
+if command -v ufw &> /dev/null; then
+    ufw allow "$XUI_PORT"/tcp
+    info "UFW: port $XUI_PORT/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
+fi
+
+section "Step 9: Verifying Container"
 sleep 5
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^3x-ui$' || true)
 if [ -z "$RUNNING" ]; then
@@ -133,12 +142,13 @@ else
     info "Container running: $RUNNING"
 fi
 
-section "Step 9: Health Check"
+section "Step 10: Health Check"
 info "Waiting for 3X-UI to be ready on port $XUI_PORT..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:$XUI_PORT &>/dev/null; then
-        info "Port $XUI_PORT is responding — 3X-UI is healthy. ✅"
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 http://127.0.0.1:$XUI_PORT 2>/dev/null || echo "000")
+    if echo "$STATUS" | grep -qE '^(200|301|302|303)$'; then
+        info "Port $XUI_PORT is responding (HTTP $STATUS) — 3X-UI is healthy. ✅"
         HEALTH_OK=1
         break
     fi
@@ -164,11 +174,11 @@ echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
 echo "  ║  🌐  Open 3X-UI Panel in your browser:             ║"
-echo "  ║      👉  http://$SERVER_IP:$XUI_PORT"
+echo "  ║      👉  http://$SERVER_IP:$XUI_PORT                ║"
 echo "  ║                                                      ║"
 echo "  ║  🔑  Login Credentials (save these!):              ║"
-echo "  ║      Username : $XUI_USER"
-echo "  ║      Password : $XUI_PASS"
+echo "  ║      Username : $XUI_USER                           ║"
+echo "  ║      Password : $XUI_PASS                           ║"
 echo "  ║                                                      ║"
 echo "  ║  📡  Protocols supported: VMess, VLESS, Trojan,    ║"
 echo "  ║      Shadowsocks, Socks, HTTP, WireGuard            ║"
