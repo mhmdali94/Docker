@@ -91,6 +91,17 @@ if [ -d "$FILEBROWSER_DIR" ]; then
 fi
 mkdir -p "$FILEBROWSER_DIR"
 cd "$FILEBROWSER_DIR" || error "Cannot navigate to $FILEBROWSER_DIR"
+touch "$FILEBROWSER_DIR/filebrowser.db"
+cat > "$FILEBROWSER_DIR/settings.json" <<EOF
+{
+  "port": 80,
+  "baseURL": "",
+  "address": "",
+  "log": "stdout",
+  "database": "/database.db",
+  "root": "/srv"
+}
+EOF
 info "Directory ready: $FILEBROWSER_DIR"
 
 section "Step 6: Generating docker-compose.yml"
@@ -104,8 +115,8 @@ services:
       - "8082:80"
     volumes:
       - /root:/srv
-      - ./database:/database
-      - ./config:/config
+      - ./filebrowser.db:/database.db
+      - ./settings.json:/.filebrowser.json
 EOF
 info "docker-compose.yml created."
 
