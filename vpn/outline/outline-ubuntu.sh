@@ -97,7 +97,7 @@ section "Step 6: Detecting Server IP"
 WAN_IP=$(curl -4 -s --max-time 5 https://ifconfig.me || curl -4 -s --max-time 5 https://api4.ipify.org || hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 info "Detected IP: $WAN_IP"
 
-section "Step 7: Generating Keys & docker-compose.yml"
+section "Step 7: Generating Keys, TLS Cert & docker-compose.yml"
 SECRET_KEY=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
 API_PORT=8092
 KEYS_PORT=12345
@@ -108,6 +108,17 @@ cat > "$OL_DIR/shadowbox-config/shadowbox_config.json" <<EOF
   "hostname": "$WAN_IP"
 }
 EOF
+
+info "Generating self-signed TLS certificate..."
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+    -keyout "$OL_DIR/shadowbox-config/shadowbox-selfsigned.key" \
+    -out    "$OL_DIR/shadowbox-config/shadowbox-selfsigned.crt" \
+    -subj   "/CN=$WAN_IP" \
+    -addext "subjectAltName=IP:$WAN_IP" 2>/dev/null
+TLS_SHA256=$(openssl x509 -noout -fingerprint -sha256 \
+    -in "$OL_DIR/shadowbox-config/shadowbox-selfsigned.crt" \
+    | sed 's/.*=//;s/://g' | tr '[:upper:]' '[:lower:]')
+info "TLS certificate generated. SHA-256: $TLS_SHA256"
 
 cat > "$OL_DIR/docker-compose.yml" <<EOF
 services:
@@ -128,14 +139,29 @@ services:
 EOF
 info "docker-compose.yml created."
 
-section "Step 8: Starting Outline"
+section "Step 8: Opening Firewall Ports"
+if command -v ufw &>/dev/null && ufw status | grep -qi "active"; then
+    ufw allow $API_PORT/tcp  comment 'Outline API'
+    ufw allow $KEYS_PORT/tcp comment 'Outline VPN keys'
+    ufw allow $KEYS_PORT/udp comment 'Outline VPN keys'
+    ufw reload
+    info "UFW rules added. ✅"
+else
+    iptables -I INPUT -p tcp --dport $API_PORT  -j ACCEPT
+    iptables -I INPUT -p tcp --dport $KEYS_PORT -j ACCEPT
+    iptables -I INPUT -p udp --dport $KEYS_PORT -j ACCEPT
+    iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    info "iptables rules added. ✅"
+fi
+
+section "Step 9: Starting Outline"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
     docker-compose up -d
 fi
 
-section "Step 9: Verifying Container"
+section "Step 10: Verifying Container"
 sleep 5
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^outline' || true)
 if [ -z "$RUNNING" ]; then
@@ -144,7 +170,7 @@ else
     info "Container running: $RUNNING"
 fi
 
-section "Step 10: Health Check"
+section "Step 11: Health Check"
 info "Waiting for Outline to be ready on port $API_PORT..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
@@ -168,19 +194,18 @@ if [ "$HEALTH_OK" -eq 0 ]; then
     fi
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 API_URL="https://$WAN_IP:$API_PORT/$SECRET_KEY"
+API_JSON="{\"apiUrl\":\"$API_URL\",\"certSha256\":\"$TLS_SHA256\"}"
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  📋  Management API URL (save this!):              ║"
-echo "  ║      $API_URL"
+echo "  ║  📋  Paste this into Outline Manager (save it!):   ║"
+echo "  ║  $API_JSON"
 echo "  ║                                                      ║"
 echo "  ║  🖥️   Manage via Outline Manager desktop app:       ║"
 echo "  ║      https://getoutline.org/get-started/#step-3     ║"
-echo "  ║      Paste the API URL above into the manager.      ║"
 echo "  ║                                                      ║"
 echo "  ║  📡  VPN Keys Port : $KEYS_PORT"
 echo "  ║  ⚙️   API Port      : $API_PORT"

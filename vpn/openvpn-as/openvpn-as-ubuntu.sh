@@ -114,7 +114,33 @@ mkdir -p "$OVPN_DIR"
 cd "$OVPN_DIR" || error "Cannot navigate to $OVPN_DIR"
 info "Directory ready: $OVPN_DIR"
 
-section "Step 7: Generating docker-compose.yml"
+section "Step 7: Opening Firewall Ports"
+if command -v ufw &>/dev/null; then
+    UFW_STATUS=$(ufw status | head -1)
+    if echo "$UFW_STATUS" | grep -qi "active"; then
+        info "UFW is active — opening required ports..."
+        ufw allow 943/tcp  comment 'OpenVPN AS Web UI'
+        ufw allow 443/tcp  comment 'OpenVPN AS TCP'
+        ufw allow 1194/udp comment 'OpenVPN AS UDP'
+        ufw reload
+        info "UFW rules added. ✅"
+    else
+        info "UFW is installed but inactive — skipping."
+    fi
+else
+    info "UFW not found — applying iptables rules directly..."
+    iptables -I INPUT -p tcp --dport 943  -j ACCEPT
+    iptables -I INPUT -p tcp --dport 443  -j ACCEPT
+    iptables -I INPUT -p udp --dport 1194 -j ACCEPT
+    if command -v netfilter-persistent &>/dev/null; then
+        netfilter-persistent save
+    elif command -v iptables-save &>/dev/null; then
+        iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    fi
+    info "iptables rules added. ✅"
+fi
+
+section "Step 8: Generating docker-compose.yml"
 cat > "$OVPN_DIR/docker-compose.yml" <<EOF
 services:
   openvpn-as:
@@ -138,14 +164,14 @@ services:
 EOF
 info "docker-compose.yml created."
 
-section "Step 8: Starting OpenVPN Access Server"
+section "Step 9: Starting OpenVPN Access Server"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
     docker-compose up -d
 fi
 
-section "Step 9: Verifying Container"
+section "Step 10: Verifying Container"
 sleep 8
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^openvpn-as$' || true)
 if [ -z "$RUNNING" ]; then
@@ -154,7 +180,7 @@ else
     info "Container running: $RUNNING"
 fi
 
-section "Step 10: Health Check"
+section "Step 11: Health Check"
 info "Waiting for OpenVPN Access Server to be ready on port 943..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
@@ -178,7 +204,7 @@ if [ "$HEALTH_OK" -eq 0 ]; then
     fi
 fi
 
-section "Step 11: Setting Admin Password"
+section "Step 12: Setting Admin Password"
 info "Waiting for OpenVPN AS to be fully ready before setting password..."
 for i in $(seq 1 10); do
     if docker exec openvpn-as test -f /usr/local/openvpn_as/scripts/sacli 2>/dev/null; then
