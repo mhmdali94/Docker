@@ -146,14 +146,31 @@ networks:
 EOF
 info "docker-compose.yml created."
 
-section "Step 8: Starting Pritunl"
+section "Step 8: Opening Firewall Ports"
+if command -v ufw &>/dev/null && ufw status | grep -qi "active"; then
+    ufw allow 80/tcp   comment 'Pritunl HTTP'
+    ufw allow 443/tcp  comment 'Pritunl HTTPS/VPN'
+    ufw allow 1194/tcp comment 'Pritunl VPN TCP'
+    ufw allow 1194/udp comment 'Pritunl VPN UDP'
+    ufw reload
+    info "UFW rules added. ✅"
+else
+    iptables -I INPUT -p tcp --dport 80   -j ACCEPT
+    iptables -I INPUT -p tcp --dport 443  -j ACCEPT
+    iptables -I INPUT -p tcp --dport 1194 -j ACCEPT
+    iptables -I INPUT -p udp --dport 1194 -j ACCEPT
+    iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    info "iptables rules added. ✅"
+fi
+
+section "Step 9: Starting Pritunl"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
     docker-compose up -d
 fi
 
-section "Step 9: Verifying Containers"
+section "Step 10: Verifying Containers"
 sleep 8
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E 'pritunl' || true)
 if [ -z "$RUNNING" ]; then
@@ -162,7 +179,7 @@ else
     info "Containers running: $RUNNING"
 fi
 
-section "Step 10: Health Check"
+section "Step 11: Health Check"
 info "Waiting for Pritunl to be ready on port 443..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
@@ -186,6 +203,21 @@ if [ "$HEALTH_OK" -eq 0 ]; then
     fi
 fi
 
+section "Step 12: Fetching Setup Key & Default Password"
+info "Waiting for Pritunl to be ready..."
+SETUP_KEY=""
+DEFAULT_PASS=""
+for i in $(seq 1 10); do
+    SETUP_KEY=$(docker exec pritunl pritunl setup-key 2>/dev/null | tr -d '[:space:]' || true)
+    DEFAULT_PASS=$(docker exec pritunl pritunl default-password 2>/dev/null | grep -oP '(?<=password: ).*' || true)
+    [ -n "$SETUP_KEY" ] && [ -n "$DEFAULT_PASS" ] && break
+    echo "  Attempt $i/10 — waiting 5s..."
+    sleep 5
+done
+[ -z "$SETUP_KEY" ]   && SETUP_KEY="(run: docker exec pritunl pritunl setup-key)"
+[ -z "$DEFAULT_PASS" ] && DEFAULT_PASS="(run: docker exec pritunl pritunl default-password)"
+info "Credentials fetched. ✅"
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -195,9 +227,9 @@ echo "  ║                                                      ║"
 echo "  ║  🌐  Open Pritunl in your browser:                 ║"
 echo "  ║      👉  https://$SERVER_IP"
 echo "  ║                                                      ║"
-echo "  ║  🔑  Get setup key & default credentials:          ║"
-echo "  ║      docker exec pritunl pritunl setup-key          ║"
-echo "  ║      docker exec pritunl pritunl default-password   ║"
+echo "  ║  🔑  Setup Key      : $SETUP_KEY"
+echo "  ║  🔑  Username       : pritunl"
+echo "  ║  🔑  Password       : $DEFAULT_PASS"
 echo "  ║                                                      ║"
 echo "  ║  📡  Ports: 443 (Web UI + VPN), 1194 (UDP/TCP)    ║"
 echo "  ║                                                      ║"
