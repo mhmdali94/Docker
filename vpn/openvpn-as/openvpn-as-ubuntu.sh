@@ -43,6 +43,16 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
+echo ""
+read -rsp "  🔑  Set admin password for 'openvpn' user: " OVPN_PASSWORD
+echo ""
+[ -z "$OVPN_PASSWORD" ] && error "Password cannot be empty."
+read -rsp "  🔑  Confirm password: " OVPN_PASSWORD_CONFIRM
+echo ""
+[ "$OVPN_PASSWORD" != "$OVPN_PASSWORD_CONFIRM" ] && error "Passwords do not match."
+info "Password accepted."
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -168,6 +178,24 @@ if [ "$HEALTH_OK" -eq 0 ]; then
     fi
 fi
 
+section "Step 11: Setting Admin Password"
+info "Waiting for OpenVPN AS to be fully ready before setting password..."
+for i in $(seq 1 10); do
+    if docker exec openvpn-as test -f /usr/local/openvpn_as/scripts/sacli 2>/dev/null; then
+        break
+    fi
+    echo "  Attempt $i/10 — waiting 5s..."
+    sleep 5
+done
+
+info "Setting password for 'openvpn' user via sacli..."
+if docker exec openvpn-as /usr/local/openvpn_as/scripts/sacli --user openvpn --new_pass "${OVPN_PASSWORD}" SetLocalPassword 2>/dev/null; then
+    info "Password set successfully. ✅"
+else
+    warn "Could not set password automatically. Run manually after container is ready:"
+    warn "  docker exec -it openvpn-as /usr/local/openvpn_as/scripts/sacli --user openvpn --new_pass 'YOUR_PASS' SetLocalPassword"
+fi
+
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -182,9 +210,9 @@ echo "  ║      👉  https://$SERVER_IP:943"
 echo "  ║                                                      ║"
 echo "  ║  🔑  Default Login Credentials:                     ║"
 echo "  ║      Username : openvpn                             ║"
-echo "  ║      Password : (auto-set on first boot)            ║"
+echo "  ║      Password : $OVPN_PASSWORD"
 echo "  ║                                                      ║"
-echo "  ║  📋  To get/set the admin password run:            ║"
+echo "  ║  🔄  To change the password later run:             ║"
 echo "  ║      docker exec -it openvpn-as passwd openvpn     ║"
 echo "  ║                                                      ║"
 echo "  ║  📡  Ports: 943 (Web UI), 443 (TCP), 1194 (UDP)   ║"
