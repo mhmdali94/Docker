@@ -74,14 +74,10 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E 'adguardhome' || true)
-if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing AdGuard Home containers found."
-fi
+warn "Force-removing any existing adguardhome container..."
+docker rm -f adguardhome 2>/dev/null || true
 docker network prune -f &>/dev/null || true
+info "Cleanup done."
 
 section "Step 5: Preparing Directory"
 ADGUARD_DIR="/root/docker/adguardhome"
@@ -94,28 +90,24 @@ cd "$ADGUARD_DIR" || error "Cannot navigate to $ADGUARD_DIR"
 info "Directory ready: $ADGUARD_DIR"
 
 section "Step 6: Freeing Port 53"
-info "Disabling systemd-resolved DNS stub listener (required for AdGuard)..."
-mkdir -p /etc/systemd/resolved.conf.d
-cat > /etc/systemd/resolved.conf.d/adguard.conf <<RESOLVCONF
-[Resolve]
-DNSStubListener=no
-DNS=1.1.1.1
-FallbackDNS=8.8.8.8
-RESOLVCONF
-systemctl restart systemd-resolved
-sleep 3
-# Replace symlinked resolv.conf with a static one so host DNS still works
+info "Stopping and disabling systemd-resolved..."
+systemctl stop systemd-resolved    2>/dev/null || true
+systemctl disable systemd-resolved 2>/dev/null || true
+
+info "Writing static resolv.conf so host DNS still works..."
 rm -f /etc/resolv.conf
 cat > /etc/resolv.conf <<RESOLV
 nameserver 1.1.1.1
 nameserver 8.8.8.8
 RESOLV
-# Kill anything else that might still hold port 53
+
+info "Killing any remaining process on port 53..."
 fuser -k 53/tcp 2>/dev/null || true
 fuser -k 53/udp 2>/dev/null || true
-sleep 1
+sleep 2
+
 if ss -tlnp | grep -q ':53' || ss -ulnp | grep -q ':53'; then
-    error "Port 53 is still in use after cleanup. Check: ss -tlunp | grep ':53'"
+    error "Port 53 is still occupied. Run: ss -tlunp | grep ':53' to find the process."
 fi
 info "Port 53 is free. ✅"
 
