@@ -93,7 +93,45 @@ mkdir -p "$ADGUARD_DIR/work" "$ADGUARD_DIR/conf"
 cd "$ADGUARD_DIR" || error "Cannot navigate to $ADGUARD_DIR"
 info "Directory ready: $ADGUARD_DIR"
 
-section "Step 6: Generating docker-compose.yml"
+section "Step 6: Freeing Port 53"
+if ss -tlunp 2>/dev/null | grep -q ':53 '; then
+    warn "Port 53 is in use — disabling systemd-resolved DNS stub listener..."
+    mkdir -p /etc/systemd/resolved.conf.d
+    cat > /etc/systemd/resolved.conf.d/adguard.conf <<RESOLVCONF
+[Resolve]
+DNSStubListener=no
+RESOLVCONF
+    systemctl restart systemd-resolved
+    # Point /etc/resolv.conf at a real upstream so the host still resolves
+    rm -f /etc/resolv.conf
+    echo "nameserver 1.1.1.1" > /etc/resolv.conf
+    info "systemd-resolved stub listener disabled. Port 53 is now free. ✅"
+else
+    info "Port 53 is free. OK."
+fi
+
+section "Step 7: Opening Firewall Ports"
+if command -v ufw &>/dev/null && ufw status | grep -qi "active"; then
+    ufw allow 53/tcp  comment 'AdGuard DNS'
+    ufw allow 53/udp  comment 'AdGuard DNS'
+    ufw allow 3000/tcp comment 'AdGuard Setup UI'
+    ufw allow 8083/tcp comment 'AdGuard Web UI'
+    ufw allow 443/tcp  comment 'AdGuard HTTPS/DoH'
+    ufw allow 443/udp  comment 'AdGuard DoQ'
+    ufw reload
+    info "UFW rules added. ✅"
+else
+    iptables -I INPUT -p tcp --dport 53   -j ACCEPT
+    iptables -I INPUT -p udp --dport 53   -j ACCEPT
+    iptables -I INPUT -p tcp --dport 3000 -j ACCEPT
+    iptables -I INPUT -p tcp --dport 8083 -j ACCEPT
+    iptables -I INPUT -p tcp --dport 443  -j ACCEPT
+    iptables -I INPUT -p udp --dport 443  -j ACCEPT
+    iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    info "iptables rules added. ✅"
+fi
+
+section "Step 8: Generating docker-compose.yml"
 cat > "$ADGUARD_DIR/docker-compose.yml" <<EOF
 services:
   adguardhome:
@@ -113,14 +151,14 @@ services:
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting AdGuard Home"
+section "Step 9: Starting AdGuard Home"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
     docker-compose up -d
 fi
 
-section "Step 8: Verifying Container"
+section "Step 10: Verifying Container"
 sleep 4
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E 'adguardhome' || true)
 if [ -z "$RUNNING" ]; then
@@ -129,7 +167,7 @@ else
     info "Container running: $RUNNING"
 fi
 
-section "Step 9: Health Check"
+section "Step 11: Health Check"
 info "Waiting for AdGuard Home to be ready on port 3000..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
