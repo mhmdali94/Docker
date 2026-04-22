@@ -125,11 +125,8 @@ else
     info "iptables rules added. ✅"
 fi
 
-section "Step 8: Generating Password"
-WEB_PASSWORD=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
-info "Admin password generated."
-
 section "Step 9: Generating docker-compose.yml"
+WEB_PASSWORD="82Q1zP36P8NL"
 cat > "$PIHOLE_DIR/docker-compose.yml" <<EOF
 services:
   pihole:
@@ -165,7 +162,18 @@ else
     info "Container running: $RUNNING"
 fi
 
-section "Step 12: Health Check"
+section "Step 12: Enforcing Admin Password"
+info "Setting Pi-hole admin password via pihole CLI..."
+for i in $(seq 1 10); do
+    if docker exec pihole pihole -a -p "${WEB_PASSWORD}" 2>/dev/null; then
+        info "Password set successfully. ✅"
+        break
+    fi
+    echo "  Attempt $i/10 — waiting 5s..."
+    sleep 5
+done
+
+section "Step 13: Health Check"
 info "Waiting for Pi-hole to be ready on port 8084..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
