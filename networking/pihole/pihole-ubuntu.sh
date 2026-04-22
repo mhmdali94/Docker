@@ -162,16 +162,22 @@ else
     info "Container running: $RUNNING"
 fi
 
-section "Step 12: Enforcing Admin Password"
-info "Setting Pi-hole admin password via pihole CLI..."
+section "Step 12: Setting Admin Password Inside Container"
+info "Waiting for Pi-hole to be ready, then setting password..."
+PASSWORD_SET=0
 for i in $(seq 1 10); do
-    if docker exec pihole pihole -a -p "${WEB_PASSWORD}" 2>/dev/null; then
-        info "Password set successfully. ✅"
+    if docker exec pihole pihole setpassword "${WEB_PASSWORD}" 2>/dev/null; then
+        info "Password set via 'pihole setpassword'. ✅"
+        PASSWORD_SET=1
         break
     fi
     echo "  Attempt $i/10 — waiting 5s..."
     sleep 5
 done
+if [ "$PASSWORD_SET" -eq 0 ]; then
+    warn "Could not set password automatically. Run manually:"
+    warn "  docker exec -it pihole pihole setpassword ${WEB_PASSWORD}"
+fi
 
 section "Step 13: Health Check"
 info "Waiting for Pi-hole to be ready on port 8084..."
