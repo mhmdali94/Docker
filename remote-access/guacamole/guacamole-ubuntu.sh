@@ -194,7 +194,7 @@ section "Step 9: Health Check"
 info "Waiting for Guacamole to be ready on port 8085..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8085/guacamole &>/dev/null; then
+    if curl -sf --max-time 3 http://127.0.0.1:8085 &>/dev/null; then
         info "Port 8085 is responding — Guacamole is healthy. ✅"
         HEALTH_OK=1
         break
@@ -218,7 +218,7 @@ fi
 # Done
 # ------------------------------------
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
-ADMIN_URL="http://$SERVER_IP:8085/guacamole"
+ADMIN_URL="http://$SERVER_IP:8085"
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
