@@ -93,11 +93,43 @@ mkdir -p "$PIHOLE_DIR/etc-pihole" "$PIHOLE_DIR/etc-dnsmasq.d"
 cd "$PIHOLE_DIR" || error "Cannot navigate to $PIHOLE_DIR"
 info "Directory ready: $PIHOLE_DIR"
 
-section "Step 6: Generating Password"
-WEB_PASSWORD=$(tr -dc 'A-Za-z0-9!@#$%' < /dev/urandom | head -c 20)
+section "Step 6: Freeing Port 53"
+info "Stopping and disabling systemd-resolved to free port 53..."
+systemctl stop systemd-resolved    2>/dev/null || true
+systemctl disable systemd-resolved 2>/dev/null || true
+rm -f /etc/resolv.conf
+cat > /etc/resolv.conf <<RESOLV
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+RESOLV
+fuser -k 53/tcp 2>/dev/null || true
+fuser -k 53/udp 2>/dev/null || true
+sleep 2
+if ss -tlnp | grep -q ':53' || ss -ulnp | grep -q ':53'; then
+    error "Port 53 still occupied. Run: ss -tlunp | grep ':53'"
+fi
+info "Port 53 is free. ✅"
+
+section "Step 7: Opening Firewall Ports"
+if command -v ufw &>/dev/null && ufw status | grep -qi "active"; then
+    ufw allow 53/tcp  comment 'Pi-hole DNS'
+    ufw allow 53/udp  comment 'Pi-hole DNS'
+    ufw allow 8084/tcp comment 'Pi-hole Web UI'
+    ufw reload
+    info "UFW rules added. ✅"
+else
+    iptables -I INPUT -p tcp --dport 53   -j ACCEPT
+    iptables -I INPUT -p udp --dport 53   -j ACCEPT
+    iptables -I INPUT -p tcp --dport 8084 -j ACCEPT
+    iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    info "iptables rules added. ✅"
+fi
+
+section "Step 8: Generating Password"
+WEB_PASSWORD=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 info "Admin password generated."
 
-section "Step 7: Generating docker-compose.yml"
+section "Step 9: Generating docker-compose.yml"
 cat > "$PIHOLE_DIR/docker-compose.yml" <<EOF
 services:
   pihole:
@@ -117,14 +149,14 @@ services:
 EOF
 info "docker-compose.yml created."
 
-section "Step 8: Starting Pi-hole"
+section "Step 10: Starting Pi-hole"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
     docker-compose up -d
 fi
 
-section "Step 9: Verifying Container"
+section "Step 11: Verifying Container"
 sleep 5
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E 'pihole' || true)
 if [ -z "$RUNNING" ]; then
@@ -133,7 +165,7 @@ else
     info "Container running: $RUNNING"
 fi
 
-section "Step 10: Health Check"
+section "Step 12: Health Check"
 info "Waiting for Pi-hole to be ready on port 8084..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
@@ -164,7 +196,7 @@ echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
 echo "  ║  🌐  Open Pi-hole Admin in your browser:           ║"
-echo "  ║      👉  http://$SERVER_IP/admin"
+echo "  ║      👉  http://$SERVER_IP:8084/admin"
 echo "  ║                                                      ║"
 echo "  ║  🔑  Login Credentials:                             ║"
 echo "  ║      Password: $WEB_PASSWORD"
