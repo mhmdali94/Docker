@@ -1,8 +1,8 @@
 # 🐳 Docker Self-Hosted Services Collection
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Services](https://img.shields.io/badge/Services-79-brightgreen)
-![Categories](https://img.shields.io/badge/Categories-16-purple)
+![Services](https://img.shields.io/badge/Services-109-brightgreen)
+![Categories](https://img.shields.io/badge/Categories-17-purple)
 ![Platform](https://img.shields.io/badge/Platform-Ubuntu%2022.04%20%7C%2024.04-orange)
 
 A collection of one-command Docker installer scripts for self-hosted services, organized by category.
@@ -20,7 +20,7 @@ Each service directory contains:
 
 ## 📌 At A Glance
 
-- 79 services across 16 categories
+- 109 services across 17 categories
 - Ubuntu-focused installers with Docker and Docker Compose V2 checks built in
 - Per-service deployments are typically created under `/root/docker/<service>`
 - Most scripts generate credentials, start the stack, and run a basic health check
@@ -32,21 +32,22 @@ Each service directory contains:
 
 | Category | Count | Services |
 | --- | ---: | --- |
-| AI | 3 | [Ollama + Open WebUI](./ai/ollama/), [AnythingLLM](./ai/anythingllm/), [Flowise](./ai/flowise/) |
+| AI | 6 | [Ollama + Open WebUI](./ai/ollama/), [AnythingLLM](./ai/anythingllm/), [Flowise](./ai/flowise/), [LocalAI](./ai/localai/), [Dify](./ai/dify/), [Langfuse](./ai/langfuse/) |
 | Analytics | 6 | [Plausible](./analytics/plausible/), [Umami](./analytics/umami/), [Metabase](./analytics/metabase/), [NocoDB](./analytics/nocodb/), [Baserow](./analytics/baserow/), [Redash](./analytics/redash/) |
-| Backup | 1 | [Duplicati](./backup/duplicati/) |
+| Automation | 3 | [N8N](./automation/n8n/), [Node-RED](./automation/node-red/), [ActivePieces](./automation/activepieces/) |
+| Backup | 3 | [Duplicati](./backup/duplicati/), [Kopia](./backup/kopia/), [Restic REST Server](./backup/restic/) |
 | Communication | 5 | [Mattermost](./communication/mattermost/), [ntfy](./communication/ntfy/), [Chatwoot](./communication/chatwoot/), [Zulip](./communication/zulip/), [Matrix + Element](./communication/matrix/) |
 | Databases | 6 | [InfluxDB](./databases/influxdb/), [MariaDB](./databases/mariadb/), [MinIO](./databases/minio/), [MongoDB](./databases/mongodb/), [PostgreSQL](./databases/postgres/), [Redis](./databases/redis/) |
-| Dev | 7 | [Gitea](./dev/gitea/), [Harbor](./dev/harbor/), [Woodpecker](./dev/woodpecker/), [SonarQube](./dev/sonarqube/), [Infisical](./dev/infisical/), [Plane](./dev/plane/), [Nexus](./dev/nexus/) |
+| Dev | 11 | [Gitea](./dev/gitea/), [Harbor](./dev/harbor/), [Woodpecker](./dev/woodpecker/), [SonarQube](./dev/sonarqube/), [Infisical](./dev/infisical/), [Plane](./dev/plane/), [Nexus](./dev/nexus/), [GlitchTip](./dev/glitchtip/), [Code-Server](./dev/code-server/), [Verdaccio](./dev/verdaccio/), [Coder](./dev/coder/) |
 | Email | 3 | [Listmonk](./email/listmonk/), [Mailcow](./email/mailcow/), [Mailu](./email/mailu/) |
 | Files | 3 | [FileBrowser](./files/filebrowser/), [Nextcloud](./files/nextcloud/), [Paperless-ngx](./files/paperless-ngx/) |
-| Management | 1 | [Portainer](./management/portainer/) |
-| Media | 5 | [Audiobookshelf](./media/audiobookshelf/), [Immich](./media/immich/), [Jellyfin](./media/jellyfin/), [Kavita](./media/kavita/), [Navidrome](./media/navidrome/) |
+| Management | 5 | [Portainer](./management/portainer/), [Dockge](./management/dockge/), [Watchtower](./management/watchtower/), [Dashy](./management/dashy/), [Homarr](./management/homarr/) |
+| Media | 10 | [Audiobookshelf](./media/audiobookshelf/), [Immich](./media/immich/), [Jellyfin](./media/jellyfin/), [Kavita](./media/kavita/), [Navidrome](./media/navidrome/), [PhotoPrism](./media/photoprism/), [FreshRSS](./media/freshrss/), [Komga](./media/komga/), [TubeArchivist](./media/tubearchivist/), [Overseerr](./media/overseerr/) |
 | Monitoring | 9 | [Beszel](./monitoring/beszel/), [Grafana](./monitoring/grafana/), [Graylog](./monitoring/graylog/), [Netdata](./monitoring/netdata/), [Prometheus](./monitoring/prometheus/), [Uptime Kuma](./monitoring/uptime-kuma/), [Loki](./monitoring/loki/), [SigNoz](./monitoring/signoz/), [OpenObserve](./monitoring/openobserve/) |
-| Networking | 5 | [AdGuard Home](./networking/adguardhome/), [Nginx Proxy Manager](./networking/npm/), [Pi-hole](./networking/pihole/), [Traefik](./networking/traefik/), [Technitium DNS](./networking/technitium/) |
+| Networking | 7 | [AdGuard Home](./networking/adguardhome/), [Nginx Proxy Manager](./networking/npm/), [Pi-hole](./networking/pihole/), [Traefik](./networking/traefik/), [Technitium DNS](./networking/technitium/), [Cloudflared](./networking/cloudflared/), [FRP](./networking/frp/) |
 | Remote Access | 3 | [Guacamole](./remote-access/guacamole/), [Remotely](./remote-access/remotely/), [RustDesk](./remote-access/rustdesk/) |
-| Security | 7 | [Authentik](./security/authentik/), [Authelia](./security/authelia/), [Vaultwarden](./security/vaultwarden/), [Wazuh](./security/wazuh/), [CrowdSec](./security/crowdsec/), [Passbolt](./security/passbolt/), [DefectDojo](./security/defectdojo/) |
-| Tools | 7 | [IT-Tools](./tools/it-tools/), [Stirling-PDF](./tools/stirling-pdf/), [Excalidraw](./tools/excalidraw/), [Outline Wiki](./tools/outline/), [Memos](./tools/memos/), [BookStack](./tools/bookstack/), [Docmost](./tools/docmost/) |
+| Security | 9 | [Authentik](./security/authentik/), [Authelia](./security/authelia/), [Vaultwarden](./security/vaultwarden/), [Wazuh](./security/wazuh/), [CrowdSec](./security/crowdsec/), [Passbolt](./security/passbolt/), [DefectDojo](./security/defectdojo/), [OpenVAS](./security/openvas/), [Trivy](./security/trivy/) |
+| Tools | 12 | [IT-Tools](./tools/it-tools/), [Stirling-PDF](./tools/stirling-pdf/), [Excalidraw](./tools/excalidraw/), [Outline Wiki](./tools/outline/), [Memos](./tools/memos/), [BookStack](./tools/bookstack/), [Docmost](./tools/docmost/), [Vikunja](./tools/vikunja/), [Firefly III](./tools/firefly-iii/), [Monica](./tools/monica/), [Twenty](./tools/twenty/), [Typebot](./tools/typebot/) |
 | VPN | 8 | [3X-UI](./vpn/3x-ui/), [Headscale](./vpn/headscale/), [NetBird](./vpn/netbird/), [OpenVPN AS](./vpn/openvpn-as/), [Outline](./vpn/outline/), [Pritunl](./vpn/pritunl/), [SoftEther](./vpn/softether/), [WireGuard Easy](./vpn/wireguard-easy/) |
 
 ---
@@ -94,6 +95,7 @@ For exact ports, credentials, and post-install steps, use the `README.md` inside
 .
 |- ai/
 |- analytics/
+|- automation/
 |- backup/
 |- communication/
 |- databases/
