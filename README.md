@@ -1,8 +1,8 @@
 # 🐳 Docker Self-Hosted Services Collection
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Services](https://img.shields.io/badge/Services-109-brightgreen)
-![Categories](https://img.shields.io/badge/Categories-17-purple)
+![Services](https://img.shields.io/badge/Services-124-brightgreen)
+![Categories](https://img.shields.io/badge/Categories-22-purple)
 ![Platform](https://img.shields.io/badge/Platform-Ubuntu%2022.04%20%7C%2024.04-orange)
 
 A collection of one-command Docker installer scripts for self-hosted services, organized by category.
@@ -20,7 +20,7 @@ Each service directory contains:
 
 ## 📌 At A Glance
 
-- 109 services across 17 categories
+- 124 services across 22 categories
 - Ubuntu-focused installers with Docker and Docker Compose V2 checks built in
 - Per-service deployments are typically created under `/root/docker/<service>`
 - Most scripts generate credentials, start the stack, and run a basic health check
@@ -32,13 +32,18 @@ Each service directory contains:
 
 | Category | Count | Services |
 | --- | ---: | --- |
+| Accounting | 2 | [Akaunting](./accounting/akaunting/), [Invoice Ninja](./accounting/invoice-ninja/) |
 | AI | 6 | [Ollama + Open WebUI](./ai/ollama/), [AnythingLLM](./ai/anythingllm/), [Flowise](./ai/flowise/), [LocalAI](./ai/localai/), [Dify](./ai/dify/), [Langfuse](./ai/langfuse/) |
 | Analytics | 6 | [Plausible](./analytics/plausible/), [Umami](./analytics/umami/), [Metabase](./analytics/metabase/), [NocoDB](./analytics/nocodb/), [Baserow](./analytics/baserow/), [Redash](./analytics/redash/) |
 | Automation | 3 | [N8N](./automation/n8n/), [Node-RED](./automation/node-red/), [ActivePieces](./automation/activepieces/) |
 | Backup | 3 | [Duplicati](./backup/duplicati/), [Kopia](./backup/kopia/), [Restic REST Server](./backup/restic/) |
+| Clinic | 3 | [OpenMRS](./clinic/openmrs/), [GNU Health](./clinic/gnu-health/), [OpenEMR](./clinic/openemr/) |
+| CRM | 2 | [SuiteCRM](./crm/suitecrm/), [EspoCRM](./crm/espocrm/) |
 | Communication | 5 | [Mattermost](./communication/mattermost/), [ntfy](./communication/ntfy/), [Chatwoot](./communication/chatwoot/), [Zulip](./communication/zulip/), [Matrix + Element](./communication/matrix/) |
 | Databases | 6 | [InfluxDB](./databases/influxdb/), [MariaDB](./databases/mariadb/), [MinIO](./databases/minio/), [MongoDB](./databases/mongodb/), [PostgreSQL](./databases/postgres/), [Redis](./databases/redis/) |
 | Dev | 11 | [Gitea](./dev/gitea/), [Harbor](./dev/harbor/), [Woodpecker](./dev/woodpecker/), [SonarQube](./dev/sonarqube/), [Infisical](./dev/infisical/), [Plane](./dev/plane/), [Nexus](./dev/nexus/), [GlitchTip](./dev/glitchtip/), [Code-Server](./dev/code-server/), [Verdaccio](./dev/verdaccio/), [Coder](./dev/coder/) |
+| ERP | 6 | [Odoo 16](./erp/odoo-16/), [Odoo 17](./erp/odoo-17/), [Odoo 18](./erp/odoo-18/), [ERPNext](./erp/erpnext/), [Dolibarr](./erp/dolibarr/), [iDempiere](./erp/idempiere/) |
+| HR | 2 | [OrangeHRM](./hr/orangehrm/), [IceHRM](./hr/icehrm/) |
 | Email | 3 | [Listmonk](./email/listmonk/), [Mailcow](./email/mailcow/), [Mailu](./email/mailu/) |
 | Files | 3 | [FileBrowser](./files/filebrowser/), [Nextcloud](./files/nextcloud/), [Paperless-ngx](./files/paperless-ngx/) |
 | Management | 5 | [Portainer](./management/portainer/), [Dockge](./management/dockge/), [Watchtower](./management/watchtower/), [Dashy](./management/dashy/), [Homarr](./management/homarr/) |
@@ -93,16 +98,21 @@ For exact ports, credentials, and post-install steps, use the `README.md` inside
 
 ```text
 .
+|- accounting/
 |- ai/
 |- analytics/
 |- automation/
 |- backup/
+|- clinic/
 |- communication/
+|- crm/
 |- databases/
 |- dev/
 |- email/
+|- erp/
 |- files/
 |- gpt.md
+|- hr/
 |- management/
 |- media/
 |- monitoring/
