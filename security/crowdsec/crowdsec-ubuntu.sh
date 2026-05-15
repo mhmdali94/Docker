@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   CrowdSec Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║          CrowdSec Auto-Installer                 ║"
+echo "  ║          Made by: Mohammed Ali Elshikh          ║"
+echo "  ║          prismatechwork.com                     ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,50 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
+EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^crowdsec$' || true)
 if [ -n "$EXISTING" ]; then
     warn "Removing existing containers..."
     echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
 else
-    info "No existing IT-Tools containers found."
+    info "No existing CrowdSec containers found."
 fi
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+CS_DIR="/root/docker/crowdsec"
+if [ -d "$CS_DIR" ]; then
+    warn "Removing old directory $CS_DIR..."
+    rm -rf "$CS_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$CS_DIR"
+cd "$CS_DIR" || error "Cannot navigate to $CS_DIR"
+info "Directory ready: $CS_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Writing docker-compose.yml"
+cat > "$CS_DIR/docker-compose.yml" <<'EOF'
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "6060:6060"
+      - "8181:8080"
+    environment:
+      GID: "1000"
+      COLLECTIONS: "crowdsecurity/linux crowdsecurity/sshd crowdsecurity/nginx"
+    volumes:
+      - ./data:/var/lib/crowdsec/data
+      - ./config:/etc/crowdsec
+      - /var/log/auth.log:/var/log/auth.log:ro
+      - /var/log/syslog:/var/log/syslog:ro
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting CrowdSec"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,20 +126,20 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 8
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^crowdsec$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Container may not have started. Check: docker logs crowdsec"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for CrowdSec metrics on port 6060..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+    if curl -sf --max-time 3 http://127.0.0.1:6060/metrics &>/dev/null; then
+        info "Port 6060 is responding — CrowdSec is healthy. ✅"
         HEALTH_OK=1
         break
     fi
@@ -135,14 +148,26 @@ for i in $(seq 1 12); do
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
+    if nc -z 127.0.0.1 6060 2>/dev/null; then
+        warn "Port 6060 is open but not fully ready."
+        warn "Check logs: docker logs crowdsec"
     else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
+        warn "Port 6060 is NOT responding after 60s."
+        docker logs --tail 20 crowdsec 2>&1 || true
     fi
+fi
+
+info "Generating CrowdSec local API key..."
+sleep 5
+CS_API_KEY=$(docker exec crowdsec cscli bouncers add docker-bouncer -o raw 2>/dev/null || echo "Run manually: docker exec crowdsec cscli bouncers add my-bouncer")
+
+section "Step 10: Opening Firewall Ports"
+if command -v ufw &> /dev/null; then
+    ufw allow 6060/tcp
+    ufw allow 8181/tcp
+    info "UFW: ports 6060 and 8181/tcp opened."
+else
+    warn "UFW not found — skipping firewall rules."
 fi
 
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
@@ -151,14 +176,17 @@ echo "  ╔═══════════════════════
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  📊  CrowdSec Metrics: http://$SERVER_IP:6060/metrics"
+echo "  ║  🔌  Local API:        http://$SERVER_IP:8181"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🔑  Bouncer API Key: $CS_API_KEY"
+echo "  ║                                                      ║"
+echo "  ║  🔎  View alerts:                                   ║"
+echo "  ║      docker exec crowdsec cscli alerts list         ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

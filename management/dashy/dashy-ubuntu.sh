@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   Dashy Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║         Dashy Auto-Installer                     ║"
+echo "  ║         Made by: Mohammed Ali Elshikh           ║"
+echo "  ║         prismatechwork.com                      ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,66 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
+EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^dashy$' || true)
 if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
+    warn "Removing existing container: dashy"
+    docker rm -f dashy 2>/dev/null || true
 fi
 docker network prune -f &>/dev/null || true
 
-section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+section "Step 5: Preparing Directory & Writing Config"
+DASHY_DIR="/root/docker/dashy"
+if [ -d "$DASHY_DIR" ]; then
+    warn "Removing old directory $DASHY_DIR..."
+    rm -rf "$DASHY_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$DASHY_DIR"
+cd "$DASHY_DIR" || error "Cannot navigate to $DASHY_DIR"
+info "Directory ready: $DASHY_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+cat > "$DASHY_DIR/conf.yml" <<'CONFEOF'
+pageInfo:
+  title: My Self-Hosted Dashboard
+  description: Powered by Dashy
+  navLinks:
+    - title: GitHub
+      path: https://github.com/Lissy93/dashy
+sections:
+  - name: Getting Started
+    icon: fas fa-rocket
+    items:
+      - title: Edit this config
+        description: Modify conf.yml to add your services
+        icon: fas fa-cog
+        url: "#"
+      - title: Dashy Docs
+        description: Documentation and configuration reference
+        icon: fas fa-book
+        url: https://dashy.to/docs
+appConfig:
+  theme: colorful
+  layout: auto
+  iconSize: medium
+CONFEOF
+info "conf.yml created."
+
+section "Step 6: Writing docker-compose.yml"
+cat > "$DASHY_DIR/docker-compose.yml" <<'EOF'
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  dashy:
+    image: lissy93/dashy:latest
+    container_name: dashy
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "4000:8080"
+    volumes:
+      - ./conf.yml:/app/user-data/conf.yml
+    environment:
+      NODE_ENV: production
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting Dashy"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,20 +142,20 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 10
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^dashy$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Container may not have started. Check: docker logs dashy"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for Dashy to be ready on port 4000..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+    if curl -sf --max-time 5 http://127.0.0.1:4000 &>/dev/null; then
+        info "Port 4000 is responding — Dashy is healthy. ✅"
         HEALTH_OK=1
         break
     fi
@@ -135,14 +164,15 @@ for i in $(seq 1 12); do
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
-    else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
-    fi
+    warn "Dashy may still be starting. Check: docker logs dashy"
+fi
+
+section "Step 10: Opening Firewall Port 4000"
+if command -v ufw &> /dev/null; then
+    ufw allow 4000/tcp
+    info "UFW: port 4000/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
 fi
 
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
@@ -151,14 +181,14 @@ echo "  ╔═══════════════════════
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Open Dashy in your browser:                 ║"
+echo "  ║      👉  http://$SERVER_IP:4000"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  ⚙️  Edit $DASHY_DIR/conf.yml to add services.  ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

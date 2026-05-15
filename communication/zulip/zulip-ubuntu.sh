@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   Zulip Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║           Zulip Auto-Installer                   ║"
+echo "  ║           Made by: Mohammed Ali Elshikh         ║"
+echo "  ║           prismatechwork.com                    ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,68 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
+EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^zulip$' || true)
 if [ -n "$EXISTING" ]; then
     warn "Removing existing containers..."
     echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
 else
-    info "No existing IT-Tools containers found."
+    info "No existing Zulip containers found."
 fi
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+ZULIP_DIR="/root/docker/zulip"
+if [ -d "$ZULIP_DIR" ]; then
+    warn "Removing old directory $ZULIP_DIR..."
+    rm -rf "$ZULIP_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$ZULIP_DIR/data"
+cd "$ZULIP_DIR" || error "Cannot navigate to $ZULIP_DIR"
+info "Directory ready: $ZULIP_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Generating Credentials & docker-compose.yml"
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+RABBIT_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+SECRET=$(tr -dc 'a-f0-9' < /dev/urandom | head -c 64)
+DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+ADMIN_PASS=$(tr -dc 'A-Za-z0-9!@#' < /dev/urandom | head -c 20)
+ADMIN_EMAIL="admin@${SERVER_IP}.local"
+info "Admin Email    : $ADMIN_EMAIL"
+info "Admin Password : $ADMIN_PASS"
+
+cat > "$ZULIP_DIR/docker-compose.yml" <<EOF
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  zulip:
+    image: zulip/docker-zulip:latest
+    container_name: zulip
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "8585:80"
+    environment:
+      DB_HOST: 127.0.0.1
+      DB_HOST_PORT: 5432
+      DB_USER: zulip
+      SETTING_MEMCACHED_LOCATION: 127.0.0.1:11211
+      SETTING_RABBITMQ_HOST: 127.0.0.1
+      SETTING_REDIS_HOST: 127.0.0.1
+      SECRETS_rabbitmq_password: $RABBIT_PASS
+      SECRETS_secret_key: $SECRET
+      SECRETS_email_password: ""
+      SECRETS_auth_ldap_bind_password: ""
+      SECRETS_postgres_password: $DB_PASS
+      SETTING_EXTERNAL_HOST: $SERVER_IP
+      SETTING_ZULIP_ADMINISTRATOR: $ADMIN_EMAIL
+      ZULIP_USER_EMAIL: $ADMIN_EMAIL
+      ZULIP_USER_DOMAIN: ${SERVER_IP}.local
+      ZULIP_USER_FULL_NAME: Admin
+      ZULIP_USER_PASS: $ADMIN_PASS
+      DISABLE_HTTPS: "true"
+    volumes:
+      - ./data:/data
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting Zulip"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,52 +144,60 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 10
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^zulip$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Container may not have started. Check: docker logs zulip"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for Zulip to be ready on port 8585 (may take 3-5 minutes)..."
 HEALTH_OK=0
-for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+for i in $(seq 1 24); do
+    if curl -sf --max-time 5 http://127.0.0.1:8585 &>/dev/null; then
+        info "Port 8585 is responding — Zulip is healthy. ✅"
         HEALTH_OK=1
         break
     fi
-    echo -n "  Attempt $i/12 — waiting 5s..."
-    sleep 5
+    echo -n "  Attempt $i/24 — waiting 15s..."
+    sleep 15
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
+    if nc -z 127.0.0.1 8585 2>/dev/null; then
+        warn "Port 8585 is open but Zulip may still be initializing."
+        warn "Check logs: docker logs zulip"
     else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
+        warn "Port 8585 is NOT responding."
+        docker logs --tail 20 zulip 2>&1 || true
     fi
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+section "Step 10: Opening Firewall Port 8585"
+if command -v ufw &> /dev/null; then
+    ufw allow 8585/tcp
+    info "UFW: port 8585/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
+fi
+
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Open Zulip in your browser:                  ║"
+echo "  ║      👉  http://$SERVER_IP:8585"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🔑  Login Credentials (save these!):              ║"
+echo "  ║      Email    : $ADMIN_EMAIL"
+echo "  ║      Password : $ADMIN_PASS"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   NocoDB Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║          NocoDB Auto-Installer                   ║"
+echo "  ║          Made by: Mohammed Ali Elshikh          ║"
+echo "  ║          prismatechwork.com                     ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,60 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
-if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
-fi
+for cname in nocodb nocodb-db; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+NOCO_DIR="/root/docker/nocodb"
+if [ -d "$NOCO_DIR" ]; then
+    warn "Removing old directory $NOCO_DIR..."
+    rm -rf "$NOCO_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$NOCO_DIR"
+cd "$NOCO_DIR" || error "Cannot navigate to $NOCO_DIR"
+info "Directory ready: $NOCO_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Generating Credentials & docker-compose.yml"
+DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+JWT_SECRET=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
+info "Credentials generated."
+
+cat > "$NOCO_DIR/docker-compose.yml" <<EOF
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  nocodb-db:
+    image: postgres:15
+    container_name: nocodb-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nocodb
+      POSTGRES_PASSWORD: $DB_PASS
+      POSTGRES_DB: nocodb
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+
+  nocodb:
+    image: nocodb/nocodb:latest
+    container_name: nocodb
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "8088:8080"
+    environment:
+      NC_DB: pg://nocodb-db:5432?u=nocodb&p=$DB_PASS&d=nocodb
+      NC_AUTH_JWT_SECRET: $JWT_SECRET
+    volumes:
+      - ./data:/usr/app/data
+    depends_on:
+      - nocodb-db
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting NocoDB"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,20 +136,20 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 8
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^nocodb$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Container may not have started. Check: docker logs nocodb"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for NocoDB to be ready on port 8088..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+    if curl -sf --max-time 3 http://127.0.0.1:8088/api/v1/health &>/dev/null; then
+        info "Port 8088 is responding — NocoDB is healthy. ✅"
         HEALTH_OK=1
         break
     fi
@@ -136,13 +159,20 @@ for i in $(seq 1 12); do
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
     if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
+        warn "Port 8088 is open but not fully ready."
+        warn "Check logs: docker logs nocodb"
     else
         warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
+        docker logs --tail 20 nocodb 2>&1 || true
     fi
+fi
+
+section "Step 10: Opening Firewall Port 8088"
+if command -v ufw &> /dev/null; then
+    ufw allow 8088/tcp
+    info "UFW: port 8088/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
 fi
 
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
@@ -151,14 +181,14 @@ echo "  ╔═══════════════════════
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
+echo "  ║  🌐  Open NocoDB in your browser:                 ║"
 echo "  ║      👉  http://$SERVER_IP:8088"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🔑  Create your admin account on first visit.     ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

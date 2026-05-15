@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   Wazuh Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║           Wazuh Auto-Installer                   ║"
+echo "  ║           Made by: Mohammed Ali Elshikh         ║"
+echo "  ║           prismatechwork.com                    ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,75 +75,140 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
-if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
-fi
+for cname in wazuh-manager wazuh-indexer wazuh-dashboard; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
 docker network prune -f &>/dev/null || true
 
-section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+section "Step 5: Preparing Directory & SSL Certificates"
+WAZUH_DIR="/root/docker/wazuh"
+if [ -d "$WAZUH_DIR" ]; then
+    warn "Removing old directory $WAZUH_DIR..."
+    rm -rf "$WAZUH_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$WAZUH_DIR/certs"
+cd "$WAZUH_DIR" || error "Cannot navigate to $WAZUH_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+info "Generating self-signed SSL certificate..."
+apt-get install -y openssl &>/dev/null || true
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout "$WAZUH_DIR/certs/wazuh.key" \
+    -out "$WAZUH_DIR/certs/wazuh.crt" \
+    -subj "/C=US/ST=State/L=City/O=Wazuh/CN=wazuh" 2>/dev/null
+info "SSL certificate generated."
+
+section "Step 6: Generating Credentials & docker-compose.yml"
+WAZUH_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+info "Admin User     : admin"
+info "Admin Password : $WAZUH_PASS"
+
+sysctl -w vm.max_map_count=262144
+info "vm.max_map_count set (required for OpenSearch/Wazuh Indexer)."
+
+cat > "$WAZUH_DIR/docker-compose.yml" <<EOF
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  wazuh-indexer:
+    image: wazuh/wazuh-indexer:4.7.5
+    container_name: wazuh-indexer
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "9200:9200"
+    environment:
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+      bootstrap.memory_lock: "true"
+      discovery.type: single-node
+      plugins.security.ssl.http.enabled: "false"
+      WAZUH_INDEXER_PASSWORD: $WAZUH_PASS
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./indexer-data:/var/lib/wazuh-indexer
+
+  wazuh-manager:
+    image: wazuh/wazuh-manager:4.7.5
+    container_name: wazuh-manager
+    restart: unless-stopped
+    ports:
+      - "1514:1514/udp"
+      - "1515:1515"
+      - "55000:55000"
+    environment:
+      WAZUH_INDEXER_URL: https://wazuh-indexer:9200
+      WAZUH_INDEXER_PASSWORD: $WAZUH_PASS
+    volumes:
+      - ./manager-data:/var/ossec/data
+      - ./certs:/etc/ssl/wazuh
+
+  wazuh-dashboard:
+    image: wazuh/wazuh-dashboard:4.7.5
+    container_name: wazuh-dashboard
+    restart: unless-stopped
+    ports:
+      - "8443:443"
+    environment:
+      INDEXER_URL: https://wazuh-indexer:9200
+      INDEXER_USERNAME: admin
+      INDEXER_PASSWORD: $WAZUH_PASS
+      WAZUH_API_URL: https://wazuh-manager
+      DASHBOARD_USERNAME: admin
+      DASHBOARD_PASSWORD: $WAZUH_PASS
+    volumes:
+      - ./certs:/usr/share/wazuh-dashboard/certs
+    depends_on:
+      - wazuh-indexer
+      - wazuh-manager
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting Wazuh"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
     docker-compose up -d
 fi
 
-section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+section "Step 8: Verifying Containers"
+sleep 15
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^wazuh-dashboard$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Wazuh dashboard may not have started. Check: docker logs wazuh-dashboard"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for Wazuh Dashboard on port 8443 (may take 3-5 minutes)..."
 HEALTH_OK=0
-for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+for i in $(seq 1 24); do
+    if curl -sk --max-time 5 https://127.0.0.1:8443 &>/dev/null; then
+        info "Port 8443 is responding — Wazuh Dashboard is healthy. ✅"
         HEALTH_OK=1
         break
     fi
-    echo -n "  Attempt $i/12 — waiting 5s..."
-    sleep 5
+    echo -n "  Attempt $i/24 — waiting 15s..."
+    sleep 15
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
-    else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
-    fi
+    warn "Wazuh may still be initializing. Check: docker logs wazuh-dashboard"
+fi
+
+section "Step 10: Opening Firewall Ports"
+if command -v ufw &> /dev/null; then
+    ufw allow 8443/tcp
+    ufw allow 1514/udp
+    ufw allow 1515/tcp
+    ufw allow 55000/tcp
+    ufw allow 9200/tcp
+    info "UFW: ports 8443, 1514/udp, 1515, 55000, 9200 opened."
+else
+    warn "UFW not found — skipping firewall rules."
 fi
 
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
@@ -151,14 +217,19 @@ echo "  ╔═══════════════════════
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Wazuh Dashboard (accept SSL warning):        ║"
+echo "  ║      👉  https://$SERVER_IP:8443"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🔑  Login Credentials (save these!):              ║"
+echo "  ║      Username : admin"
+echo "  ║      Password : $WAZUH_PASS"
+echo "  ║                                                      ║"
+echo "  ║  📡  Agent enrollment port : 1515/tcp              ║"
+echo "  ║  📥  Log collection port   : 1514/udp              ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   SonarQube Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║        SonarQube Auto-Installer                  ║"
+echo "  ║        Made by: Mohammed Ali Elshikh            ║"
+echo "  ║        prismatechwork.com                       ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,70 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
-if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
-fi
+for cname in sonarqube sonarqube-db; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+SQ_DIR="/root/docker/sonarqube"
+if [ -d "$SQ_DIR" ]; then
+    warn "Removing old directory $SQ_DIR..."
+    rm -rf "$SQ_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$SQ_DIR"/{data,logs,extensions,postgres}
+cd "$SQ_DIR" || error "Cannot navigate to $SQ_DIR"
+info "Directory ready: $SQ_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Generating Credentials & docker-compose.yml"
+DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+info "Database Password generated."
+info "SonarQube Default Login: admin / admin (change on first login)"
+
+sysctl -w vm.max_map_count=524288
+info "vm.max_map_count set to 524288 (required for Elasticsearch)."
+
+cat > "$SQ_DIR/docker-compose.yml" <<EOF
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  sonarqube-db:
+    image: postgres:15
+    container_name: sonarqube-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: $DB_PASS
+      POSTGRES_DB: sonarqube
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: sonarqube
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "9000:9000"
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: $DB_PASS
+    volumes:
+      - ./data:/opt/sonarqube/data
+      - ./logs:/opt/sonarqube/logs
+      - ./extensions:/opt/sonarqube/extensions
+    depends_on:
+      - sonarqube-db
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting SonarQube"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,36 +146,44 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 8
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^sonarqube$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Container may not have started. Check: docker logs sonarqube"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for SonarQube to be ready on port 9000 (may take ~2 minutes)..."
 HEALTH_OK=0
-for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+for i in $(seq 1 24); do
+    if curl -sf --max-time 5 http://127.0.0.1:9000/api/system/status 2>/dev/null | grep -q '"status":"UP"'; then
+        info "Port 9000 is responding — SonarQube is healthy. ✅"
         HEALTH_OK=1
         break
     fi
-    echo -n "  Attempt $i/12 — waiting 5s..."
-    sleep 5
+    echo -n "  Attempt $i/24 — waiting 10s..."
+    sleep 10
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
+    if nc -z 127.0.0.1 9000 2>/dev/null; then
+        warn "Port 9000 is open but SonarQube may still be initializing (Elasticsearch takes time)."
+        warn "Check logs: docker logs sonarqube"
     else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
+        warn "Port 9000 is NOT responding after ~4 minutes."
+        warn "Check logs: docker logs sonarqube"
+        docker logs --tail 20 sonarqube 2>&1 || true
     fi
+fi
+
+section "Step 10: Opening Firewall Port 9000"
+if command -v ufw &> /dev/null; then
+    ufw allow 9000/tcp
+    info "UFW: port 9000/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
 fi
 
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
@@ -151,14 +192,16 @@ echo "  ╔═══════════════════════
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Open SonarQube in your browser:              ║"
+echo "  ║      👉  http://$SERVER_IP:9000"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🔑  Default Login Credentials:                    ║"
+echo "  ║      Username : admin                               ║"
+echo "  ║      Password : admin (change on first login)       ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

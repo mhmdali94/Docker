@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   Matrix Synapse + Element Web Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║   Matrix Synapse + Element Web Auto-Installer    ║"
+echo "  ║   Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║   prismatechwork.com                            ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,59 +75,112 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
-if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
-fi
+for cname in synapse element-web; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
 docker network prune -f &>/dev/null || true
 
-section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+section "Step 5: Preparing Directory & Generating Synapse Config"
+MATRIX_DIR="/root/docker/matrix"
+if [ -d "$MATRIX_DIR" ]; then
+    warn "Removing old directory $MATRIX_DIR..."
+    rm -rf "$MATRIX_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$MATRIX_DIR/synapse"
+cd "$MATRIX_DIR" || error "Cannot navigate to $MATRIX_DIR"
+info "Directory ready: $MATRIX_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+
+info "Generating Synapse configuration..."
+docker run --rm \
+    -v "$MATRIX_DIR/synapse:/data" \
+    -e SYNAPSE_SERVER_NAME="$SERVER_IP" \
+    -e SYNAPSE_REPORT_STATS=no \
+    matrixdotorg/synapse:latest generate
+info "Synapse config generated."
+
+# Enable open registration for demo
+sed -i 's/#enable_registration: false/enable_registration: true/' "$MATRIX_DIR/synapse/homeserver.yaml" 2>/dev/null || true
+sed -i 's/enable_registration: false/enable_registration: true/' "$MATRIX_DIR/synapse/homeserver.yaml" 2>/dev/null || true
+echo "enable_registration_without_verification: true" >> "$MATRIX_DIR/synapse/homeserver.yaml"
+info "Open registration enabled in homeserver.yaml."
+
+section "Step 6: Writing Element Config & docker-compose.yml"
+cat > "$MATRIX_DIR/element-config.json" <<EOF
+{
+  "default_server_config": {
+    "m.homeserver": {
+      "base_url": "http://$SERVER_IP:8008",
+      "server_name": "$SERVER_IP"
+    }
+  },
+  "disable_custom_urls": false,
+  "disable_guests": false,
+  "disable_login_language_selector": false,
+  "disable_3pid_login": false,
+  "brand": "Element",
+  "integrations_ui_url": "",
+  "integrations_rest_url": "",
+  "bug_report_endpoint_url": "",
+  "roomDirectory": {
+    "servers": ["$SERVER_IP"]
+  }
+}
+EOF
+
+cat > "$MATRIX_DIR/docker-compose.yml" <<'EOF'
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  synapse:
+    image: matrixdotorg/synapse:latest
+    container_name: synapse
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "8008:8008"
+    volumes:
+      - ./synapse:/data
+
+  element-web:
+    image: vectorim/element-web:latest
+    container_name: element-web
+    restart: unless-stopped
+    ports:
+      - "8009:80"
+    volumes:
+      - ./element-config.json:/app/config.json:ro
+    depends_on:
+      - synapse
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting Matrix Synapse + Element Web"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
     docker-compose up -d
 fi
 
-section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
-if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
-else
-    info "Container running: $RUNNING"
-fi
+section "Step 8: Verifying Containers"
+sleep 8
+for cname in synapse element-web; do
+    RUNNING=$(docker ps --format '{{.Names}}' | grep -E "^${cname}$" || true)
+    if [ -z "$RUNNING" ]; then
+        warn "Container '$cname' may not have started. Check: docker logs $cname"
+    else
+        info "Container running: $cname"
+    fi
+done
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for Synapse to be ready on port 8008..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+    if curl -sf --max-time 3 http://127.0.0.1:8008/health &>/dev/null; then
+        info "Port 8008 is responding — Synapse is healthy. ✅"
         HEALTH_OK=1
         break
     fi
@@ -135,30 +189,35 @@ for i in $(seq 1 12); do
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
-    else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
-    fi
+    warn "Synapse may still be starting. Check: docker logs synapse"
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+section "Step 10: Opening Firewall Ports"
+if command -v ufw &> /dev/null; then
+    ufw allow 8008/tcp
+    ufw allow 8009/tcp
+    info "UFW: ports 8008 and 8009/tcp opened."
+else
+    warn "UFW not found — skipping firewall rules."
+fi
+
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Element Web (chat client):                   ║"
+echo "  ║      👉  http://$SERVER_IP:8009"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  📡  Synapse Matrix server:                        ║"
+echo "  ║      http://$SERVER_IP:8008"
+echo "  ║                                                      ║"
+echo "  ║  🔑  Register your account via Element Web.        ║"
+echo "  ║      Homeserver URL: http://$SERVER_IP:8008"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   FreshRSS Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║         FreshRSS Auto-Installer                  ║"
+echo "  ║         Made by: Mohammed Ali Elshikh           ║"
+echo "  ║         prismatechwork.com                      ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,45 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
+EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^freshrss$' || true)
 if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
+    warn "Removing existing container: freshrss"
+    docker rm -f freshrss 2>/dev/null || true
 fi
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+RSS_DIR="/root/docker/freshrss"
+if [ -d "$RSS_DIR" ]; then
+    warn "Removing old directory $RSS_DIR..."
+    rm -rf "$RSS_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$RSS_DIR"/{data,extensions}
+cd "$RSS_DIR" || error "Cannot navigate to $RSS_DIR"
+info "Directory ready: $RSS_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Writing docker-compose.yml"
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+info "Complete setup wizard at http://$SERVER_IP:8097 after start."
+
+cat > "$RSS_DIR/docker-compose.yml" <<'EOF'
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  freshrss:
+    image: freshrss/freshrss:latest
+    container_name: freshrss
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "8097:80"
+    environment:
+      TZ: UTC
+      CRON_MIN: "2,32"
+    volumes:
+      - ./data:/var/www/FreshRSS/data
+      - ./extensions:/var/www/FreshRSS/extensions
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting FreshRSS"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,20 +121,20 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 8
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^freshrss$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Container may not have started. Check: docker logs freshrss"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for FreshRSS to be ready on port 8097..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+    if curl -sf --max-time 5 http://127.0.0.1:8097 &>/dev/null; then
+        info "Port 8097 is responding — FreshRSS is healthy. ✅"
         HEALTH_OK=1
         break
     fi
@@ -135,30 +143,30 @@ for i in $(seq 1 12); do
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
-    else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
-    fi
+    warn "FreshRSS may still be starting. Check: docker logs freshrss"
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+section "Step 10: Opening Firewall Port 8097"
+if command -v ufw &> /dev/null; then
+    ufw allow 8097/tcp
+    info "UFW: port 8097/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
+fi
+
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Open FreshRSS in your browser:              ║"
+echo "  ║      👉  http://$SERVER_IP:8097"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🔑  Complete the setup wizard on first visit.     ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

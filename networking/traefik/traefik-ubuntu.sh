@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   Traefik Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║          Traefik Auto-Installer                  ║"
+echo "  ║          Made by: Mohammed Ali Elshikh          ║"
+echo "  ║          prismatechwork.com                     ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,66 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
+EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^traefik$' || true)
 if [ -n "$EXISTING" ]; then
     warn "Removing existing containers..."
     echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
 else
-    info "No existing IT-Tools containers found."
+    info "No existing Traefik containers found."
 fi
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+TRAEFIK_DIR="/root/docker/traefik"
+if [ -d "$TRAEFIK_DIR" ]; then
+    warn "Removing old directory $TRAEFIK_DIR..."
+    rm -rf "$TRAEFIK_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$TRAEFIK_DIR"
+cd "$TRAEFIK_DIR" || error "Cannot navigate to $TRAEFIK_DIR"
+info "Directory ready: $TRAEFIK_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Writing Configuration & docker-compose.yml"
+cat > "$TRAEFIK_DIR/traefik.yaml" <<'EOF'
+api:
+  dashboard: true
+  insecure: true
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+ping: {}
+EOF
+
+touch "$TRAEFIK_DIR/acme.json"
+chmod 600 "$TRAEFIK_DIR/acme.json"
+info "traefik.yaml and acme.json created."
+
+cat > "$TRAEFIK_DIR/docker-compose.yml" <<'EOF'
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  traefik:
+    image: traefik:latest
+    container_name: traefik
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    command:
+      - --configFile=/etc/traefik/traefik.yaml
+    volumes:
+      - ./traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./acme.json:/acme.json
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting Traefik"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,20 +142,20 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 5
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^traefik$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Container may not have started. Check: docker logs traefik"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for Traefik to be ready on port 8080..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+    if curl -sf --max-time 3 http://127.0.0.1:8080/ping &>/dev/null; then
+        info "Port 8080 is responding — Traefik is healthy. ✅"
         HEALTH_OK=1
         break
     fi
@@ -135,14 +164,23 @@ for i in $(seq 1 12); do
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
+    if nc -z 127.0.0.1 8080 2>/dev/null; then
+        warn "Port 8080 is open but /ping did not respond."
+        warn "Check logs: docker logs traefik"
     else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
+        warn "Port 8080 is NOT responding after 60s."
+        docker logs --tail 20 traefik 2>&1 || true
     fi
+fi
+
+section "Step 10: Opening Firewall Ports"
+if command -v ufw &> /dev/null; then
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+    ufw allow 8080/tcp
+    info "UFW: ports 80, 443, and 8080/tcp opened."
+else
+    warn "UFW not found — skipping firewall rules."
 fi
 
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
@@ -151,14 +189,19 @@ echo "  ╔═══════════════════════
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Traefik Dashboard:                            ║"
+echo "  ║      👉  http://$SERVER_IP:8080/dashboard/#/"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🔀  HTTP entrypoint : port 80                     ║"
+echo "  ║  🔒  HTTPS entrypoint: port 443                    ║"
+echo "  ║                                                      ║"
+echo "  ║  💡  Expose a service via Traefik — add labels:    ║"
+echo "  ║      traefik.enable=true                            ║"
+echo "  ║      traefik.http.routers.app.rule=Host('...')     ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

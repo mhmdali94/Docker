@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   Coder Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║         Coder Auto-Installer                     ║"
+echo "  ║         Made by: Mohammed Ali Elshikh           ║"
+echo "  ║         prismatechwork.com                      ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,66 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
-if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
-fi
+for cname in coder coder-db; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+CODER_DIR="/root/docker/coder"
+if [ -d "$CODER_DIR" ]; then
+    warn "Removing old directory $CODER_DIR..."
+    rm -rf "$CODER_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$CODER_DIR"
+cd "$CODER_DIR" || error "Cannot navigate to $CODER_DIR"
+info "Directory ready: $CODER_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Generating Credentials & docker-compose.yml"
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+ADMIN_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+info "Admin User     : admin"
+info "Admin Password : $ADMIN_PASS"
+
+cat > "$CODER_DIR/docker-compose.yml" <<EOF
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  coder-db:
+    image: postgres:15
+    container_name: coder-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: coder
+      POSTGRES_PASSWORD: $DB_PASS
+      POSTGRES_DB: coder
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+
+  coder:
+    image: ghcr.io/coder/coder:latest
+    container_name: coder
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "3020:3000"
+    environment:
+      CODER_ACCESS_URL: http://$SERVER_IP:3020
+      CODER_PG_CONNECTION_URL: postgresql://coder:$DB_PASS@coder-db/coder?sslmode=disable
+      CODER_FIRST_USER_EMAIL: admin@coder.local
+      CODER_FIRST_USER_USERNAME: admin
+      CODER_FIRST_USER_PASSWORD: $ADMIN_PASS
+      CODER_FIRST_USER_TRIAL: "false"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - coder-db
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting Coder"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,52 +142,54 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 15
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^coder$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Container may not have started. Check: docker logs coder"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for Coder to be ready on port 3020..."
 HEALTH_OK=0
-for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+for i in $(seq 1 18); do
+    if curl -sf --max-time 5 http://127.0.0.1:3020 &>/dev/null; then
+        info "Port 3020 is responding — Coder is healthy. ✅"
         HEALTH_OK=1
         break
     fi
-    echo -n "  Attempt $i/12 — waiting 5s..."
-    sleep 5
+    echo -n "  Attempt $i/18 — waiting 10s..."
+    sleep 10
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
-    else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
-    fi
+    warn "Coder may still be initializing. Check: docker logs coder"
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+section "Step 10: Opening Firewall Port 3020"
+if command -v ufw &> /dev/null; then
+    ufw allow 3020/tcp
+    info "UFW: port 3020/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
+fi
+
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Open Coder in your browser:                 ║"
+echo "  ║      👉  http://$SERVER_IP:3020"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🔑  Login Credentials:                            ║"
+echo "  ║      Username : admin                               ║"
+echo "  ║      Password : $ADMIN_PASS"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

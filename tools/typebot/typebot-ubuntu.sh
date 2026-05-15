@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   Typebot Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║         Typebot Auto-Installer                   ║"
+echo "  ║         Made by: Mohammed Ali Elshikh           ║"
+echo "  ║         prismatechwork.com                      ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,91 +75,140 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
-if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
-fi
+for cname in typebot-builder typebot-viewer typebot-db; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+TB_DIR="/root/docker/typebot"
+if [ -d "$TB_DIR" ]; then
+    warn "Removing old directory $TB_DIR..."
+    rm -rf "$TB_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$TB_DIR"
+cd "$TB_DIR" || error "Cannot navigate to $TB_DIR"
+info "Directory ready: $TB_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Generating Credentials & docker-compose.yml"
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+NEXTAUTH_SECRET=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
+ENCRYPTION_SECRET=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 24)
+info "Builder URL : http://$SERVER_IP:3310"
+info "Viewer URL  : http://$SERVER_IP:3311"
+
+cat > "$TB_DIR/docker-compose.yml" <<EOF
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  typebot-db:
+    image: postgres:15
+    container_name: typebot-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: typebot
+      POSTGRES_PASSWORD: $DB_PASS
+      POSTGRES_DB: typebot
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+
+  typebot-builder:
+    image: baptistearno/typebot-builder:latest
+    container_name: typebot-builder
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "3310:3000"
+    environment:
+      DATABASE_URL: postgresql://typebot:$DB_PASS@typebot-db:5432/typebot
+      NEXTAUTH_URL: http://$SERVER_IP:3310
+      NEXTAUTH_SECRET: $NEXTAUTH_SECRET
+      ENCRYPTION_SECRET: $ENCRYPTION_SECRET
+      NEXT_PUBLIC_VIEWER_URL: http://$SERVER_IP:3311
+      ADMIN_EMAIL: admin@typebot.local
+      DISABLE_SIGNUP: "false"
+    depends_on:
+      - typebot-db
+
+  typebot-viewer:
+    image: baptistearno/typebot-viewer:latest
+    container_name: typebot-viewer
+    restart: unless-stopped
+    ports:
+      - "3311:3000"
+    environment:
+      DATABASE_URL: postgresql://typebot:$DB_PASS@typebot-db:5432/typebot
+      NEXTAUTH_URL: http://$SERVER_IP:3310
+      NEXTAUTH_SECRET: $NEXTAUTH_SECRET
+      ENCRYPTION_SECRET: $ENCRYPTION_SECRET
+      NEXT_PUBLIC_VIEWER_URL: http://$SERVER_IP:3311
+    depends_on:
+      - typebot-db
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting Typebot"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
     docker-compose up -d
 fi
 
-section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
-if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
-else
-    info "Container running: $RUNNING"
-fi
+section "Step 8: Verifying Containers"
+sleep 15
+for cname in typebot-builder typebot-viewer; do
+    RUNNING=$(docker ps --format '{{.Names}}' | grep -E "^${cname}$" || true)
+    if [ -z "$RUNNING" ]; then
+        warn "Container '$cname' may not have started. Check: docker logs $cname"
+    else
+        info "Container running: $cname"
+    fi
+done
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for Typebot Builder to be ready on port 3310..."
 HEALTH_OK=0
-for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+for i in $(seq 1 18); do
+    if curl -sf --max-time 5 http://127.0.0.1:3310 &>/dev/null; then
+        info "Port 3310 is responding — Typebot Builder is healthy. ✅"
         HEALTH_OK=1
         break
     fi
-    echo -n "  Attempt $i/12 — waiting 5s..."
-    sleep 5
+    echo -n "  Attempt $i/18 — waiting 10s..."
+    sleep 10
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
-    else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
-    fi
+    warn "Typebot may still be initializing. Check: docker logs typebot-builder"
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+section "Step 10: Opening Firewall Ports 3310 & 3311"
+if command -v ufw &> /dev/null; then
+    ufw allow 3310/tcp
+    ufw allow 3311/tcp
+    info "UFW: ports 3310 and 3311/tcp opened."
+else
+    warn "UFW not found — skipping firewall rules."
+fi
+
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Typebot Builder (design bots):               ║"
+echo "  ║      👉  http://$SERVER_IP:3310"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🌐  Typebot Viewer (serve bots):                 ║"
+echo "  ║      👉  http://$SERVER_IP:3311"
+echo "  ║                                                      ║"
+echo "  ║  🔑  Register your account on first visit.         ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

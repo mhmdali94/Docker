@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   Outline Wiki Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║         Outline Wiki Auto-Installer              ║"
+echo "  ║         Made by: Mohammed Ali Elshikh           ║"
+echo "  ║         prismatechwork.com                      ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,81 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
-if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
-fi
+for cname in outline outline-db outline-redis; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+OUTLINE_DIR="/root/docker/outline"
+if [ -d "$OUTLINE_DIR" ]; then
+    warn "Removing old directory $OUTLINE_DIR..."
+    rm -rf "$OUTLINE_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$OUTLINE_DIR"
+cd "$OUTLINE_DIR" || error "Cannot navigate to $OUTLINE_DIR"
+info "Directory ready: $OUTLINE_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Generating Credentials & docker-compose.yml"
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+SECRET=$(tr -dc 'a-f0-9' < /dev/urandom | head -c 64)
+UTILS_SECRET=$(tr -dc 'a-f0-9' < /dev/urandom | head -c 64)
+info "URL: http://$SERVER_IP:3003"
+warn "NOTE: Outline requires OAuth (Google/Slack/GitHub) or SMTP for login."
+warn "      Set SLACK_KEY/SLACK_SECRET or configure SMTP in the compose file."
+
+cat > "$OUTLINE_DIR/docker-compose.yml" <<EOF
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  outline-db:
+    image: postgres:15
+    container_name: outline-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: outline
+      POSTGRES_PASSWORD: $DB_PASS
+      POSTGRES_DB: outline
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+
+  outline-redis:
+    image: redis:7
+    container_name: outline-redis
+    restart: unless-stopped
+    volumes:
+      - ./redis:/data
+
+  outline:
+    image: outlinewiki/outline:latest
+    container_name: outline
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "3003:3000"
+    environment:
+      SECRET_KEY: $SECRET
+      UTILS_SECRET: $UTILS_SECRET
+      DATABASE_URL: postgres://outline:$DB_PASS@outline-db:5432/outline
+      REDIS_URL: redis://outline-redis:6379
+      URL: http://$SERVER_IP:3003
+      PORT: 3000
+      FORCE_HTTPS: "false"
+      PGSSLMODE: disable
+      FILE_STORAGE: local
+      FILE_STORAGE_LOCAL_ROOT_DIR: /var/lib/outline/data
+      FILE_STORAGE_UPLOAD_MAX_SIZE: 26214400
+    volumes:
+      - ./data:/var/lib/outline/data
+    depends_on:
+      - outline-db
+      - outline-redis
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting Outline"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,52 +157,55 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 10
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^outline$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Container may not have started. Check: docker logs outline"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for Outline to be ready on port 3003..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+    if curl -sf --max-time 5 http://127.0.0.1:3003 &>/dev/null; then
+        info "Port 3003 is responding — Outline is healthy. ✅"
         HEALTH_OK=1
         break
     fi
-    echo -n "  Attempt $i/12 — waiting 5s..."
-    sleep 5
+    echo -n "  Attempt $i/12 — waiting 10s..."
+    sleep 10
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
-    else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
-    fi
+    warn "Outline may still be initializing. Check: docker logs outline"
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+section "Step 10: Opening Firewall Port 3003"
+if command -v ufw &> /dev/null; then
+    ufw allow 3003/tcp
+    info "UFW: port 3003/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
+fi
+
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Open Outline in your browser:               ║"
+echo "  ║      👉  http://$SERVER_IP:3003"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🔑  Login requires OAuth or SMTP configuration.   ║"
+echo "  ║      Edit docker-compose.yml to add:               ║"
+echo "  ║      SLACK_KEY / SLACK_SECRET  (easiest option)    ║"
+echo "  ║      or SMTP_* variables for email login           ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   SigNoz Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║          SigNoz Auto-Installer                   ║"
+echo "  ║          Made by: Mohammed Ali Elshikh          ║"
+echo "  ║          prismatechwork.com                     ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,80 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
-if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
-fi
+for cname in signoz-clickhouse signoz-query signoz-frontend; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+SIGNOZ_DIR="/root/docker/signoz"
+if [ -d "$SIGNOZ_DIR" ]; then
+    warn "Removing old directory $SIGNOZ_DIR..."
+    rm -rf "$SIGNOZ_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$SIGNOZ_DIR"
+cd "$SIGNOZ_DIR" || error "Cannot navigate to $SIGNOZ_DIR"
+info "Directory ready: $SIGNOZ_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Generating Credentials & docker-compose.yml"
+CH_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+info "ClickHouse password generated."
+
+sysctl -w vm.max_map_count=262144
+info "vm.max_map_count set (required for ClickHouse)."
+
+cat > "$SIGNOZ_DIR/docker-compose.yml" <<EOF
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  signoz-clickhouse:
+    image: clickhouse/clickhouse-server:23.8
+    container_name: signoz-clickhouse
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: signoz_traces
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: $CH_PASS
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - ./clickhouse:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  signoz-query:
+    image: signoz/query-service:latest
+    container_name: signoz-query
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "8080:8080"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      ClickHouseUrl: tcp://signoz-clickhouse:9000/?database=signoz_traces&username=admin&password=$CH_PASS
+      STORAGE: clickhouse
+      GODEBUG: netdns=go
+    depends_on:
+      - signoz-clickhouse
+
+  signoz-frontend:
+    image: signoz/frontend:latest
+    container_name: signoz-frontend
+    restart: unless-stopped
+    ports:
+      - "3301:3301"
+    environment:
+      NGINX_PORT: 3301
+      QUERY_SERVICE_URL: http://signoz-query:8080
+    depends_on:
+      - signoz-query
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting SigNoz"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,36 +156,46 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 10
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^signoz-frontend$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "SigNoz frontend may not have started. Check: docker logs signoz-frontend"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for SigNoz frontend to be ready on port 3301..."
 HEALTH_OK=0
-for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+for i in $(seq 1 18); do
+    if curl -sf --max-time 5 http://127.0.0.1:3301 &>/dev/null; then
+        info "Port 3301 is responding — SigNoz is healthy. ✅"
         HEALTH_OK=1
         break
     fi
-    echo -n "  Attempt $i/12 — waiting 5s..."
-    sleep 5
+    echo -n "  Attempt $i/18 — waiting 10s..."
+    sleep 10
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
+    if nc -z 127.0.0.1 3301 2>/dev/null; then
+        warn "Port 3301 is open but SigNoz may still be initializing."
+        warn "Check logs: docker logs signoz-frontend"
     else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
+        warn "Port 3301 is NOT responding."
+        docker logs --tail 20 signoz-query 2>&1 || true
     fi
+fi
+
+section "Step 10: Opening Firewall Ports"
+if command -v ufw &> /dev/null; then
+    ufw allow 3301/tcp
+    ufw allow 8080/tcp
+    ufw allow 4317/tcp
+    ufw allow 4318/tcp
+    info "UFW: ports 3301, 8080, 4317, 4318/tcp opened."
+else
+    warn "UFW not found — skipping firewall rules."
 fi
 
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
@@ -151,14 +204,18 @@ echo "  ╔═══════════════════════
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  SigNoz Dashboard:                            ║"
+echo "  ║      👉  http://$SERVER_IP:3301"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  📡  Send traces from your app (OpenTelemetry):   ║"
+echo "  ║      OTLP gRPC : $SERVER_IP:4317"
+echo "  ║      OTLP HTTP : $SERVER_IP:4318"
+echo "  ║                                                      ║"
+echo "  ║  🔑  Create your admin account on first visit.     ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

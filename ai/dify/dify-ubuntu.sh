@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   Dify Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║         Dify Auto-Installer                      ║"
+echo "  ║         Made by: Mohammed Ali Elshikh           ║"
+echo "  ║         prismatechwork.com                      ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,162 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
-if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
-fi
+for cname in dify-nginx dify-web dify-api dify-worker dify-sandbox dify-db dify-redis; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+DIFY_DIR="/root/docker/dify"
+if [ -d "$DIFY_DIR" ]; then
+    warn "Removing old directory $DIFY_DIR..."
+    rm -rf "$DIFY_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$DIFY_DIR/storage"
+cd "$DIFY_DIR" || error "Cannot navigate to $DIFY_DIR"
+info "Directory ready: $DIFY_DIR"
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Generating Credentials & Writing Config"
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+SECRET=$(tr -dc 'a-f0-9' < /dev/urandom | head -c 64)
+SANDBOX_KEY=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
+info "Setup wizard at http://$SERVER_IP:3050 after start."
+
+cat > "$DIFY_DIR/nginx.conf" <<'NGINXEOF'
+upstream dify-api {
+    server dify-api:5001;
+}
+upstream dify-web {
+    server dify-web:3000;
+}
+server {
+    listen 80;
+    server_name _;
+    client_max_body_size 15M;
+    location /console/api { proxy_pass http://dify-api; proxy_set_header Host $http_host; proxy_set_header X-Real-IP $remote_addr; }
+    location /api { proxy_pass http://dify-api; proxy_set_header Host $http_host; proxy_set_header X-Real-IP $remote_addr; }
+    location /v1 { proxy_pass http://dify-api; proxy_set_header Host $http_host; proxy_set_header X-Real-IP $remote_addr; }
+    location /files { proxy_pass http://dify-api; proxy_set_header Host $http_host; proxy_set_header X-Real-IP $remote_addr; }
+    location / { proxy_pass http://dify-web; proxy_set_header Host $http_host; proxy_set_header X-Real-IP $remote_addr; }
+}
+NGINXEOF
+
+cat > "$DIFY_DIR/docker-compose.yml" <<EOF
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  dify-db:
+    image: postgres:15
+    container_name: dify-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dify
+      POSTGRES_PASSWORD: $DB_PASS
+      POSTGRES_DB: dify
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+
+  dify-redis:
+    image: redis:6
+    container_name: dify-redis
+    restart: unless-stopped
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - ./redis:/data
+
+  dify-sandbox:
+    image: langgenius/dify-sandbox:0.2.10
+    container_name: dify-sandbox
+    restart: unless-stopped
+    environment:
+      API_KEY: $SANDBOX_KEY
+      GIN_MODE: release
+      WORKER_TIMEOUT: 15
+
+  dify-api:
+    image: langgenius/dify-api:0.9.1
+    container_name: dify-api
+    restart: unless-stopped
+    environment:
+      MODE: api
+      LOG_LEVEL: INFO
+      SECRET_KEY: $SECRET
+      DB_USERNAME: dify
+      DB_PASSWORD: $DB_PASS
+      DB_HOST: dify-db
+      DB_PORT: 5432
+      DB_DATABASE: dify
+      REDIS_HOST: dify-redis
+      REDIS_PORT: 6379
+      CELERY_BROKER_URL: redis://dify-redis:6379/1
+      STORAGE_TYPE: local
+      STORAGE_LOCAL_PATH: /app/api/storage
+      SANDBOX_HOST: dify-sandbox
+      SANDBOX_PORT: 8194
+      CODE_EXECUTION_API_KEY: $SANDBOX_KEY
+      CONSOLE_WEB_URL: http://$SERVER_IP:3050
+      SERVICE_API_URL: http://$SERVER_IP:3050
+    volumes:
+      - ./storage:/app/api/storage
+    depends_on:
+      - dify-db
+      - dify-redis
+      - dify-sandbox
+
+  dify-worker:
+    image: langgenius/dify-api:0.9.1
+    container_name: dify-worker
+    restart: unless-stopped
+    environment:
+      MODE: worker
+      LOG_LEVEL: INFO
+      SECRET_KEY: $SECRET
+      DB_USERNAME: dify
+      DB_PASSWORD: $DB_PASS
+      DB_HOST: dify-db
+      DB_PORT: 5432
+      DB_DATABASE: dify
+      REDIS_HOST: dify-redis
+      REDIS_PORT: 6379
+      CELERY_BROKER_URL: redis://dify-redis:6379/1
+      STORAGE_TYPE: local
+      STORAGE_LOCAL_PATH: /app/api/storage
+      SANDBOX_HOST: dify-sandbox
+      SANDBOX_PORT: 8194
+      CODE_EXECUTION_API_KEY: $SANDBOX_KEY
+    volumes:
+      - ./storage:/app/api/storage
+    depends_on:
+      - dify-db
+      - dify-redis
+      - dify-sandbox
+
+  dify-web:
+    image: langgenius/dify-web:0.9.1
+    container_name: dify-web
+    restart: unless-stopped
+    environment:
+      CONSOLE_API_URL: http://$SERVER_IP:3050
+      APP_API_URL: http://$SERVER_IP:3050
+
+  dify-nginx:
+    image: nginx:1.25-alpine
+    container_name: dify-nginx
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "3050:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - dify-api
+      - dify-web
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting Dify"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,52 +238,53 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 15
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^dify-nginx$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Dify nginx may not have started. Check: docker logs dify-nginx"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for Dify to be ready on port 3050 (may take ~3 minutes)..."
 HEALTH_OK=0
-for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+for i in $(seq 1 24); do
+    if curl -sf --max-time 5 http://127.0.0.1:3050 &>/dev/null; then
+        info "Port 3050 is responding — Dify is healthy. ✅"
         HEALTH_OK=1
         break
     fi
-    echo -n "  Attempt $i/12 — waiting 5s..."
-    sleep 5
+    echo -n "  Attempt $i/24 — waiting 10s..."
+    sleep 10
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
-    else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
-    fi
+    warn "Dify may still be initializing. Check: docker logs dify-api"
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+section "Step 10: Opening Firewall Port 3050"
+if command -v ufw &> /dev/null; then
+    ufw allow 3050/tcp
+    info "UFW: port 3050/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
+fi
+
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Open Dify in your browser:                  ║"
+echo "  ║      👉  http://$SERVER_IP:3050"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🔑  Complete the setup wizard on first visit.     ║"
+echo "  ║      Then add LLM providers under Settings.        ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   Cloudflared (Cloudflare Tunnel) Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,31 +18,33 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║    Cloudflared (Tunnel) Auto-Installer           ║"
+echo "  ║    Made by: Mohammed Ali Elshikh                ║"
+echo "  ║    prismatechwork.com                           ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️   DEMO / TESTING USE ONLY                        ║"
 echo "  ║                                                      ║"
-echo "  ║  This installer is intended for demo and testing.   ║"
-echo "  ║  For a production-ready, hardened setup contact:    ║"
+echo "  ║  This installer requires a Cloudflare Tunnel Token.  ║"
+echo "  ║  Get it from: Cloudflare Zero Trust Dashboard →     ║"
+echo "  ║  Networks → Tunnels → Create a Tunnel              ║"
 echo "  ║                                                      ║"
 echo "  ║  👨‍💻  Mohammed Ali Elshikh                            ║"
 echo "  ║  🌐  prismatechwork.com                              ║"
 echo "  ║                                                      ║"
-echo "  ║  Press ENTER to continue with demo install...       ║"
+echo "  ║  Press ENTER to continue...                         ║"
 echo "  ║  Press Ctrl+C to cancel.                            ║"
 echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +76,47 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
+EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^cloudflared$' || true)
 if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
+    warn "Removing existing container: cloudflared"
+    docker rm -f cloudflared 2>/dev/null || true
 fi
 docker network prune -f &>/dev/null || true
 
-section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
-fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+section "Step 5: Getting Tunnel Token"
+echo ""
+echo "  ┌──────────────────────────────────────────────────────┐"
+echo "  │  Get your token from Cloudflare Zero Trust:         │"
+echo "  │  https://one.dash.cloudflare.com                    │"
+echo "  │  → Networks → Tunnels → Create a Tunnel             │"
+echo "  │  → Copy the tunnel token shown in the setup step    │"
+echo "  └──────────────────────────────────────────────────────┘"
+echo ""
+read -rp "  Enter your Cloudflare Tunnel Token: " TUNNEL_TOKEN
+[ -z "$TUNNEL_TOKEN" ] && error "Tunnel token cannot be empty."
+info "Token accepted."
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Preparing Directory & docker-compose.yml"
+CF_DIR="/root/docker/cloudflared"
+if [ -d "$CF_DIR" ]; then
+    warn "Removing old directory $CF_DIR..."
+    rm -rf "$CF_DIR"
+fi
+mkdir -p "$CF_DIR"
+cd "$CF_DIR" || error "Cannot navigate to $CF_DIR"
+info "Directory ready: $CF_DIR"
+
+cat > "$CF_DIR/docker-compose.yml" <<EOF
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
     restart: unless-stopped
-    ports:
-      - "8088:80"
+    command: tunnel --no-autoupdate run --token $TUNNEL_TOKEN
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting Cloudflared"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,52 +124,46 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 8
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^cloudflared$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Container may not have started. Check: docker logs cloudflared"
 else
     info "Container running: $RUNNING"
 fi
 
-section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
-HEALTH_OK=0
-for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
-        HEALTH_OK=1
-        break
-    fi
-    echo -n "  Attempt $i/12 — waiting 5s..."
-    sleep 5
-    echo " retrying"
-done
-if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
-    else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
-    fi
+section "Step 9: Connection Check"
+info "Checking tunnel connection (may take 10-15 seconds)..."
+sleep 15
+LOGS=$(docker logs cloudflared 2>&1 | tail -5 || true)
+if echo "$LOGS" | grep -qi "registered"; then
+    info "Tunnel registered — Cloudflared is connected. ✅"
+elif echo "$LOGS" | grep -qi "error"; then
+    warn "Potential error in logs. Check: docker logs cloudflared"
+else
+    info "Cloudflared is running. Check dashboard for tunnel status."
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+section "Step 10: No Firewall Rules Needed"
+info "Cloudflared uses outbound connections only — no inbound ports required."
+
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Manage your tunnel in Cloudflare dashboard:   ║"
+echo "  ║      https://one.dash.cloudflare.com               ║"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  📋  Check tunnel logs:                            ║"
+echo "  ║      docker logs cloudflared                        ║"
+echo "  ║                                                      ║"
+echo "  ║  🔒  Add public hostnames in Cloudflare to route   ║"
+echo "  ║      traffic to your local services.               ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 

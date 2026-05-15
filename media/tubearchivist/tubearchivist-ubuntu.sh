@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   IT-Tools Auto-Installer
+#   Tubearchivist Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -18,13 +18,13 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       IT-Tools Auto-Installer                    ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║         Tubearchivist Auto-Installer             ║"
+echo "  ║         Made by: Mohammed Ali Elshikh           ║"
+echo "  ║         prismatechwork.com                      ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -43,6 +43,7 @@ echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
+
 section "Step 0: Checking Privileges"
 if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
@@ -74,38 +75,85 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E '^it-tools$' || true)
-if [ -n "$EXISTING" ]; then
-    warn "Removing existing containers..."
-    echo "$EXISTING" | xargs docker rm -f 2>/dev/null || true
-else
-    info "No existing IT-Tools containers found."
-fi
+for cname in tubearchivist tubearchivist-es tubearchivist-redis; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
 docker network prune -f &>/dev/null || true
 
-section "Step 5: Preparing Directory"
-IT_DIR="/root/docker/it-tools"
-if [ -d "$IT_DIR" ]; then
-    warn "Removing old directory $IT_DIR..."
-    rm -rf "$IT_DIR"
+section "Step 5: Preparing Directory & System Tuning"
+TA_DIR="/root/docker/tubearchivist"
+if [ -d "$TA_DIR" ]; then
+    warn "Removing old directory $TA_DIR..."
+    rm -rf "$TA_DIR"
 fi
-mkdir -p "$IT_DIR"
-cd "$IT_DIR" || error "Cannot navigate to $IT_DIR"
-info "Directory ready: $IT_DIR"
+mkdir -p "$TA_DIR"/{youtube,cache,es,redis}
+cd "$TA_DIR" || error "Cannot navigate to $TA_DIR"
+info "Directory ready: $TA_DIR"
+sysctl -w vm.max_map_count=262144
+info "vm.max_map_count set (required for Elasticsearch)."
 
-section "Step 6: Generating docker-compose.yml"
-cat > "$IT_DIR/docker-compose.yml" <<EOF
+section "Step 6: Generating Credentials & docker-compose.yml"
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+TA_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+ELASTIC_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+info "Admin User     : admin"
+info "Admin Password : $TA_PASS"
+
+cat > "$TA_DIR/docker-compose.yml" <<EOF
 services:
-  it-tools:
-    image: corentinth/it-tools:latest
-    container_name: it-tools
+  tubearchivist-es:
+    image: bbilly1/tubearchivist-es:latest
+    container_name: tubearchivist-es
+    restart: unless-stopped
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "true"
+      ELASTIC_PASSWORD: $ELASTIC_PASS
+      discovery.type: single-node
+    volumes:
+      - ./es:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  tubearchivist-redis:
+    image: redis:7
+    container_name: tubearchivist-redis
+    restart: unless-stopped
+    volumes:
+      - ./redis:/data
+
+  tubearchivist:
+    image: bbilly1/tubearchivist:latest
+    container_name: tubearchivist
     restart: unless-stopped
     ports:
-      - "8088:80"
+      - "8098:8000"
+    environment:
+      ES_URL: http://tubearchivist-es:9200
+      REDIS_HOST: tubearchivist-redis
+      HOST_UID: 1000
+      HOST_GID: 1000
+      TA_HOST: $SERVER_IP
+      TA_USERNAME: admin
+      TA_PASSWORD: $TA_PASS
+      ELASTIC_PASSWORD: $ELASTIC_PASS
+      TZ: UTC
+    volumes:
+      - ./youtube:/youtube
+      - ./cache:/cache
+    depends_on:
+      - tubearchivist-es
+      - tubearchivist-redis
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting IT-Tools"
+section "Step 7: Starting Tubearchivist"
 if docker compose version &> /dev/null; then
     docker compose up -d
 else
@@ -113,52 +161,54 @@ else
 fi
 
 section "Step 8: Verifying Container"
-sleep 4
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^it-tools$' || true)
+sleep 20
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^tubearchivist$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs it-tools"
+    warn "Container may not have started. Check: docker logs tubearchivist"
 else
     info "Container running: $RUNNING"
 fi
 
 section "Step 9: Health Check"
-info "Waiting for IT-Tools to be ready on port 8088..."
+info "Waiting for Tubearchivist to be ready on port 8098 (may take ~3 minutes)..."
 HEALTH_OK=0
-for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088 &>/dev/null; then
-        info "Port 8088 is responding — IT-Tools is healthy. ✅"
+for i in $(seq 1 24); do
+    if curl -sf --max-time 5 http://127.0.0.1:8098 &>/dev/null; then
+        info "Port 8098 is responding — Tubearchivist is healthy. ✅"
         HEALTH_OK=1
         break
     fi
-    echo -n "  Attempt $i/12 — waiting 5s..."
-    sleep 5
+    echo -n "  Attempt $i/24 — waiting 10s..."
+    sleep 10
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 8088 2>/dev/null; then
-        warn "Port 8088 is open but HTTP did not respond. Service may still be starting."
-        warn "Check logs: docker logs it-tools"
-    else
-        warn "Port 8088 is NOT responding after 60s."
-        warn "Check logs: docker logs it-tools"
-        docker logs --tail 20 it-tools 2>&1 || true
-    fi
+    warn "Tubearchivist may still be initializing. Check: docker logs tubearchivist"
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+section "Step 10: Opening Firewall Port 8098"
+if command -v ufw &> /dev/null; then
+    ufw allow 8098/tcp
+    info "UFW: port 8098/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
+fi
+
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open IT-Tools in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:8088"
+echo "  ║  🌐  Open Tubearchivist in your browser:          ║"
+echo "  ║      👉  http://$SERVER_IP:8098"
 echo "  ║                                                      ║"
-echo "  ║  🛠️  100+ tools: UUID gen, JWT decoder, base64,    ║"
-echo "  ║      hash, color picker, cron parser, and more.    ║"
+echo "  ║  🔑  Login Credentials (save these!):              ║"
+echo "  ║      Username : admin"
+echo "  ║      Password : $TA_PASS"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                   ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 
