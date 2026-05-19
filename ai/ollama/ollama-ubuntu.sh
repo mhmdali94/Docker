@@ -153,17 +153,104 @@ for i in $(seq 1 12); do
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    if nc -z 127.0.0.1 3210 2>/dev/null; then
-        warn "Port 3210 is open but not fully ready. Service may still be starting."
-        warn "Check logs: docker logs open-webui"
-    else
-        warn "Port 3210 is NOT responding after 60s."
-        warn "Check logs: docker logs open-webui"
-        docker logs --tail 20 open-webui 2>&1 || true
-    fi
+    warn "Open WebUI may still be starting. Check: docker logs open-webui"
 fi
 
-section "Step 10: Opening Firewall Ports"
+section "Step 10: Model Selection"
+echo ""
+echo "  ┌──────────────────────────────────────────────────────────────────┐"
+echo "  │  Select models to pull.                                          │"
+echo "  │  Enter numbers separated by spaces.  Example:  1 6 12           │"
+echo "  │  Models are downloaded from ollama.com — ensure internet access. │"
+echo "  ├──────────────────────────────────────────────────────────────────┤"
+echo "  │                                                                  │"
+echo "  │  ── General Purpose ──────────────────────────────────────────  │"
+echo "  │  [1]  llama3.2:3b           Fast, general chat         ~2 GB    │"
+echo "  │  [2]  llama3.2:1b           Very fast, lightweight     ~1 GB    │"
+echo "  │  [3]  mistral:7b            Strong reasoning           ~4 GB    │"
+echo "  │  [4]  gemma3:4b             Google Gemma 3, efficient  ~3 GB    │"
+echo "  │  [5]  qwen2.5:7b            Multilingual + Arabic      ~5 GB    │"
+echo "  │                                                                  │"
+echo "  │  ── Coding ───────────────────────────────────────────────────  │"
+echo "  │  [6]  qwen2.5-coder:7b      Best mid-size coder        ~5 GB    │"
+echo "  │  [7]  qwen2.5-coder:14b     Larger, stronger coder     ~9 GB    │"
+echo "  │  [8]  deepseek-coder-v2:16b Top overall coding model   ~10 GB   │"
+echo "  │  [9]  codellama:7b          Meta Code Llama 7B         ~4 GB    │"
+echo "  │  [10] codellama:13b         Meta Code Llama 13B        ~8 GB    │"
+echo "  │  [11] codegemma:7b          Google code model          ~5 GB    │"
+echo "  │  [12] starcoder2:7b         StarCoder2, multi-language ~4 GB    │"
+echo "  │  [13] devstral:24b          Mistral DevStral (agentic) ~15 GB   │"
+echo "  │                                                                  │"
+echo "  │  ── Reasoning / Math ─────────────────────────────────────────  │"
+echo "  │  [14] deepseek-r1:7b        Chain-of-thought reasoning ~5 GB    │"
+echo "  │  [15] deepseek-r1:14b       Strong reasoning + code    ~9 GB    │"
+echo "  │  [16] deepseek-r1:32b       Best open reasoning model  ~20 GB   │"
+echo "  │  [17] qwq:32b               Qwen QwQ reasoning         ~20 GB   │"
+echo "  │  [18] phi4:14b              Microsoft Phi-4 reasoning  ~9 GB    │"
+echo "  │                                                                  │"
+echo "  │  ── Multilingual (Arabic support) ────────────────────────────  │"
+echo "  │  [19] aya-expanse:8b        Cohere Aya, 23 languages   ~5 GB    │"
+echo "  │  [20] qwen2.5:14b           Strong Arabic + reasoning  ~9 GB    │"
+echo "  │                                                                  │"
+echo "  │  [0]  Skip — I will pull models manually later                  │"
+echo "  └──────────────────────────────────────────────────────────────────┘"
+echo ""
+read -rp "  Your selection: " MODEL_SELECTION
+
+declare -A MODEL_MAP
+MODEL_MAP[1]="llama3.2:3b"
+MODEL_MAP[2]="llama3.2:1b"
+MODEL_MAP[3]="mistral:7b"
+MODEL_MAP[4]="gemma3:4b"
+MODEL_MAP[5]="qwen2.5:7b"
+MODEL_MAP[6]="qwen2.5-coder:7b"
+MODEL_MAP[7]="qwen2.5-coder:14b"
+MODEL_MAP[8]="deepseek-coder-v2:16b"
+MODEL_MAP[9]="codellama:7b"
+MODEL_MAP[10]="codellama:13b"
+MODEL_MAP[11]="codegemma:7b"
+MODEL_MAP[12]="starcoder2:7b"
+MODEL_MAP[13]="devstral:24b"
+MODEL_MAP[14]="deepseek-r1:7b"
+MODEL_MAP[15]="deepseek-r1:14b"
+MODEL_MAP[16]="deepseek-r1:32b"
+MODEL_MAP[17]="qwq:32b"
+MODEL_MAP[18]="phi4:14b"
+MODEL_MAP[19]="aya-expanse:8b"
+MODEL_MAP[20]="qwen2.5:14b"
+
+PULLED_MODELS=()
+
+if [ "$MODEL_SELECTION" != "0" ] && [ -n "$MODEL_SELECTION" ]; then
+    info "Waiting for Ollama API to be ready..."
+    for i in $(seq 1 30); do
+        if curl -sf --max-time 3 http://127.0.0.1:11434 &>/dev/null; then
+            info "Ollama API is ready."
+            break
+        fi
+        sleep 2
+    done
+
+    for num in $MODEL_SELECTION; do
+        MODEL="${MODEL_MAP[$num]}"
+        if [ -n "$MODEL" ]; then
+            info "Pulling $MODEL — this may take several minutes..."
+            if docker exec ollama ollama pull "$MODEL"; then
+                info "$MODEL pulled successfully. ✅"
+                PULLED_MODELS+=("$MODEL")
+            else
+                warn "Failed to pull $MODEL. Pull it later: docker exec ollama ollama pull $MODEL"
+            fi
+        else
+            warn "Unknown selection: $num — skipped."
+        fi
+    done
+else
+    info "Skipping model pull. Pull models later:"
+    info "  docker exec ollama ollama pull <model-name>"
+fi
+
+section "Step 11: Opening Firewall Ports"
 if command -v ufw &> /dev/null; then
     ufw allow 11434/tcp
     ufw allow 3210/tcp
@@ -184,8 +271,23 @@ echo "  ║                                                      ║"
 echo "  ║  🤖  Ollama API:                                   ║"
 echo "  ║      👉  http://$SERVER_IP:11434"
 echo "  ║                                                      ║"
-echo "  ║  📦  Pull your first model:                        ║"
-echo "  ║      docker exec ollama ollama pull llama3.2        ║"
+
+if [ "${#PULLED_MODELS[@]}" -gt 0 ]; then
+    echo "  ║  📦  Models pulled:                                ║"
+    for m in "${PULLED_MODELS[@]}"; do
+        printf "  ║      ✅  %-42s ║\n" "$m"
+    done
+    echo "  ║                                                      ║"
+else
+    echo "  ║  📦  Pull a model:                                 ║"
+    echo "  ║      docker exec ollama ollama pull llama3.2:3b     ║"
+    echo "  ║      docker exec ollama ollama pull qwen2.5-coder:7b║"
+    echo "  ║                                                      ║"
+fi
+
+echo "  ║  💡  Coding model recommendation:                  ║"
+echo "  ║      qwen2.5-coder:7b  — best mid-size coder       ║"
+echo "  ║      deepseek-coder-v2:16b — strongest coder       ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
