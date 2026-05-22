@@ -4,60 +4,51 @@ Run AI models entirely on your own server. No cloud, no API keys, no usage fees.
 
 ## What is Ollama?
 
-Ollama is the **runtime engine** that runs AI models locally. You can't skip it — it's what actually executes the model. Think of it like a video player: the model is the video file, Ollama is the player.
+Ollama is the **runtime engine** that executes AI models locally. You can't skip it — it's what actually runs the model. Think of it like a video player: the model is the video file, Ollama is the player.
 
 The only large download is the **model itself**. Everything else is minimal.
 
 ---
 
-## Install Modes
-
-### Native Install — Recommended if you just want a model
-
-Ollama binary is ~50 MB. Fast, lightweight, no Docker required.
+## Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/ai/ollama/ollama-ubuntu.sh
 chmod +x ollama-ubuntu.sh
 sudo bash ollama-ubuntu.sh
-# → choose: Native install
 ```
 
-Or manually in 2 commands:
+The installer walks you through everything before downloading anything:
 
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull qwen2.5-coder:7b
-```
+1. **Your hardware** — CPU / NVIDIA GPU / AMD GPU + how much RAM or VRAM you have
+2. **Install type** — Ollama only, or Ollama + Open WebUI
+3. **Model selection** — pick exactly what you need, compatibility shown per model
+4. **Download summary** — total size + disk space check before anything starts
 
-### Docker Install — If you want containers and easy management
-
-Pulls the full Ollama Docker image (~1.5 GB). Use this if you need portability, want to manage it with Compose, or are running multiple services together.
-
-```bash
-sudo bash ollama-ubuntu.sh
-# → choose: Docker install
-```
+Nothing downloads until you confirm.
 
 ---
 
-## What Gets Downloaded
+## Install Modes
 
-| What | Native | Docker |
+| Mode | Ollama size | Use when |
 | --- | --- | --- |
-| Ollama runtime | ~50 MB | ~1.5 GB image |
-| Open WebUI (optional) | — | ~2.5 GB image |
-| Your chosen model | same | same |
+| Native (direct on server) | ~50 MB binary | You just want to run models |
+| Docker | ~1.5 GB image | You want container management |
 
-The model is always the biggest download — see sizes below.
+> **Just want one model?** Native install is the right choice. Two commands:
+> ```bash
+> curl -fsSL https://ollama.com/install.sh | sh
+> ollama pull qwen2.5-coder:7b
+> ```
 
 ---
 
 ## Open WebUI (optional)
 
-A ChatGPT-like interface on top of Ollama. **Not required** — Ollama works perfectly as a standalone API without it.
+A ChatGPT-like browser interface on top of Ollama. **Not required.**
 
-Install it if you want a browser-based chat UI. Skip it if you're using Ollama headlessly or connecting it to VS Code / Cline / Continue.
+Skip it if you're using Ollama via API or connecting it to a VS Code extension (Cline, Continue, KiloCode). Install it if you want a chat UI in the browser.
 
 | Service | Port |
 | --- | --- |
@@ -66,9 +57,47 @@ Install it if you want a browser-based chat UI. Skip it if you're using Ollama h
 
 ---
 
-## Models
+## GPU Support
 
-The installer shows a compatibility table based on your hardware. Only models that fit your RAM or VRAM are marked ✅.
+The installer detects your GPU type and configures Docker automatically.
+
+| Hardware | What the installer does |
+| --- | --- |
+| NVIDIA (CUDA) | Checks for NVIDIA Container Toolkit, offers to install it, enables `--gpus all` |
+| AMD (ROCm) | Uses `ollama/ollama:rocm` image, passes `/dev/kfd` + `/dev/dri` |
+| CPU only | Standard setup, no extras |
+
+GPU users get 5–10× faster responses. For daily coding use, GPU is strongly recommended.
+
+---
+
+## Model Compatibility
+
+The installer shows a live compatibility table based on your hardware:
+
+| Indicator | Meaning |
+| --- | --- |
+| ✅ OK | Fits your RAM / VRAM — runs well |
+| ⚠️ Needs X GB | Exceeds your RAM — will use disk swap, very slow |
+| ❌ Need X GB VRAM | Exceeds GPU VRAM — GPU hard limit |
+
+**CPU users can still install ⚠️ models.** The installer will warn you first:
+
+```
+  ⚠️   CAUTION — Models exceed your available RAM
+  ║  qwen2.5-coder:14b  needs 16 GB — you have 8 GB
+  ║
+  ║  These models WILL run but will spill into disk swap.
+  ║    • Very slow responses (minutes per reply)
+  ║    • High disk I/O — SSD strongly recommended
+  ║    • Risk of OOM crash on severely under-spec servers
+```
+
+You can confirm and install anyway, or decline to remove them from your selection.
+
+---
+
+## Models
 
 ### General Purpose
 
@@ -110,29 +139,53 @@ The installer shows a compatibility table based on your hardware. Only models th
 | 19 | `aya-expanse:8b` | ~5 GB | 10 GB | 6 GB | Medium |
 | 20 | `qwen2.5:14b` | ~9 GB | 16 GB | 10 GB | Slow |
 
-> **CPU Speed** = inference speed on CPU only. GPU users get 5–10× faster responses regardless of rating.
+---
+
+## Disk Space Check
+
+Before downloading, the installer calculates the total required space (with a 20% buffer) and checks your available disk space:
+
+```
+  │  Space required  (with 20% buffer): ~8 GB         │
+  │  Space available (on /var/lib/docker): 3 GB        │
+  │  ❌ Not enough space — free up ~5 GB first.        │
+```
+
+If there isn't enough space, it warns you with exactly how many GB to free up.
 
 ---
 
-## GPU Support
+## Swap & Memory — Why It Matters
 
-The installer detects your hardware and configures everything automatically.
+Ollama calculates available memory using `MemFree + Buffers` — **not** the `MemAvailable` figure that Linux and `free -h` report. On a busy server, `MemFree` can be very low even when the system has gigabytes of reclaimable page cache, causing Ollama to refuse loading a model with an error like:
 
-| GPU | What changes |
-| --- | --- |
-| NVIDIA (CUDA) | Installs NVIDIA Container Toolkit, enables `--gpus all` |
-| AMD (ROCm) | Uses `ollama/ollama:rocm` image, passes `/dev/kfd` + `/dev/dri` |
-| CPU only | Standard setup, no extras needed |
+```
+Error: model requires more system memory (4.3 GiB) than is available (3.0 GiB)
+```
 
-**Minimum RAM / VRAM guide:**
+The installer handles this in two ways:
 
-| Model size | CPU RAM | GPU VRAM |
-| --- | --- | --- |
-| 1–3B | 4–8 GB | 2–3 GB |
-| 7–8B | 8–10 GB | 6 GB |
-| 13–14B | 16 GB | 10 GB |
-| 16–24B | 20–32 GB | 12–16 GB |
-| 32B+ | 40 GB+ | 20 GB+ |
+**1 — Sets up a swapfile (recommended, asked during install)**
+
+Ollama counts swap as available memory. An 8 GB swapfile on an 8 GB server gives Ollama the headroom it needs and prevents OOM crashes when running large models.
+
+```bash
+fallocate -l 8G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab   # persist across reboots
+```
+
+**2 — Drops the page cache before pulling models**
+
+Releases cached pages so `MemFree` jumps from a few hundred MB to several GB, giving Ollama an accurate picture of what RAM is actually available.
+
+```bash
+sync && echo 3 > /proc/sys/vm/drop_caches
+```
+
+If you hit the memory error on an existing install, run both commands above manually then retry.
 
 ---
 
@@ -140,16 +193,16 @@ The installer detects your hardware and configures everything automatically.
 
 ```bash
 # List installed models
-ollama list                                      # native
-docker exec ollama ollama list                   # docker
+ollama list                                       # native
+docker exec ollama ollama list                    # docker
 
 # Pull a model
-ollama pull qwen2.5-coder:7b                     # native
-docker exec ollama ollama pull qwen2.5-coder:7b  # docker
+ollama pull qwen2.5-coder:7b                      # native
+docker exec ollama ollama pull qwen2.5-coder:7b   # docker
 
 # Remove a model
-ollama rm qwen2.5-coder:7b                       # native
-docker exec ollama ollama rm qwen2.5-coder:7b    # docker
+ollama rm qwen2.5-coder:7b                        # native
+docker exec ollama ollama rm qwen2.5-coder:7b     # docker
 ```
 
 ---
@@ -161,14 +214,14 @@ Use **OpenAI Compatible** as the provider:
 | Field | Value |
 | --- | --- |
 | Base URL | `http://<server-ip>:11434/v1` |
-| API Key | `ollama` (any non-empty value works) |
+| API Key | `ollama` (any non-empty value) |
 | Model ID | e.g. `qwen2.5-coder:7b` |
 
 > The `/v1` suffix is required.
 
 **Recommended models for VS Code extensions:**
 
-| Model | VRAM | Best for |
+| Model | Min VRAM | Best for |
 | --- | --- | --- |
 | `qwen2.5-coder:7b` | 6 GB | Fast everyday coding |
 | `qwen2.5-coder:14b` | 10 GB | Stronger, larger context |
@@ -179,6 +232,7 @@ Use **OpenAI Compatible** as the provider:
 
 ## Notes
 
-- Models persist across restarts (stored in `~/.ollama` for native, `./ollama/` for Docker)
-- On CPU, 7B models are usable but not fast — GPU is strongly recommended for daily use
-- Open WebUI also supports connecting external APIs (OpenAI, Anthropic) if you want a unified chat interface
+- Models persist across restarts (`~/.ollama` for native · `./ollama/` for Docker)
+- On CPU, 7B models are usable but not fast — GPU strongly recommended for daily use
+- Running models larger than your RAM works but is very slow (disk swap) — SSD required
+- Open WebUI also supports external APIs (OpenAI, Anthropic) as an alternative to local models

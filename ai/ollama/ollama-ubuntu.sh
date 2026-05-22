@@ -196,7 +196,7 @@ if [ "$USE_GPU" = true ]; then
     echo "  ─────────────────────────────────────────────────────────────────"
 else
     echo -e "  ${B}Hardware: CPU only — ${USER_MEM} GB RAM${RST}"
-    echo -e "  ${G}✅ OK${RST} = fits in your RAM   ${R}❌ Need X GB${RST} = exceeds your RAM"
+    echo -e "  ${G}✅ OK${RST} = fits your RAM   ${Y}⚠️  Needs X GB${RST} = will use swap (slow)   ${R}❌${RST} = GPU only limit"
     echo ""
     printf "  ${B}%-5s %-28s %-8s %-9s %-13s %s${RST}\n" "Num" "Model" "DL" "Min RAM" "CPU Speed" "Status"
     echo "  ─────────────────────────────────────────────────────────────────────────"
@@ -219,8 +219,10 @@ for i in $(seq 1 $MODEL_TOTAL); do
 
     if [ "$USER_MEM" -ge "$REQ" ]; then
         STATUS="${G}✅ OK${RST}"
+    elif [ "$USE_GPU" = true ]; then
+        STATUS="${R}❌ Need ${REQ} GB VRAM${RST}"
     else
-        STATUS="${R}❌ Need ${REQ} GB${RST}"
+        STATUS="${Y}⚠️  Needs ${REQ} GB RAM (will use swap — very slow)${RST}"
     fi
 
     if [ "$USE_GPU" = true ]; then
@@ -238,12 +240,69 @@ echo "  [0]  Skip — pull models manually later"
 echo ""
 read -rp "  Your selection (e.g. 1 6 14): " MODEL_SELECTION
 
+# Warn CPU users who selected models that exceed their RAM
+if [ "$USE_GPU" = false ] && [ "$MODEL_SELECTION" != "0" ] && [ -n "$MODEL_SELECTION" ]; then
+    OVER_SPEC=()
+    for num in $MODEL_SELECTION; do
+        if [ -n "${MODEL_MAP[$num]}" ] && [ "${MODEL_RAM[$num]}" -gt "$USER_MEM" ]; then
+            OVER_SPEC+=("$num")
+        fi
+    done
+
+    if [ "${#OVER_SPEC[@]}" -gt 0 ]; then
+        echo ""
+        echo -e "  ${Y}╔══════════════════════════════════════════════════════════════╗${RST}"
+        echo -e "  ${Y}║  ⚠️   CAUTION — Models exceed your available RAM             ║${RST}"
+        echo -e "  ${Y}╠══════════════════════════════════════════════════════════════╣${RST}"
+        echo -e "  ${Y}║                                                              ║${RST}"
+        for num in "${OVER_SPEC[@]}"; do
+            DEFICIT=$((MODEL_RAM[$num] - USER_MEM))
+            printf "  ${Y}║${RST}  %-28s needs %2s GB — you have %2s GB  ${Y}║${RST}\n" \
+                "${MODEL_MAP[$num]}" "${MODEL_RAM[$num]}" "${USER_MEM}"
+        done
+        echo -e "  ${Y}║                                                              ║${RST}"
+        echo -e "  ${Y}║  These models WILL run but will spill into disk swap.        ║${RST}"
+        echo -e "  ${Y}║  Expect:                                                     ║${RST}"
+        echo -e "  ${Y}║    • Very slow responses (minutes per reply)                 ║${RST}"
+        echo -e "  ${Y}║    • High disk I/O — SSD strongly recommended                ║${RST}"
+        echo -e "  ${Y}║    • Risk of OOM crash on severely under-spec servers        ║${RST}"
+        echo -e "  ${Y}║                                                              ║${RST}"
+        echo -e "  ${Y}╚══════════════════════════════════════════════════════════════╝${RST}"
+        echo ""
+        read -rp "  Install these models anyway? [y/N]: " _OVER_CONFIRM
+        case "$_OVER_CONFIRM" in
+            [yY][eE][sS]|[yY]) warn "Proceeding with over-spec models. You have been warned." ;;
+            *)
+                # Remove over-spec models from selection
+                NEW_SELECTION=""
+                for num in $MODEL_SELECTION; do
+                    KEEP=true
+                    for over in "${OVER_SPEC[@]}"; do
+                        [ "$num" = "$over" ] && KEEP=false && break
+                    done
+                    [ "$KEEP" = true ] && NEW_SELECTION="$NEW_SELECTION $num"
+                done
+                MODEL_SELECTION="${NEW_SELECTION# }"
+                info "Over-spec models removed. Continuing with: ${MODEL_SELECTION:-none}"
+                ;;
+        esac
+    fi
+fi
+
 # ─────────────────────────────────────────────────────────────────────
 
 section "Step 7: Download Summary"
 echo ""
 echo -e "  ${B}Everything that will be downloaded and installed:${RST}"
 echo ""
+
+# Calculate total space needed
+if [ "$GPU_TYPE" = "amd" ]; then
+    SPACE_NEEDED=3
+else
+    SPACE_NEEDED=2
+fi
+[ "$INSTALL_WEBUI" = true ] && SPACE_NEEDED=$((SPACE_NEEDED + 3))
 
 if [ "$USE_GPU" = true ]; then
     if [ "$GPU_TYPE" = "amd" ]; then
@@ -263,8 +322,37 @@ if [ "$MODEL_SELECTION" != "0" ] && [ -n "$MODEL_SELECTION" ]; then
         MODEL="${MODEL_MAP[$num]}"
         if [ -n "$MODEL" ]; then
             printf "    • %-30s ~%s GB\n" "$MODEL" "${MODEL_DL[$num]}"
+            SPACE_NEEDED=$((SPACE_NEEDED + MODEL_DL[$num]))
         fi
     done
+fi
+
+# Add 20% buffer to space estimate
+SPACE_NEEDED=$((SPACE_NEEDED + SPACE_NEEDED / 5))
+
+# Check available disk space on Docker's storage path
+DOCKER_DIR="/var/lib/docker"
+[ ! -d "$DOCKER_DIR" ] && DOCKER_DIR="/"
+AVAIL_SPACE=$(df -BG "$DOCKER_DIR" 2>/dev/null | awk 'NR==2 {gsub(/G/,"",$4); print int($4)}')
+
+echo ""
+echo "  ┌──────────────────────────────────────────────────────┐"
+printf "  │  Space required  (with 20%% buffer): %-14s │\n" "~${SPACE_NEEDED} GB"
+printf "  │  Space available (on %-16s): %-14s │\n" "$DOCKER_DIR" "${AVAIL_SPACE} GB"
+if [ "$AVAIL_SPACE" -lt "$SPACE_NEEDED" ]; then
+    NEED_MORE=$((SPACE_NEEDED - AVAIL_SPACE))
+    echo "  │                                                      │"
+    printf "  │  ${R}❌ Not enough space — free up ~%s GB first.${RST}%-6s│\n" "$NEED_MORE" " "
+    echo "  └──────────────────────────────────────────────────────┘"
+    echo ""
+    read -rp "  Continue anyway? [y/N]: " _SPACE_CONFIRM
+    case "$_SPACE_CONFIRM" in
+        [yY][eE][sS]|[yY]) warn "Continuing despite low disk space..." ;;
+        *) info "Aborted. Free up disk space and run again."; exit 0 ;;
+    esac
+else
+    echo -e "  │  ${G}✅ Enough disk space.${RST}                                │"
+    echo "  └──────────────────────────────────────────────────────┘"
 fi
 
 echo ""
@@ -453,7 +541,59 @@ if [ "$INSTALL_WEBUI" = true ]; then
     [ "$HEALTH_OK" -eq 0 ] && warn "Open WebUI may still be starting. Check: docker logs open-webui"
 fi
 
-section "Step 15: Pulling Models"
+section "Step 15: Swap & Memory Preparation"
+
+# ── Swap setup ────────────────────────────────────────────────────────
+# Ollama calculates available memory as MemFree + Buffers (not MemAvailable).
+# On servers with little free RAM but lots of page cache, Ollama will refuse
+# to load models even when Linux reports plenty of available memory.
+# Swap gives Ollama the headroom it needs and prevents OOM on tight servers.
+
+SWAP_TOTAL=$(free -m | awk '/Swap/ {print $2}')
+if [ "$SWAP_TOTAL" -gt 0 ]; then
+    info "Swap already configured: ${SWAP_TOTAL} MB — skipping swap setup."
+else
+    warn "No swap detected. Ollama may fail to load models without swap."
+    echo ""
+    echo "  Recommended: 8 GB swapfile (matches your RAM size)"
+    echo "  This is written to /swapfile and persists across reboots."
+    echo ""
+    read -rp "  Set up 8 GB swap now? [Y/n]: " _SWAP_CONFIRM
+    case "$_SWAP_CONFIRM" in
+        [nN][oO]|[nN])
+            warn "Swap skipped. If Ollama fails to load a model, run:"
+            warn "  fallocate -l 8G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile"
+            ;;
+        *)
+            if [ -f /swapfile ]; then
+                warn "/swapfile already exists — reusing it."
+                swapon /swapfile 2>/dev/null || true
+            else
+                info "Creating 8 GB swapfile..."
+                fallocate -l 8G /swapfile
+                chmod 600 /swapfile
+                mkswap /swapfile
+                swapon /swapfile
+                # Persist across reboots
+                if ! grep -q '/swapfile' /etc/fstab; then
+                    echo '/swapfile none swap sw 0 0' >> /etc/fstab
+                fi
+            fi
+            SWAP_NOW=$(free -m | awk '/Swap/ {print $2}')
+            info "Swap active: ${SWAP_NOW} MB ✅"
+            ;;
+    esac
+fi
+
+# ── Drop page cache ───────────────────────────────────────────────────
+# Force Linux to release cached pages so MemFree jumps up.
+# Ollama reads MemFree + Buffers — not the higher MemAvailable figure.
+MEM_BEFORE=$(awk '/MemFree/ {printf "%d", $2/1024}' /proc/meminfo)
+sync && echo 3 > /proc/sys/vm/drop_caches
+MEM_AFTER=$(awk '/MemFree/ {printf "%d", $2/1024}' /proc/meminfo)
+info "Page cache cleared: ${MEM_BEFORE} MB → ${MEM_AFTER} MB free ✅"
+
+section "Step 16: Pulling Models"
 PULLED_MODELS=()
 if [ "$MODEL_SELECTION" != "0" ] && [ -n "$MODEL_SELECTION" ]; then
     info "Waiting for Ollama API..."
@@ -483,7 +623,7 @@ else
     info "  docker exec ollama ollama pull <model-name>"
 fi
 
-section "Step 16: Opening Firewall Ports"
+section "Step 17: Opening Firewall Ports"
 if command -v ufw &> /dev/null; then
     ufw allow 11434/tcp
     [ "$INSTALL_WEBUI" = true ] && ufw allow 3210/tcp
