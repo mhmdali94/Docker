@@ -12,27 +12,32 @@ sudo bash ollama-ubuntu.sh
 
 ## What It Installs
 
-- **Ollama** — local LLM runtime and API server
+- **Ollama** — local LLM runtime and API server (listens on all interfaces via `OLLAMA_HOST=0.0.0.0`)
 - **Open WebUI** — ChatGPT-like web interface connected to Ollama
-
-## Credentials
-
-| Field | Value |
-| --- | --- |
-| Open WebUI URL | http://\<server-ip\>:3210 |
-| Ollama API URL | http://\<server-ip\>:11434 |
-| Login | Create admin account on first visit |
 
 ## Ports
 
 | Port | Service |
 | --- | --- |
-| 3210 | Open WebUI |
+| 3210 | Open WebUI (chat interface) |
 | 11434 | Ollama API |
+
+## Access
+
+| | URL |
+| --- | --- |
+| Open WebUI | `http://<server-ip>:3210` |
+| Ollama API | `http://<server-ip>:11434` |
+
+Create your admin account on first visit to Open WebUI.
 
 ## Model Selection (during install)
 
-The installer presents an interactive menu. Enter numbers separated by spaces to pull multiple models. Example: `1 6 14` pulls llama3.2:3b + qwen2.5-coder:7b + deepseek-r1:7b.
+The installer presents an interactive menu. Enter numbers separated by spaces to pull multiple models.
+
+Example: `1 6 14` pulls `llama3.2:3b` + `qwen2.5-coder:7b` + `deepseek-r1:7b`
+
+Enter `0` to skip and pull models manually later.
 
 ### General Purpose
 
@@ -77,28 +82,41 @@ The installer presents an interactive menu. Enter numbers separated by spaces to
 ## Pull Models Manually
 
 ```bash
-# General
-docker exec ollama ollama pull llama3.2:3b
-docker exec ollama ollama pull mistral:7b
-
-# Coding
-docker exec ollama ollama pull qwen2.5-coder:7b
-docker exec ollama ollama pull deepseek-coder-v2:16b
-docker exec ollama ollama pull codellama:7b
-
-# Reasoning
-docker exec ollama ollama pull deepseek-r1:7b
-
 # List installed models
 docker exec ollama ollama list
+
+# Pull a model
+docker exec ollama ollama pull qwen2.5-coder:7b
 
 # Remove a model
 docker exec ollama ollama rm <model-name>
 ```
 
+## Connecting VS Code Extensions (KiloCode, Cline, Continue)
+
+Ollama exposes an OpenAI-compatible API. Use **OpenAI Compatible** as the provider in your extension:
+
+| Field | Value |
+| --- | --- |
+| Provider | OpenAI Compatible |
+| Base URL | `http://<server-ip>:11434/v1` |
+| API Key | `ollama` (any non-empty value) |
+| Model ID | e.g. `qwen2.5-coder:7b` |
+
+> The `/v1` suffix is required — the extension appends `/chat/completions` to whatever base URL you set.
+
+**Recommended coding models for VS Code extensions:**
+
+| Model | RAM needed | Best for |
+| --- | --- | --- |
+| `qwen2.5-coder:7b` | 8 GB | Fast everyday coding |
+| `qwen2.5-coder:14b` | 16 GB | Stronger, larger context |
+| `deepseek-coder-v2:16b` | 20 GB | Top quality |
+| `devstral:24b` | 32 GB | Agentic multi-file tasks |
+
 ## Notes
 
 - Models are stored in `./ollama` and persist across container restarts
-- Recommended minimum RAM: 8 GB for 7B models, 16 GB for 13-16B models, 32 GB+ for 32B models
+- Minimum RAM: 8 GB for 7B models · 16 GB for 13–16B models · 32 GB+ for 32B models
 - GPU acceleration is supported — see the [Ollama Docker docs](https://hub.docker.com/r/ollama/ollama) for NVIDIA/AMD setup
 - Open WebUI also supports connecting external APIs (OpenAI, Anthropic) alongside local models

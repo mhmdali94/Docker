@@ -147,11 +147,17 @@ info "docker-compose.yml created."
 warn "Edit $WP_DIR/docker-compose.yml to configure your OAuth provider before first login."
 
 section "Step 7: Starting Woodpecker CI"
-if docker compose version &> /dev/null; then
-    docker compose up -d
-else
-    docker-compose up -d
-fi
+MAX_RETRIES=3
+for attempt in $(seq 1 $MAX_RETRIES); do
+    if docker compose version &> /dev/null; then
+        docker compose up -d && break
+    else
+        docker-compose up -d && break
+    fi
+    warn "Docker pull failed on attempt $attempt/$MAX_RETRIES (registry may be temporarily unavailable)."
+    [ "$attempt" -lt "$MAX_RETRIES" ] && info "Retrying in 15s..." && sleep 15
+    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed to start after $MAX_RETRIES attempts. Run manually: cd $PWD && docker compose up -d"
+done
 
 section "Step 8: Verifying Containers"
 sleep 6

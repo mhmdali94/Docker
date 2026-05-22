@@ -112,11 +112,17 @@ info "docker-compose.yml created."
 info "Schedule: daily at 04:00 UTC. Old images will be removed after update."
 
 section "Step 7: Starting Watchtower"
-if docker compose version &> /dev/null; then
-    docker compose up -d
-else
-    docker-compose up -d
-fi
+MAX_RETRIES=3
+for attempt in $(seq 1 $MAX_RETRIES); do
+    if docker compose version &> /dev/null; then
+        docker compose up -d && break
+    else
+        docker-compose up -d && break
+    fi
+    warn "Docker pull failed on attempt $attempt/$MAX_RETRIES (registry may be temporarily unavailable)."
+    [ "$attempt" -lt "$MAX_RETRIES" ] && info "Retrying in 15s..." && sleep 15
+    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed to start after $MAX_RETRIES attempts. Run manually: cd $PWD && docker compose up -d"
+done
 
 section "Step 8: Verifying Container"
 sleep 5

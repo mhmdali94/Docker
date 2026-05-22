@@ -103,6 +103,8 @@ services:
     restart: unless-stopped
     ports:
       - "11434:11434"
+    environment:
+      OLLAMA_HOST: 0.0.0.0
     volumes:
       - ./ollama:/root/.ollama
 
