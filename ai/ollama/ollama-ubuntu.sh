@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ============================================================
-#   Ollama + Open WebUI Auto-Installer
+#   Ollama Auto-Installer (+ optional Open WebUI)
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
 #
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
@@ -10,42 +10,71 @@
 
 set -e
 
-info()    { echo -e "\e[32m[INFO]\e[0m $*"; }
-warn()    { echo -e "\e[33m[WARN]\e[0m $*"; }
-error()   { echo -e "\e[31m[ERROR]\e[0m $*"; exit 1; }
-section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
+# ── Colors & helpers ─────────────────────────────────────────────────
+G="\e[32m"; Y="\e[33m"; R="\e[31m"; C="\e[36m"; B="\e[1m"; RST="\e[0m"
+info()    { echo -e "${G}[INFO]${RST} $*"; }
+warn()    { echo -e "${Y}[WARN]${RST} $*"; }
+error()   { echo -e "${R}[ERROR]${RST} $*"; exit 1; }
+section() { echo -e "\n${C}${B}══════════════════════ $* ══════════════════════${RST}"; }
+
+# ── Model registry ────────────────────────────────────────────────────
+#   MODEL_DL   = download size (GB, approx)
+#   MODEL_RAM  = minimum RAM for CPU inference (GB)
+#   MODEL_VRAM = minimum VRAM for GPU inference (GB)
+#   MODEL_SPEED= CPU inference speed rating
+#   MODEL_CAT  = display category
+
+declare -A MODEL_MAP MODEL_DL MODEL_RAM MODEL_VRAM MODEL_SPEED MODEL_CAT
+
+MODEL_MAP[1]="llama3.2:3b"           MODEL_DL[1]=2   MODEL_RAM[1]=8   MODEL_VRAM[1]=3   MODEL_SPEED[1]="Fast"       MODEL_CAT[1]="General"
+MODEL_MAP[2]="llama3.2:1b"           MODEL_DL[2]=1   MODEL_RAM[2]=4   MODEL_VRAM[2]=2   MODEL_SPEED[2]="Very Fast"  MODEL_CAT[2]="General"
+MODEL_MAP[3]="mistral:7b"            MODEL_DL[3]=4   MODEL_RAM[3]=8   MODEL_VRAM[3]=6   MODEL_SPEED[3]="Medium"     MODEL_CAT[3]="General"
+MODEL_MAP[4]="gemma3:4b"             MODEL_DL[4]=3   MODEL_RAM[4]=6   MODEL_VRAM[4]=4   MODEL_SPEED[4]="Fast"       MODEL_CAT[4]="General"
+MODEL_MAP[5]="qwen2.5:7b"            MODEL_DL[5]=5   MODEL_RAM[5]=8   MODEL_VRAM[5]=6   MODEL_SPEED[5]="Medium"     MODEL_CAT[5]="General"
+MODEL_MAP[6]="qwen2.5-coder:7b"      MODEL_DL[6]=5   MODEL_RAM[6]=8   MODEL_VRAM[6]=6   MODEL_SPEED[6]="Medium"     MODEL_CAT[6]="Coding"
+MODEL_MAP[7]="qwen2.5-coder:14b"     MODEL_DL[7]=9   MODEL_RAM[7]=16  MODEL_VRAM[7]=10  MODEL_SPEED[7]="Slow"       MODEL_CAT[7]="Coding"
+MODEL_MAP[8]="deepseek-coder-v2:16b" MODEL_DL[8]=10  MODEL_RAM[8]=20  MODEL_VRAM[8]=12  MODEL_SPEED[8]="Slow"       MODEL_CAT[8]="Coding"
+MODEL_MAP[9]="codellama:7b"          MODEL_DL[9]=4   MODEL_RAM[9]=8   MODEL_VRAM[9]=6   MODEL_SPEED[9]="Medium"     MODEL_CAT[9]="Coding"
+MODEL_MAP[10]="codellama:13b"        MODEL_DL[10]=8  MODEL_RAM[10]=16 MODEL_VRAM[10]=10 MODEL_SPEED[10]="Slow"      MODEL_CAT[10]="Coding"
+MODEL_MAP[11]="codegemma:7b"         MODEL_DL[11]=5  MODEL_RAM[11]=8  MODEL_VRAM[11]=6  MODEL_SPEED[11]="Medium"    MODEL_CAT[11]="Coding"
+MODEL_MAP[12]="starcoder2:7b"        MODEL_DL[12]=4  MODEL_RAM[12]=8  MODEL_VRAM[12]=6  MODEL_SPEED[12]="Medium"    MODEL_CAT[12]="Coding"
+MODEL_MAP[13]="devstral:24b"         MODEL_DL[13]=15 MODEL_RAM[13]=32 MODEL_VRAM[13]=16 MODEL_SPEED[13]="Very Slow" MODEL_CAT[13]="Coding"
+MODEL_MAP[14]="deepseek-r1:7b"       MODEL_DL[14]=5  MODEL_RAM[14]=8  MODEL_VRAM[14]=6  MODEL_SPEED[14]="Medium"    MODEL_CAT[14]="Reasoning"
+MODEL_MAP[15]="deepseek-r1:14b"      MODEL_DL[15]=9  MODEL_RAM[15]=16 MODEL_VRAM[15]=10 MODEL_SPEED[15]="Slow"      MODEL_CAT[15]="Reasoning"
+MODEL_MAP[16]="deepseek-r1:32b"      MODEL_DL[16]=20 MODEL_RAM[16]=40 MODEL_VRAM[16]=20 MODEL_SPEED[16]="Very Slow" MODEL_CAT[16]="Reasoning"
+MODEL_MAP[17]="qwq:32b"              MODEL_DL[17]=20 MODEL_RAM[17]=40 MODEL_VRAM[17]=20 MODEL_SPEED[17]="Very Slow" MODEL_CAT[17]="Reasoning"
+MODEL_MAP[18]="phi4:14b"             MODEL_DL[18]=9  MODEL_RAM[18]=16 MODEL_VRAM[18]=10 MODEL_SPEED[18]="Slow"      MODEL_CAT[18]="Reasoning"
+MODEL_MAP[19]="aya-expanse:8b"       MODEL_DL[19]=5  MODEL_RAM[19]=10 MODEL_VRAM[19]=6  MODEL_SPEED[19]="Medium"    MODEL_CAT[19]="Multilingual"
+MODEL_MAP[20]="qwen2.5:14b"          MODEL_DL[20]=9  MODEL_RAM[20]=16 MODEL_VRAM[20]=10 MODEL_SPEED[20]="Slow"      MODEL_CAT[20]="Multilingual"
+MODEL_TOTAL=20
+
+# ─────────────────────────────────────────────────────────────────────
 
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║     Ollama + Open WebUI Auto-Installer           ║"
+echo "  ║     Ollama Auto-Installer                        ║"
 echo "  ║     Made by: Mohammed Ali Elshikh               ║"
 echo "  ║     prismatechwork.com                          ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-
-echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
-echo "  ║                                                      ║"
-echo "  ║  ⚠️   DEMO / TESTING USE ONLY                        ║"
-echo "  ║                                                      ║"
 echo "  ║  This installer is intended for demo and testing.   ║"
 echo "  ║  For a production-ready, hardened setup contact:    ║"
 echo "  ║                                                      ║"
-echo "  ║  👨‍💻  Mohammed Ali Elshikh                            ║"
-echo "  ║  🌐  prismatechwork.com                              ║"
+echo "  ║  👨‍💻  Mohammed Ali Elshikh  |  prismatechwork.com    ║"
 echo "  ║                                                      ║"
-echo "  ║  Press ENTER to continue with demo install...       ║"
-echo "  ║  Press Ctrl+C to cancel.                            ║"
-echo "  ║                                                      ║"
+echo "  ║  Press ENTER to continue ...  Ctrl+C to cancel.    ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
 read -rp "" _DEMO_CONFIRM
 
+# ─────────────────────────────────────────────────────────────────────
+
 section "Step 0: Checking Privileges"
-if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
+[ "$EUID" -ne 0 ] && error "Please run as root: sudo bash $0"
 info "Running as root. OK."
 
 section "Step 1: Verifying OS"
@@ -74,7 +103,182 @@ else
     info "Docker Compose: $(docker compose version)"
 fi
 
-section "Step 4: Cleaning Up Existing Containers"
+# ─────────────────────────────────────────────────────────────────────
+
+section "Step 4: Your Hardware"
+echo ""
+echo "  What type of hardware is this server running?"
+echo ""
+echo "  [1]  CPU only       No GPU — works on any server, slower inference"
+echo "  [2]  NVIDIA GPU     CUDA acceleration — fastest option"
+echo "  [3]  AMD GPU        ROCm acceleration — experimental"
+echo ""
+read -rp "  Your hardware [1/2/3]: " HW_CHOICE
+
+case "$HW_CHOICE" in
+    2) USE_GPU=true;  GPU_TYPE="nvidia"; info "NVIDIA GPU selected." ;;
+    3) USE_GPU=true;  GPU_TYPE="amd";    info "AMD GPU (ROCm) selected." ;;
+    *) USE_GPU=false; GPU_TYPE="cpu";    info "CPU-only selected." ;;
+esac
+
+echo ""
+if [ "$USE_GPU" = true ]; then
+    echo "  How much VRAM does your GPU have?"
+    echo ""
+    echo "  [1]  4 GB   (GTX 1650, RX 570)"
+    echo "  [2]  6 GB   (RTX 3060, RX 6600)"
+    echo "  [3]  8 GB   (RTX 3070, RX 6700)"
+    echo "  [4]  10 GB  (RTX 3080 10GB)"
+    echo "  [5]  12 GB  (RTX 3060 Ti, RX 7700)"
+    echo "  [6]  16 GB  (RTX 4080, RX 7900 GRE)"
+    echo "  [7]  24 GB+ (RTX 3090, RTX 4090, A100)"
+    echo ""
+    read -rp "  Your VRAM [1-7]: " MEM_CHOICE
+    case "$MEM_CHOICE" in
+        1) USER_MEM=4  ;;
+        2) USER_MEM=6  ;;
+        3) USER_MEM=8  ;;
+        4) USER_MEM=10 ;;
+        5) USER_MEM=12 ;;
+        6) USER_MEM=16 ;;
+        7) USER_MEM=24 ;;
+        *) USER_MEM=8  ;;
+    esac
+    info "GPU VRAM: ${USER_MEM} GB"
+else
+    echo "  How much RAM does your server have?"
+    echo ""
+    echo "  [1]  4 GB    (minimal — only tiny models)"
+    echo "  [2]  8 GB    (entry — 7B models)"
+    echo "  [3]  16 GB   (comfortable — up to 14B)"
+    echo "  [4]  24 GB   (good — up to 16B)"
+    echo "  [5]  32 GB   (large — up to 24B)"
+    echo "  [6]  48 GB+  (high-end — 32B+ models)"
+    echo ""
+    read -rp "  Your RAM [1-6]: " MEM_CHOICE
+    case "$MEM_CHOICE" in
+        1) USER_MEM=4  ;;
+        2) USER_MEM=8  ;;
+        3) USER_MEM=16 ;;
+        4) USER_MEM=24 ;;
+        5) USER_MEM=32 ;;
+        6) USER_MEM=48 ;;
+        *) USER_MEM=8  ;;
+    esac
+    info "Server RAM: ${USER_MEM} GB"
+fi
+
+# ─────────────────────────────────────────────────────────────────────
+
+section "Step 5: Installation Type"
+echo ""
+echo "  What do you want to install?"
+echo ""
+echo "  [1]  Ollama + Open WebUI   Chat interface included   ~4 GB Docker images"
+echo "  [2]  Ollama only           API server only           ~1.5 GB Docker image"
+echo ""
+read -rp "  Your choice [1/2]: " INSTALL_CHOICE
+case "$INSTALL_CHOICE" in
+    2) INSTALL_WEBUI=false; info "Ollama only selected." ;;
+    *) INSTALL_WEBUI=true;  info "Ollama + Open WebUI selected." ;;
+esac
+
+# ─────────────────────────────────────────────────────────────────────
+
+section "Step 6: Model Selection"
+echo ""
+
+if [ "$USE_GPU" = true ]; then
+    echo -e "  ${B}Hardware: ${GPU_TYPE^^} GPU — ${USER_MEM} GB VRAM${RST}"
+    echo -e "  ${G}✅ OK${RST} = fits in your VRAM   ${R}❌ Need X GB${RST} = exceeds your VRAM"
+    echo ""
+    printf "  ${B}%-5s %-28s %-8s %-11s %s${RST}\n" "Num" "Model" "DL" "Min VRAM" "Status"
+    echo "  ─────────────────────────────────────────────────────────────────"
+else
+    echo -e "  ${B}Hardware: CPU only — ${USER_MEM} GB RAM${RST}"
+    echo -e "  ${G}✅ OK${RST} = fits in your RAM   ${R}❌ Need X GB${RST} = exceeds your RAM"
+    echo ""
+    printf "  ${B}%-5s %-28s %-8s %-9s %-13s %s${RST}\n" "Num" "Model" "DL" "Min RAM" "CPU Speed" "Status"
+    echo "  ─────────────────────────────────────────────────────────────────────────"
+fi
+
+PREV_CAT=""
+for i in $(seq 1 $MODEL_TOTAL); do
+    CAT="${MODEL_CAT[$i]}"
+    if [ "$CAT" != "$PREV_CAT" ]; then
+        echo ""
+        echo -e "  ${C}── ${CAT} ──${RST}"
+        PREV_CAT="$CAT"
+    fi
+
+    if [ "$USE_GPU" = true ]; then
+        REQ="${MODEL_VRAM[$i]}"
+    else
+        REQ="${MODEL_RAM[$i]}"
+    fi
+
+    if [ "$USER_MEM" -ge "$REQ" ]; then
+        STATUS="${G}✅ OK${RST}"
+    else
+        STATUS="${R}❌ Need ${REQ} GB${RST}"
+    fi
+
+    if [ "$USE_GPU" = true ]; then
+        printf "  %-5s %-28s %-8s %-11s " \
+            "[${i}]" "${MODEL_MAP[$i]}" "~${MODEL_DL[$i]} GB" "${REQ} GB"
+    else
+        printf "  %-5s %-28s %-8s %-9s %-13s " \
+            "[${i}]" "${MODEL_MAP[$i]}" "~${MODEL_DL[$i]} GB" "${REQ} GB" "${MODEL_SPEED[$i]}"
+    fi
+    echo -e "$STATUS"
+done
+
+echo ""
+echo "  [0]  Skip — pull models manually later"
+echo ""
+read -rp "  Your selection (e.g. 1 6 14): " MODEL_SELECTION
+
+# ─────────────────────────────────────────────────────────────────────
+
+section "Step 7: Download Summary"
+echo ""
+echo -e "  ${B}Everything that will be downloaded and installed:${RST}"
+echo ""
+
+if [ "$USE_GPU" = true ]; then
+    if [ "$GPU_TYPE" = "amd" ]; then
+        echo "  Docker image:   ollama/ollama:rocm              ~3 GB"
+    else
+        echo "  Docker image:   ollama/ollama:latest            ~1.5 GB"
+    fi
+else
+    echo "  Docker image:   ollama/ollama:latest            ~1.5 GB"
+fi
+[ "$INSTALL_WEBUI" = true ] && echo "  Docker image:   open-webui/open-webui:main      ~2.5 GB"
+
+if [ "$MODEL_SELECTION" != "0" ] && [ -n "$MODEL_SELECTION" ]; then
+    echo ""
+    echo "  Models:"
+    for num in $MODEL_SELECTION; do
+        MODEL="${MODEL_MAP[$num]}"
+        if [ -n "$MODEL" ]; then
+            printf "    • %-30s ~%s GB\n" "$MODEL" "${MODEL_DL[$num]}"
+        fi
+    done
+fi
+
+echo ""
+read -rp "  Do you want to continue? [y/N]: " _CONFIRM
+case "$_CONFIRM" in
+    [yY][eE][sS]|[yY]) ;;
+    *) info "Aborted. Run again when ready."; exit 0 ;;
+esac
+
+# ─────────────────────────────────────────────────────────────────────
+# From here: all downloads and installation
+# ─────────────────────────────────────────────────────────────────────
+
+section "Step 8: Cleaning Up Existing Containers"
 for cname in ollama open-webui; do
     EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
     if [ -n "$EXISTING" ]; then
@@ -84,7 +288,7 @@ for cname in ollama open-webui; do
 done
 docker network prune -f &>/dev/null || true
 
-section "Step 5: Preparing Directory"
+section "Step 9: Preparing Directory"
 OLLAMA_DIR="/root/docker/ollama"
 if [ -d "$OLLAMA_DIR" ]; then
     warn "Removing old directory $OLLAMA_DIR..."
@@ -94,11 +298,39 @@ mkdir -p "$OLLAMA_DIR"
 cd "$OLLAMA_DIR" || error "Cannot navigate to $OLLAMA_DIR"
 info "Directory ready: $OLLAMA_DIR"
 
-section "Step 6: Writing docker-compose.yml"
-cat > "$OLLAMA_DIR/docker-compose.yml" <<'EOF'
+section "Step 10: Writing docker-compose.yml"
+
+# Build the Ollama service block based on GPU type
+if [ "$GPU_TYPE" = "nvidia" ]; then
+    OLLAMA_IMAGE="ollama/ollama:latest"
+    OLLAMA_EXTRA=$(cat <<'NVIDIA'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+NVIDIA
+)
+elif [ "$GPU_TYPE" = "amd" ]; then
+    OLLAMA_IMAGE="ollama/ollama:rocm"
+    OLLAMA_EXTRA=$(cat <<'AMD'
+    devices:
+      - /dev/kfd
+      - /dev/dri
+AMD
+)
+else
+    OLLAMA_IMAGE="ollama/ollama:latest"
+    OLLAMA_EXTRA=""
+fi
+
+if [ "$INSTALL_WEBUI" = true ]; then
+    cat > "$OLLAMA_DIR/docker-compose.yml" <<EOF
 services:
   ollama:
-    image: ollama/ollama:latest
+    image: ${OLLAMA_IMAGE}
     container_name: ollama
     restart: unless-stopped
     ports:
@@ -107,6 +339,7 @@ services:
       OLLAMA_HOST: 0.0.0.0
     volumes:
       - ./ollama:/root/.ollama
+${OLLAMA_EXTRA}
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
@@ -121,9 +354,63 @@ services:
     depends_on:
       - ollama
 EOF
+else
+    cat > "$OLLAMA_DIR/docker-compose.yml" <<EOF
+services:
+  ollama:
+    image: ${OLLAMA_IMAGE}
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    environment:
+      OLLAMA_HOST: 0.0.0.0
+    volumes:
+      - ./ollama:/root/.ollama
+${OLLAMA_EXTRA}
+EOF
+fi
 info "docker-compose.yml created."
 
-section "Step 7: Starting Ollama + Open WebUI"
+section "Step 11: GPU Toolkit Check"
+if [ "$GPU_TYPE" = "nvidia" ]; then
+    if ! dpkg -l 2>/dev/null | grep -q "nvidia-container-toolkit"; then
+        warn "NVIDIA Container Toolkit not found — required for GPU acceleration."
+        echo ""
+        read -rp "  Install NVIDIA Container Toolkit now? [y/N]: " _NVIDIA_INSTALL
+        case "$_NVIDIA_INSTALL" in
+            [yY][eE][sS]|[yY])
+                info "Installing NVIDIA Container Toolkit..."
+                curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey \
+                    | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+                curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list \
+                    | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \
+                    | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+                apt update -y && apt install -y nvidia-container-toolkit
+                nvidia-ctk runtime configure --runtime=docker
+                systemctl restart docker
+                info "NVIDIA Container Toolkit installed. ✅"
+                ;;
+            *)
+                warn "Skipped. GPU passthrough will not work without it."
+                warn "Install later: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html"
+                ;;
+        esac
+    else
+        info "NVIDIA Container Toolkit found. ✅"
+    fi
+elif [ "$GPU_TYPE" = "amd" ]; then
+    if [ ! -e /dev/kfd ]; then
+        warn "/dev/kfd not found — ROCm driver may not be installed."
+        warn "Install ROCm: https://rocm.docs.amd.com/en/latest/deploy/linux/quick_start.html"
+    else
+        info "AMD ROCm device /dev/kfd found. ✅"
+    fi
+else
+    info "CPU mode — no GPU toolkit needed."
+fi
+
+section "Step 12: Starting Containers"
 MAX_RETRIES=3
 for attempt in $(seq 1 $MAX_RETRIES); do
     if docker compose version &> /dev/null; then
@@ -131,106 +418,45 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     else
         docker-compose up -d && break
     fi
-    warn "Docker pull failed on attempt $attempt/$MAX_RETRIES (registry may be temporarily unavailable)."
+    warn "Docker pull failed on attempt $attempt/$MAX_RETRIES."
     [ "$attempt" -lt "$MAX_RETRIES" ] && info "Retrying in 15s..." && sleep 15
-    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed to start containers after $MAX_RETRIES attempts. Run manually: cd $OLLAMA_DIR && docker compose up -d"
+    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed after $MAX_RETRIES attempts. Run: cd $OLLAMA_DIR && docker compose up -d"
 done
 
-section "Step 8: Verifying Containers"
+section "Step 13: Verifying Containers"
 sleep 8
-for cname in ollama open-webui; do
+VERIFY_LIST="ollama"
+[ "$INSTALL_WEBUI" = true ] && VERIFY_LIST="ollama open-webui"
+for cname in $VERIFY_LIST; do
     RUNNING=$(docker ps --format '{{.Names}}' | grep -E "^${cname}$" || true)
     if [ -z "$RUNNING" ]; then
         warn "Container '$cname' may not have started. Check: docker logs $cname"
     else
-        info "Container running: $cname"
+        info "Container running: $cname ✅"
     fi
 done
 
-section "Step 9: Health Check"
-info "Waiting for Open WebUI to be ready on port 3210..."
-HEALTH_OK=0
-for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:3210 &>/dev/null; then
-        info "Port 3210 is responding — Open WebUI is healthy. ✅"
-        HEALTH_OK=1
-        break
-    fi
-    echo -n "  Attempt $i/12 — waiting 5s..."
-    sleep 5
-    echo " retrying"
-done
-if [ "$HEALTH_OK" -eq 0 ]; then
-    warn "Open WebUI may still be starting. Check: docker logs open-webui"
+if [ "$INSTALL_WEBUI" = true ]; then
+    section "Step 14: Health Check (Open WebUI)"
+    info "Waiting for Open WebUI on port 3210..."
+    HEALTH_OK=0
+    for i in $(seq 1 12); do
+        if curl -sf --max-time 3 http://127.0.0.1:3210 &>/dev/null; then
+            info "Open WebUI is healthy on port 3210. ✅"
+            HEALTH_OK=1
+            break
+        fi
+        echo -n "  Attempt $i/12 — waiting 5s..."
+        sleep 5
+        echo " retrying"
+    done
+    [ "$HEALTH_OK" -eq 0 ] && warn "Open WebUI may still be starting. Check: docker logs open-webui"
 fi
 
-section "Step 10: Model Selection"
-echo ""
-echo "  ┌──────────────────────────────────────────────────────────────────┐"
-echo "  │  Select models to pull.                                          │"
-echo "  │  Enter numbers separated by spaces.  Example:  1 6 12           │"
-echo "  │  Models are downloaded from ollama.com — ensure internet access. │"
-echo "  ├──────────────────────────────────────────────────────────────────┤"
-echo "  │                                                                  │"
-echo "  │  ── General Purpose ──────────────────────────────────────────  │"
-echo "  │  [1]  llama3.2:3b           Fast, general chat         ~2 GB    │"
-echo "  │  [2]  llama3.2:1b           Very fast, lightweight     ~1 GB    │"
-echo "  │  [3]  mistral:7b            Strong reasoning           ~4 GB    │"
-echo "  │  [4]  gemma3:4b             Google Gemma 3, efficient  ~3 GB    │"
-echo "  │  [5]  qwen2.5:7b            Multilingual + Arabic      ~5 GB    │"
-echo "  │                                                                  │"
-echo "  │  ── Coding ───────────────────────────────────────────────────  │"
-echo "  │  [6]  qwen2.5-coder:7b      Best mid-size coder        ~5 GB    │"
-echo "  │  [7]  qwen2.5-coder:14b     Larger, stronger coder     ~9 GB    │"
-echo "  │  [8]  deepseek-coder-v2:16b Top overall coding model   ~10 GB   │"
-echo "  │  [9]  codellama:7b          Meta Code Llama 7B         ~4 GB    │"
-echo "  │  [10] codellama:13b         Meta Code Llama 13B        ~8 GB    │"
-echo "  │  [11] codegemma:7b          Google code model          ~5 GB    │"
-echo "  │  [12] starcoder2:7b         StarCoder2, multi-language ~4 GB    │"
-echo "  │  [13] devstral:24b          Mistral DevStral (agentic) ~15 GB   │"
-echo "  │                                                                  │"
-echo "  │  ── Reasoning / Math ─────────────────────────────────────────  │"
-echo "  │  [14] deepseek-r1:7b        Chain-of-thought reasoning ~5 GB    │"
-echo "  │  [15] deepseek-r1:14b       Strong reasoning + code    ~9 GB    │"
-echo "  │  [16] deepseek-r1:32b       Best open reasoning model  ~20 GB   │"
-echo "  │  [17] qwq:32b               Qwen QwQ reasoning         ~20 GB   │"
-echo "  │  [18] phi4:14b              Microsoft Phi-4 reasoning  ~9 GB    │"
-echo "  │                                                                  │"
-echo "  │  ── Multilingual (Arabic support) ────────────────────────────  │"
-echo "  │  [19] aya-expanse:8b        Cohere Aya, 23 languages   ~5 GB    │"
-echo "  │  [20] qwen2.5:14b           Strong Arabic + reasoning  ~9 GB    │"
-echo "  │                                                                  │"
-echo "  │  [0]  Skip — I will pull models manually later                  │"
-echo "  └──────────────────────────────────────────────────────────────────┘"
-echo ""
-read -rp "  Your selection: " MODEL_SELECTION
-
-declare -A MODEL_MAP
-MODEL_MAP[1]="llama3.2:3b"
-MODEL_MAP[2]="llama3.2:1b"
-MODEL_MAP[3]="mistral:7b"
-MODEL_MAP[4]="gemma3:4b"
-MODEL_MAP[5]="qwen2.5:7b"
-MODEL_MAP[6]="qwen2.5-coder:7b"
-MODEL_MAP[7]="qwen2.5-coder:14b"
-MODEL_MAP[8]="deepseek-coder-v2:16b"
-MODEL_MAP[9]="codellama:7b"
-MODEL_MAP[10]="codellama:13b"
-MODEL_MAP[11]="codegemma:7b"
-MODEL_MAP[12]="starcoder2:7b"
-MODEL_MAP[13]="devstral:24b"
-MODEL_MAP[14]="deepseek-r1:7b"
-MODEL_MAP[15]="deepseek-r1:14b"
-MODEL_MAP[16]="deepseek-r1:32b"
-MODEL_MAP[17]="qwq:32b"
-MODEL_MAP[18]="phi4:14b"
-MODEL_MAP[19]="aya-expanse:8b"
-MODEL_MAP[20]="qwen2.5:14b"
-
+section "Step 15: Pulling Models"
 PULLED_MODELS=()
-
 if [ "$MODEL_SELECTION" != "0" ] && [ -n "$MODEL_SELECTION" ]; then
-    info "Waiting for Ollama API to be ready..."
+    info "Waiting for Ollama API..."
     for i in $(seq 1 30); do
         if curl -sf --max-time 3 http://127.0.0.1:11434 &>/dev/null; then
             info "Ollama API is ready."
@@ -238,16 +464,15 @@ if [ "$MODEL_SELECTION" != "0" ] && [ -n "$MODEL_SELECTION" ]; then
         fi
         sleep 2
     done
-
     for num in $MODEL_SELECTION; do
         MODEL="${MODEL_MAP[$num]}"
         if [ -n "$MODEL" ]; then
-            info "Pulling $MODEL — this may take several minutes..."
+            info "Pulling $MODEL (~${MODEL_DL[$num]} GB) — this may take several minutes..."
             if docker exec ollama ollama pull "$MODEL"; then
                 info "$MODEL pulled successfully. ✅"
                 PULLED_MODELS+=("$MODEL")
             else
-                warn "Failed to pull $MODEL. Pull it later: docker exec ollama ollama pull $MODEL"
+                warn "Failed to pull $MODEL. Pull later: docker exec ollama ollama pull $MODEL"
             fi
         else
             warn "Unknown selection: $num — skipped."
@@ -258,61 +483,52 @@ else
     info "  docker exec ollama ollama pull <model-name>"
 fi
 
-section "Step 11: Opening Firewall Ports"
+section "Step 16: Opening Firewall Ports"
 if command -v ufw &> /dev/null; then
     ufw allow 11434/tcp
-    ufw allow 3210/tcp
-    info "UFW: ports 11434/tcp and 3210/tcp opened."
+    [ "$INSTALL_WEBUI" = true ] && ufw allow 3210/tcp
+    info "UFW ports opened."
 else
     warn "UFW not found — skipping firewall rules."
 fi
 
+# ── Summary ───────────────────────────────────────────────────────────
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🌐  Open WebUI (chat interface):                  ║"
+if [ "$INSTALL_WEBUI" = true ]; then
+echo "  ║  🌐  Open WebUI:                                   ║"
 echo "  ║      👉  http://$SERVER_IP:3210"
 echo "  ║                                                      ║"
+fi
 echo "  ║  🤖  Ollama API:                                   ║"
 echo "  ║      👉  http://$SERVER_IP:11434"
 echo "  ║                                                      ║"
-
+if [ "$USE_GPU" = true ]; then
+echo "  ║  ⚡  GPU:  ${GPU_TYPE^^} acceleration enabled              ║"
+echo "  ║                                                      ║"
+fi
 if [ "${#PULLED_MODELS[@]}" -gt 0 ]; then
-    echo "  ║  📦  Models pulled:                                ║"
+    echo "  ║  📦  Models installed:                             ║"
     for m in "${PULLED_MODELS[@]}"; do
         printf "  ║      ✅  %-42s ║\n" "$m"
     done
     echo "  ║                                                      ║"
 else
     echo "  ║  📦  Pull a model:                                 ║"
-    echo "  ║      docker exec ollama ollama pull llama3.2:3b     ║"
-    echo "  ║      docker exec ollama ollama pull qwen2.5-coder:7b║"
+    echo "  ║      docker exec ollama ollama pull llama3.2:3b    ║"
     echo "  ║                                                      ║"
 fi
-
-echo "  ║  💡  Coding model recommendation:                  ║"
-echo "  ║      qwen2.5-coder:7b  — best mid-size coder       ║"
-echo "  ║      deepseek-coder-v2:16b — strongest coder       ║"
-echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
 echo "  ║       prismatechwork.com                            ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
-
-echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
-echo "  ║                                                      ║"
 echo "  ║  🚀  Need a production-ready setup?                 ║"
-echo "  ║                                                      ║"
-echo "  ║  Contact us for a hardened, secure, and             ║"
-echo "  ║  fully configured production environment:           ║"
-echo "  ║                                                      ║"
-echo "  ║  👨‍💻  Mohammed Ali Elshikh                            ║"
-echo "  ║  🌐  prismatechwork.com                              ║"
-echo "  ║                                                      ║"
+echo "  ║  Contact: Mohammed Ali Elshikh | prismatechwork.com ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
