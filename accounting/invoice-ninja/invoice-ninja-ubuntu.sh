@@ -74,14 +74,15 @@ else
     info "Docker Compose: $(docker compose version)"
 fi
 
-section "Step 4: Cleaning Up Existing Containers"
-for C in invoiceninja invoiceninja-db; do
+section "Step 4: Cleaning Up Existing Containers & Volumes"
+for C in invoiceninja invoiceninja-app invoiceninja-db; do
     EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${C}$" || true)
     if [ -n "$EXISTING" ]; then
         warn "Removing existing container: $C"
         docker rm -f "$C" 2>/dev/null || true
     fi
 done
+docker volume rm invoice-ninja_public invoice-ninja_storage 2>/dev/null || true
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
@@ -90,12 +91,11 @@ if [ -d "$IN_DIR" ]; then
     warn "Removing old directory $IN_DIR..."
     rm -rf "$IN_DIR"
 fi
-mkdir -p "$IN_DIR/storage" "$IN_DIR/public"
-chmod -R 777 "$IN_DIR/storage" "$IN_DIR/public"
+mkdir -p "$IN_DIR"
 cd "$IN_DIR" || error "Cannot navigate to $IN_DIR"
 info "Directory ready: $IN_DIR"
 
-section "Step 6: Generating Credentials & Writing docker-compose.yml"
+section "Step 6: Generating Credentials & Writing Config"
 apt-get install -y openssl &>/dev/null || true
 DB_ROOT=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
@@ -104,6 +104,33 @@ APP_KEY="base64:$(openssl rand -base64 32)"
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 info "Admin Email    : admin@example.com"
 info "Admin Password : $ADMIN_PASS"
+
+cat > "$IN_DIR/nginx.conf" <<'NGINXEOF'
+server {
+    listen 80;
+    server_name _;
+    root /var/www/app/public;
+    index index.php;
+    client_max_body_size 20M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass invoiceninja-app:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $document_root;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+NGINXEOF
 
 cat > "$IN_DIR/docker-compose.yml" <<EOF
 services:
@@ -119,14 +146,12 @@ services:
     volumes:
       - ./db:/var/lib/mysql
 
-  invoiceninja:
+  invoiceninja-app:
     image: invoiceninja/invoiceninja:5
-    container_name: invoiceninja
+    container_name: invoiceninja-app
     restart: unless-stopped
     depends_on:
       - invoiceninja-db
-    ports:
-      - "8128:80"
     environment:
       APP_URL: http://$SERVER_IP:8128
       APP_KEY: $APP_KEY
@@ -139,10 +164,26 @@ services:
       IN_USER_EMAIL: admin@example.com
       IN_PASSWORD: $ADMIN_PASS
     volumes:
-      - ./storage:/var/www/app/storage
-      - ./public:/var/www/app/public/storage
+      - public:/var/www/app/public
+      - storage:/var/www/app/storage
+
+  invoiceninja:
+    image: nginx:alpine
+    container_name: invoiceninja
+    restart: unless-stopped
+    depends_on:
+      - invoiceninja-app
+    ports:
+      - "8128:80"
+    volumes:
+      - public:/var/www/app/public
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  public:
+  storage:
 EOF
-info "docker-compose.yml created."
+info "docker-compose.yml and nginx.conf created."
 
 section "Step 7: Starting Invoice Ninja"
 MAX_RETRIES=3
