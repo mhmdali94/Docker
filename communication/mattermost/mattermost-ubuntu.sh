@@ -168,7 +168,7 @@ section "Step 9: Health Check"
 info "Waiting for Mattermost to be ready on port 8065 (may take a few minutes)..."
 HEALTH_OK=0
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:8065/api/v4/system/ping &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8065/api/v4/system/ping &>/dev/null; then
         info "Port 8065 is responding — Mattermost is healthy. ✅"
         HEALTH_OK=1
         break

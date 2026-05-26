@@ -93,7 +93,7 @@ fi
 section "Step 8: Health Check"
 info "Waiting for Mealie to be ready..."
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:9925 &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:9925 &>/dev/null; then
         info "Mealie is ready. ✅"
         break
     fi

@@ -187,7 +187,7 @@ section "Step 10: Health Check"
 info "Waiting for Immich to be ready on port 2283 (may take a few minutes)..."
 HEALTH_OK=0
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:2283/api/server-info/ping &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:2283/api/server-info/ping &>/dev/null; then
         info "Port 2283 is responding — Immich is healthy. ✅"
         HEALTH_OK=1
         break

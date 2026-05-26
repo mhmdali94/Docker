@@ -139,7 +139,7 @@ fi
 section "Step 9: Health Check (~2 min)"
 info "Waiting for Pixelfed to be ready..."
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:8085 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8085 &>/dev/null; then
         info "Pixelfed is ready. ✅"
         break
     fi

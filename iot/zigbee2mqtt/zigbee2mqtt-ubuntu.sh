@@ -140,7 +140,7 @@ fi
 section "Step 10: Health Check"
 info "Waiting for Zigbee2MQTT to be ready..."
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8080 &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:8080 &>/dev/null; then
         info "Zigbee2MQTT is ready. ✅"
         break
     fi

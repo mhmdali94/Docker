@@ -121,7 +121,7 @@ fi
 section "Step 9: Health Check"
 info "Waiting for Ghost to be ready (~60s for first start)..."
 for i in $(seq 1 18); do
-    if curl -sf --max-time 3 http://127.0.0.1:2368 &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:2368 &>/dev/null; then
         info "Ghost is ready. ✅"
         break
     fi

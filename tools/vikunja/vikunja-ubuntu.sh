@@ -162,7 +162,7 @@ section "Step 9: Health Check"
 info "Waiting for Vikunja to be ready on port 3456..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 5 http://127.0.0.1:3456 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:3456 &>/dev/null; then
         info "Port 3456 is responding — Vikunja is healthy. ✅"
         HEALTH_OK=1
         break

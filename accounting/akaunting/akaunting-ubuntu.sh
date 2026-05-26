@@ -160,7 +160,7 @@ section "Step 9: Health Check"
 info "Waiting for Akaunting to be ready on port 8127..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8127 &>/dev/null; then
+    if curl -s --max-time 5 -o /dev/null http://127.0.0.1:8127; then
         info "Port 8127 is responding — Akaunting is healthy. ✅"
         HEALTH_OK=1
         break

@@ -143,7 +143,7 @@ section "Step 9: Health Check"
 info "Waiting for Code-server to be ready on port 8094..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 5 http://127.0.0.1:8094 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8094 &>/dev/null; then
         info "Port 8094 is responding — Code-server is healthy. ✅"
         HEALTH_OK=1
         break

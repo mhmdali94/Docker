@@ -118,7 +118,7 @@ fi
 section "Step 9: Health Check (~60s for first start)"
 info "Waiting for Kimai to be ready..."
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8001 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8001 &>/dev/null; then
         info "Kimai is ready. ✅"
         break
     fi

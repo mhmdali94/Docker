@@ -155,7 +155,7 @@ section "Step 9: Health Check"
 info "Waiting for Prometheus to be ready on port 9090..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:9090/-/healthy &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:9090/-/healthy &>/dev/null; then
         info "Port 9090 is responding — Prometheus is healthy. ✅"
         HEALTH_OK=1
         break

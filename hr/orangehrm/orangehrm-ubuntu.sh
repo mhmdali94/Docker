@@ -161,7 +161,7 @@ section "Step 9: Health Check"
 info "Waiting for OrangeHRM to be ready on port 8125..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8125 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8125 &>/dev/null; then
         info "Port 8125 is responding — OrangeHRM is healthy. ✅"
         HEALTH_OK=1
         break

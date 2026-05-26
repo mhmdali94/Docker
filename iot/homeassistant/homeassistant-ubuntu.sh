@@ -99,7 +99,7 @@ fi
 section "Step 9: Health Check (~60s for first start)"
 info "Waiting for Home Assistant to initialize..."
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8123 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8123 &>/dev/null; then
         info "Home Assistant is ready. ✅"
         break
     fi

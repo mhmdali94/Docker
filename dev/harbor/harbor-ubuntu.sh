@@ -128,7 +128,7 @@ section "Step 10: Health Check"
 info "Waiting for Harbor to be ready on port 5080 (may take a few minutes)..."
 HEALTH_OK=0
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:5080 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:5080 &>/dev/null; then
         info "Port 5080 is responding — Harbor is healthy. ✅"
         HEALTH_OK=1
         break

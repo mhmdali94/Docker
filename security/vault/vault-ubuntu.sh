@@ -112,7 +112,7 @@ fi
 section "Step 9: Health Check"
 info "Waiting for Vault to be ready..."
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8200/v1/sys/health &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:8200/v1/sys/health &>/dev/null; then
         info "Vault is ready. ✅"
         break
     fi

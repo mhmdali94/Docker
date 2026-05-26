@@ -529,7 +529,7 @@ if [ "$INSTALL_WEBUI" = true ]; then
     info "Waiting for Open WebUI on port 3210..."
     HEALTH_OK=0
     for i in $(seq 1 12); do
-        if curl -sf --max-time 3 http://127.0.0.1:3210 &>/dev/null; then
+        if curl -s --max-time 3 http://127.0.0.1:3210 &>/dev/null; then
             info "Open WebUI is healthy on port 3210. ✅"
             HEALTH_OK=1
             break
@@ -598,7 +598,7 @@ PULLED_MODELS=()
 if [ "$MODEL_SELECTION" != "0" ] && [ -n "$MODEL_SELECTION" ]; then
     info "Waiting for Ollama API..."
     for i in $(seq 1 30); do
-        if curl -sf --max-time 3 http://127.0.0.1:11434 &>/dev/null; then
+        if curl -s --max-time 3 http://127.0.0.1:11434 &>/dev/null; then
             info "Ollama API is ready."
             break
         fi

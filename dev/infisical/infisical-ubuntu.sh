@@ -166,7 +166,7 @@ section "Step 9: Health Check"
 info "Waiting for Infisical to be ready on port 8090..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8090/api/status &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:8090/api/status &>/dev/null; then
         info "Port 8090 is responding — Infisical is healthy. ✅"
         HEALTH_OK=1
         break

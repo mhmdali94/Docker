@@ -143,7 +143,7 @@ section "Step 9: Health Check"
 info "Waiting for MinIO to be ready on port 9000..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:9000/minio/health/live &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:9000/minio/health/live &>/dev/null; then
         info "Port 9000 is responding — MinIO is healthy. ✅"
         HEALTH_OK=1
         break

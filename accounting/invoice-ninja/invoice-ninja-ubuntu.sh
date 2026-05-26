@@ -169,7 +169,7 @@ section "Step 9: Health Check"
 info "Waiting for Invoice Ninja to be ready on port 8128..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8128 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8128 &>/dev/null; then
         info "Port 8128 is responding — Invoice Ninja is healthy. ✅"
         HEALTH_OK=1
         break

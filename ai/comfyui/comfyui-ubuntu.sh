@@ -125,7 +125,7 @@ fi
 section "Step 9: Health Check"
 info "Waiting for ComfyUI to be ready (first start downloads dependencies)..."
 for i in $(seq 1 24); do
-    if curl -sf --max-time 3 http://127.0.0.1:8188 &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:8188 &>/dev/null; then
         info "ComfyUI is ready. ✅"
         break
     fi

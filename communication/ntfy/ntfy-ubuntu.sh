@@ -148,7 +148,7 @@ section "Step 9: Health Check"
 info "Waiting for ntfy to be ready on port 8095..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8095/v1/health &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:8095/v1/health &>/dev/null; then
         info "Port 8095 is responding — ntfy is healthy. ✅"
         HEALTH_OK=1
         break

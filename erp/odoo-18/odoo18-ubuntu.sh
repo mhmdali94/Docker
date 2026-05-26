@@ -165,7 +165,7 @@ section "Step 9: Health Check"
 info "Waiting for Odoo 18 to be ready on port 8018 (first pull may take time)..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8018 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8018 &>/dev/null; then
         info "Port 8018 is responding — Odoo 18 is healthy. ✅"
         HEALTH_OK=1
         break

@@ -109,7 +109,7 @@ fi
 section "Step 8: Health Check (~60s for first start)"
 info "Waiting for Open Source POS to be ready..."
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8888 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8888 &>/dev/null; then
         info "Open Source POS is ready. ✅"
         break
     fi

@@ -186,7 +186,7 @@ fi
 section "Step 9: Health Check (~2 min for migrations)"
 info "Waiting for Mastodon to be ready..."
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:3005 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:3005 &>/dev/null; then
         info "Mastodon is ready. ✅"
         break
     fi

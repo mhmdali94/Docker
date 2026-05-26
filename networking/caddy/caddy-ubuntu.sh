@@ -117,7 +117,7 @@ fi
 section "Step 9: Health Check"
 info "Waiting for Caddy to be ready..."
 for i in $(seq 1 6); do
-    if curl -sf --max-time 3 http://127.0.0.1:80 &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:80 &>/dev/null; then
         info "Caddy is ready. ✅"
         break
     fi

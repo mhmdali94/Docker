@@ -153,7 +153,7 @@ section "Step 9: Health Check"
 info "Waiting for Photoprism to be ready on port 2342..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:2342 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:2342 &>/dev/null; then
         info "Port 2342 is responding — Photoprism is healthy. ✅"
         HEALTH_OK=1
         break

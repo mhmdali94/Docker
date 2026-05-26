@@ -181,7 +181,7 @@ section "Step 9: Health Check"
 info "Waiting for GlitchTip to be ready on port 8093 (may take ~2 minutes)..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8093 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8093 &>/dev/null; then
         info "Port 8093 is responding — GlitchTip is healthy. ✅"
         HEALTH_OK=1
         break

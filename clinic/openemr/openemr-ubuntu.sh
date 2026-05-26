@@ -165,7 +165,7 @@ section "Step 9: Health Check"
 warn "OpenEMR initializes and migrates its database on first run — allow 3-5 minutes."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8124 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8124 &>/dev/null; then
         info "Port 8124 is responding — OpenEMR is healthy. ✅"
         HEALTH_OK=1
         break

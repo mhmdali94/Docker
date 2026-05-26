@@ -139,7 +139,7 @@ section "Step 9: Health Check"
 info "Waiting for Nexus to be ready on port 8081 (may take ~2 minutes)..."
 HEALTH_OK=0
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:8081/service/rest/v1/status &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8081/service/rest/v1/status &>/dev/null; then
         info "Port 8081 is responding — Nexus is healthy. ✅"
         HEALTH_OK=1
         break

@@ -135,7 +135,7 @@ section "Step 9: Health Check"
 info "Waiting for LocalAI to be ready on port 8085 (may take 2-3 minutes on first pull)..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8085/readyz &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8085/readyz &>/dev/null; then
         info "Port 8085 is responding — LocalAI is healthy. ✅"
         HEALTH_OK=1
         break

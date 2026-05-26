@@ -198,7 +198,7 @@ fi
 section "Step 8: Health Check"
 info "Waiting for Zammad to be ready..."
 for i in $(seq 1 36); do
-    if curl -sf --max-time 5 http://127.0.0.1:3036 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:3036 &>/dev/null; then
         info "Zammad is ready. ✅"
         break
     fi

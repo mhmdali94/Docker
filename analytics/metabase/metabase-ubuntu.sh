@@ -157,7 +157,7 @@ section "Step 9: Health Check"
 info "Waiting for Metabase to be ready on port 3007..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:3007/api/health 2>/dev/null | grep -q '"status":"ok"'; then
+    if curl -s --max-time 5 http://127.0.0.1:3007/api/health 2>/dev/null | grep -q '"status":"ok"'; then
         info "Port 3007 is responding — Metabase is healthy. ✅"
         HEALTH_OK=1
         break

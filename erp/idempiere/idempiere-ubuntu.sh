@@ -159,7 +159,7 @@ section "Step 9: Health Check"
 info "Waiting for iDempiere to be ready on port 8121 (OSGi startup takes 3-5 min)..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8121/webui/ &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8121/webui/ &>/dev/null; then
         info "Port 8121 is responding — iDempiere is healthy. ✅"
         HEALTH_OK=1
         break

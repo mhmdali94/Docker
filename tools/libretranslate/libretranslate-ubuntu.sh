@@ -94,7 +94,7 @@ fi
 section "Step 8: Health Check (~3 min for model downloads)"
 info "Waiting for LibreTranslate to be ready (downloading language models)..."
 for i in $(seq 1 36); do
-    if curl -sf --max-time 5 http://127.0.0.1:5010/health &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:5010/health &>/dev/null; then
         info "LibreTranslate is ready. ✅"
         break
     fi

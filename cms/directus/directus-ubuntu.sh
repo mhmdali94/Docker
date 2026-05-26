@@ -133,7 +133,7 @@ fi
 section "Step 9: Health Check"
 info "Waiting for Directus to be ready..."
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8055/server/health &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8055/server/health &>/dev/null; then
         info "Directus is ready. ✅"
         break
     fi

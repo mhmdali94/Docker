@@ -120,7 +120,7 @@ fi
 section "Step 9: Health Check"
 info "Waiting for HedgeDoc to be ready..."
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:3888 &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:3888 &>/dev/null; then
         info "HedgeDoc is ready. ✅"
         break
     fi

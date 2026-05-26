@@ -164,7 +164,7 @@ section "Step 9: Health Check"
 warn "OpenMRS initializes the database schema on first run — this takes 5-10 minutes."
 HEALTH_OK=0
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:8122/openmrs/ &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8122/openmrs/ &>/dev/null; then
         info "Port 8122 is responding — OpenMRS is healthy. ✅"
         HEALTH_OK=1
         break

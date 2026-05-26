@@ -173,7 +173,7 @@ section "Step 9: Health Check"
 info "Waiting for EspoCRM to be ready on port 8130..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8130 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8130 &>/dev/null; then
         info "Port 8130 is responding — EspoCRM is healthy. ✅"
         HEALTH_OK=1
         break

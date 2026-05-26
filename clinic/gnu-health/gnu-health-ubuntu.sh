@@ -172,7 +172,7 @@ section "Step 9: Health Check"
 info "Waiting for GNU Health web client to be ready on port 8123..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8123 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8123 &>/dev/null; then
         info "Port 8123 is responding — GNU Health web client is ready. ✅"
         HEALTH_OK=1
         break

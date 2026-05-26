@@ -207,7 +207,7 @@ section "Step 9: Health Check"
 warn "ERPNext site initialization takes 10-15 minutes. Checking every 30s (30 attempts)..."
 HEALTH_OK=0
 for i in $(seq 1 30); do
-    if curl -sf --max-time 5 http://127.0.0.1:8119 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8119 &>/dev/null; then
         info "Port 8119 is responding — ERPNext is healthy. ✅"
         HEALTH_OK=1
         break

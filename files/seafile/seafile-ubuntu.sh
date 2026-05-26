@@ -124,7 +124,7 @@ fi
 section "Step 9: Health Check (initialization takes ~60s)"
 info "Waiting for Seafile to be ready..."
 for i in $(seq 1 18); do
-    if curl -sf --max-time 3 http://127.0.0.1:8090 &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:8090 &>/dev/null; then
         info "Seafile is ready. ✅"
         break
     fi

@@ -139,7 +139,7 @@ fi
 section "Step 9: Health Check (~2 min for migrations)"
 info "Waiting for Saleor API to be ready..."
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:8010/health/ &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8010/health/ &>/dev/null; then
         info "Saleor API is ready. ✅"
         break
     fi

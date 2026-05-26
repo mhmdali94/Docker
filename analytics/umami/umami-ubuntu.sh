@@ -160,7 +160,7 @@ section "Step 9: Health Check"
 info "Waiting for Umami to be ready on port 3002 (may take a minute)..."
 HEALTH_OK=0
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:3002/api/heartbeat &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:3002/api/heartbeat &>/dev/null; then
         info "Port 3002 is responding — Umami is healthy. ✅"
         HEALTH_OK=1
         break

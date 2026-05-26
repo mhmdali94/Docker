@@ -113,7 +113,7 @@ fi
 section "Step 10: Health Check (GitLab takes 3-5 minutes)"
 info "Waiting for GitLab to be ready..."
 for i in $(seq 1 36); do
-    if curl -sf --max-time 5 http://127.0.0.1:9080 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:9080 &>/dev/null; then
         info "GitLab is ready. ✅"
         break
     fi

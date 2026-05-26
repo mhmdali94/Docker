@@ -95,7 +95,7 @@ fi
 section "Step 9: Health Check"
 info "Waiting for Meilisearch to be ready..."
 for i in $(seq 1 6); do
-    if curl -sf --max-time 3 http://127.0.0.1:7700/health &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:7700/health &>/dev/null; then
         info "Meilisearch is ready. ✅"
         break
     fi

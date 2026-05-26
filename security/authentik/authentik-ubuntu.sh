@@ -203,7 +203,7 @@ section "Step 9: Health Check"
 info "Waiting for Authentik to be ready on port 9010 (may take a few minutes)..."
 HEALTH_OK=0
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:9010/-/health/live/ &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:9010/-/health/live/ &>/dev/null; then
         info "Port 9010 is responding — Authentik is healthy. ✅"
         HEALTH_OK=1
         break

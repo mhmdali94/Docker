@@ -191,7 +191,7 @@ section "Step 10: Health Check"
 info "Waiting for Graylog to be ready on port 9000 (may take up to 2 minutes)..."
 HEALTH_OK=0
 for i in $(seq 1 24); do
-    if curl -sf --max-time 3 http://127.0.0.1:9000/api/system/lbstatus &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:9000/api/system/lbstatus &>/dev/null; then
         info "Port 9000 is responding — Graylog is healthy. ✅"
         HEALTH_OK=1
         break

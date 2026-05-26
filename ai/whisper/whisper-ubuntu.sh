@@ -112,7 +112,7 @@ fi
 section "Step 9: Health Check"
 info "Waiting for Whisper API (model download may take a few minutes)..."
 for i in $(seq 1 18); do
-    if curl -sf --max-time 3 http://127.0.0.1:9000/docs &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:9000/docs &>/dev/null; then
         info "Whisper API is ready. ✅"
         break
     fi

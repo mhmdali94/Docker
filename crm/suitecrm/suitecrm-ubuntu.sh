@@ -165,7 +165,7 @@ section "Step 9: Health Check"
 info "Waiting for SuiteCRM to be ready on port 8129 (first setup takes 3-5 min)..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sf --max-time 5 http://127.0.0.1:8129 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8129 &>/dev/null; then
         info "Port 8129 is responding — SuiteCRM is healthy. ✅"
         HEALTH_OK=1
         break

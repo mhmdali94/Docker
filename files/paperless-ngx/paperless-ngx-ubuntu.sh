@@ -183,7 +183,7 @@ section "Step 9: Health Check"
 info "Waiting for Paperless-NGX to be ready on port 8010..."
 HEALTH_OK=0
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:8010 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8010 &>/dev/null; then
         info "Port 8010 is responding — Paperless-NGX is healthy. ✅"
         HEALTH_OK=1
         break

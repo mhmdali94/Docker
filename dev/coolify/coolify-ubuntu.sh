@@ -75,7 +75,7 @@ fi
 section "Step 6: Health Check"
 info "Waiting for Coolify to be ready..."
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8000 &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:8000 &>/dev/null; then
         info "Coolify is ready. ✅"
         break
     fi

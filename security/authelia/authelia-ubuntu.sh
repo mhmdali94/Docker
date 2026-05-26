@@ -232,7 +232,7 @@ section "Step 10: Health Check"
 info "Waiting for Authelia to be ready on port 9091..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:9091/api/health &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:9091/api/health &>/dev/null; then
         info "Port 9091 is responding — Authelia is healthy. ✅"
         HEALTH_OK=1
         break

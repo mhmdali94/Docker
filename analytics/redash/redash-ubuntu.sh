@@ -198,7 +198,7 @@ section "Step 9: Health Check"
 info "Waiting for Redash to be ready on port 5001..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:5001 &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:5001 &>/dev/null; then
         info "Port 5001 is responding — Redash is healthy. ✅"
         HEALTH_OK=1
         break

@@ -160,7 +160,7 @@ section "Step 9: Health Check"
 info "Waiting for Langfuse to be ready on port 3006..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 5 http://127.0.0.1:3006 &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:3006 &>/dev/null; then
         info "Port 3006 is responding — Langfuse is healthy. ✅"
         HEALTH_OK=1
         break

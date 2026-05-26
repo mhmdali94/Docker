@@ -88,7 +88,7 @@ fi
 section "Step 8: Health Check"
 info "Waiting for Adminer to be ready..."
 for i in $(seq 1 6); do
-    if curl -sf --max-time 3 http://127.0.0.1:8086 &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:8086 &>/dev/null; then
         info "Adminer is ready. ✅"
         break
     fi

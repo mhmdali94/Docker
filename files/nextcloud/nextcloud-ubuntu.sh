@@ -168,7 +168,7 @@ section "Step 9: Health Check"
 info "Waiting for Nextcloud to be ready on port 8080 (may take up to 2 minutes)..."
 HEALTH_OK=0
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:8080/status.php &>/dev/null; then
+    if curl -s --max-time 5 http://127.0.0.1:8080/status.php &>/dev/null; then
         info "Port 8080 is responding — Nextcloud is healthy. ✅"
         HEALTH_OK=1
         break

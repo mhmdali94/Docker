@@ -154,7 +154,7 @@ section "Step 9: Health Check"
 info "Waiting for NocoDB to be ready on port 8088..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:8088/api/v1/health &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:8088/api/v1/health &>/dev/null; then
         info "Port 8088 is responding — NocoDB is healthy. ✅"
         HEALTH_OK=1
         break

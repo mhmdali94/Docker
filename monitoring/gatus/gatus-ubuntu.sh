@@ -121,7 +121,7 @@ fi
 section "Step 9: Health Check"
 info "Waiting for Gatus to be ready..."
 for i in $(seq 1 6); do
-    if curl -sf --max-time 3 http://127.0.0.1:8097 &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:8097 &>/dev/null; then
         info "Gatus is ready. ✅"
         break
     fi

@@ -164,7 +164,7 @@ section "Step 9: Health Check"
 info "Waiting for SonarQube to be ready on port 9000 (may take ~2 minutes)..."
 HEALTH_OK=0
 for i in $(seq 1 24); do
-    if curl -sf --max-time 5 http://127.0.0.1:9000/api/system/status 2>/dev/null | grep -q '"status":"UP"'; then
+    if curl -s --max-time 5 http://127.0.0.1:9000/api/system/status 2>/dev/null | grep -q '"status":"UP"'; then
         info "Port 9000 is responding — SonarQube is healthy. ✅"
         HEALTH_OK=1
         break

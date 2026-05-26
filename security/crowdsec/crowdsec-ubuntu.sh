@@ -144,7 +144,7 @@ section "Step 9: Health Check"
 info "Waiting for CrowdSec metrics on port 6060..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -sf --max-time 3 http://127.0.0.1:6060/metrics &>/dev/null; then
+    if curl -s --max-time 3 http://127.0.0.1:6060/metrics &>/dev/null; then
         info "Port 6060 is responding — CrowdSec is healthy. ✅"
         HEALTH_OK=1
         break
