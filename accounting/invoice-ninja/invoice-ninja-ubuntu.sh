@@ -161,6 +161,8 @@ services:
       DB_USERNAME: invoiceninja
       DB_PASSWORD: $DB_PASS
       MAIL_MAILER: log
+      REQUIRE_HTTPS: "false"
+      SESSION_SECURE_COOKIE: "false"
       IN_USER_EMAIL: admin@example.com
       IN_PASSWORD: $ADMIN_PASS
     volumes:
