@@ -94,6 +94,7 @@ if [ -d "$EN_DIR" ]; then
     rm -rf "$EN_DIR"
 fi
 mkdir -p "$EN_DIR/sites" "$EN_DIR/logs"
+chown -R 1000:1000 "$EN_DIR/sites" "$EN_DIR/logs"
 cd "$EN_DIR" || error "Cannot navigate to $EN_DIR"
 info "Directory ready: $EN_DIR"
 
@@ -109,6 +110,9 @@ cat > "$EN_DIR/init.sh" <<EOF
 set -e
 SITE="erpnext.localhost"
 BENCH_DIR="/home/frappe/frappe-bench"
+
+# Recreate apps.txt if missing (empty mounted sites/ volume removes it)
+[ ! -f "\$BENCH_DIR/sites/apps.txt" ] && printf "frappe\nerpnext\n" > "\$BENCH_DIR/sites/apps.txt"
 
 echo "[ERPNext] Waiting for MariaDB..."
 until python3 -c "import socket; socket.create_connection(('erpnext-db', 3306), timeout=3)" 2>/dev/null; do
