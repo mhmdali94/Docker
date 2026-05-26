@@ -91,7 +91,7 @@ if [ -d "$IN_DIR" ]; then
     rm -rf "$IN_DIR"
 fi
 mkdir -p "$IN_DIR/storage" "$IN_DIR/public"
-chown -R 33:33 "$IN_DIR/storage" "$IN_DIR/public"
+chown -R 1500:1500 "$IN_DIR/storage" "$IN_DIR/public"
 cd "$IN_DIR" || error "Cannot navigate to $IN_DIR"
 info "Directory ready: $IN_DIR"
 
