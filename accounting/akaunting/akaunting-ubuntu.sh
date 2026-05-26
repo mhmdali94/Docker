@@ -97,15 +97,13 @@ info "Directory ready: $AK_DIR"
 section "Step 6: Generating Credentials & Writing docker-compose.yml"
 DB_ROOT=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
-ADMIN_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
-info "Admin Email    : admin@example.com"
-info "Admin Password : $ADMIN_PASS"
+info "DB credentials generated."
 
 cat > "$AK_DIR/docker-compose.yml" <<EOF
 services:
   akaunting-db:
-    image: mysql:8
+    image: mysql:8.0
     container_name: akaunting-db
     restart: unless-stopped
     environment:
@@ -115,7 +113,7 @@ services:
       MYSQL_PASSWORD: $DB_PASS
     volumes:
       - ./db:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
   akaunting:
     image: akaunting/akaunting:latest
@@ -131,9 +129,6 @@ services:
       DB_DATABASE: akaunting
       DB_USERNAME: akaunting
       DB_PASSWORD: $DB_PASS
-      ADMIN_EMAIL: admin@example.com
-      ADMIN_PASSWORD: $ADMIN_PASS
-      COMPANY_NAME: My Company
     volumes:
       - ./storage:/var/www/html/storage
 EOF
@@ -194,9 +189,10 @@ echo "  ║                                                      ║"
 echo "  ║  🌐  Akaunting URL:                                ║"
 echo "  ║      http://$SERVER_IP:8127"
 echo "  ║                                                      ║"
-echo "  ║  🔑  Login Credentials (save these!):              ║"
-echo "  ║      Email    : admin@example.com"
-echo "  ║      Password : $ADMIN_PASS"
+echo "  ║  👤  Create your admin account via the web wizard   ║"
+echo "  ║                                                      ║"
+echo "  ║  🗄️  DB Hostname (for setup wizard):               ║"
+echo "  ║      akaunting-db                                   ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
