@@ -91,6 +91,7 @@ if [ -d "$ALLM_DIR" ]; then
     rm -rf "$ALLM_DIR"
 fi
 mkdir -p "$ALLM_DIR/storage"
+chmod -R 777 "$ALLM_DIR/storage"
 cd "$ALLM_DIR" || error "Cannot navigate to $ALLM_DIR"
 info "Directory ready: $ALLM_DIR"
 
