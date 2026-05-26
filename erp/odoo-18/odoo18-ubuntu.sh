@@ -104,6 +104,7 @@ info "Master Password : $MASTER_PASS"
 cat > "$ODOO_DIR/odoo.conf" <<EOF
 [options]
 admin_passwd = $MASTER_PASS
+data_dir = /var/lib/odoo
 db_host = odoo18-db
 db_port = 5432
 db_user = odoo
