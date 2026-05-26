@@ -91,6 +91,7 @@ if [ -d "$ODOO_DIR" ]; then
     rm -rf "$ODOO_DIR"
 fi
 mkdir -p "$ODOO_DIR/data" "$ODOO_DIR/addons"
+chown -R 101:101 "$ODOO_DIR/data"
 cd "$ODOO_DIR" || error "Cannot navigate to $ODOO_DIR"
 info "Directory ready: $ODOO_DIR"
 
