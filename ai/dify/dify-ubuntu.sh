@@ -132,6 +132,11 @@ services:
       POSTGRES_DB: dify
     volumes:
       - ./postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dify"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   dify-redis:
     image: redis:6
@@ -176,9 +181,12 @@ services:
     volumes:
       - ./storage:/app/api/storage
     depends_on:
-      - dify-db
-      - dify-redis
-      - dify-sandbox
+      dify-db:
+        condition: service_healthy
+      dify-redis:
+        condition: service_started
+      dify-sandbox:
+        condition: service_started
 
   dify-worker:
     image: langgenius/dify-api:0.9.1
@@ -204,9 +212,12 @@ services:
     volumes:
       - ./storage:/app/api/storage
     depends_on:
-      - dify-db
-      - dify-redis
-      - dify-sandbox
+      dify-db:
+        condition: service_healthy
+      dify-redis:
+        condition: service_started
+      dify-sandbox:
+        condition: service_started
 
   dify-web:
     image: langgenius/dify-web:0.9.1
