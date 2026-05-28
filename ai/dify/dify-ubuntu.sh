@@ -254,6 +254,20 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed to start after $MAX_RETRIES attempts. Run manually: cd $PWD && docker compose up -d"
 done
 
+info "Waiting for database to be ready..."
+for i in $(seq 1 30); do
+    if docker exec dify-db pg_isready -U dify -d dify &>/dev/null; then
+        info "Database is ready."
+        break
+    fi
+    sleep 3
+done
+sleep 5
+info "Running database migrations..."
+docker exec dify-api flask db upgrade 2>/dev/null || warn "Migration output suppressed — may already be up to date."
+docker restart dify-api dify-worker &>/dev/null
+info "API and worker restarted after migration."
+
 section "Step 8: Verifying Container"
 sleep 15
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^dify-nginx$' || true)
