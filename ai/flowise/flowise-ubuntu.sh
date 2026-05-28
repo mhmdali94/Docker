@@ -94,11 +94,7 @@ mkdir -p "$FLOWISE_DIR/data"
 cd "$FLOWISE_DIR" || error "Cannot navigate to $FLOWISE_DIR"
 info "Directory ready: $FLOWISE_DIR"
 
-section "Step 6: Generating Credentials & docker-compose.yml"
-FW_PASSWORD=$(tr -dc 'A-Za-z0-9!@#$%' < /dev/urandom | head -c 20)
-info "Admin User     : admin"
-info "Admin Password : $FW_PASSWORD"
-
+section "Step 6: Writing docker-compose.yml"
 cat > "$FLOWISE_DIR/docker-compose.yml" <<EOF
 services:
   flowise:
@@ -108,8 +104,6 @@ services:
     ports:
       - "3060:3000"
     environment:
-      FLOWISE_USERNAME: admin
-      FLOWISE_PASSWORD: $FW_PASSWORD
       DATABASE_PATH: /root/.flowise
       SECRETKEY_PATH: /root/.flowise
     volumes:
@@ -180,9 +174,7 @@ echo "  ║                                                      ║"
 echo "  ║  🌐  Open Flowise in your browser:                 ║"
 echo "  ║      👉  http://$SERVER_IP:3060"
 echo "  ║                                                      ║"
-echo "  ║  🔑  Login Credentials (save these!):              ║"
-echo "  ║      Username : admin"
-echo "  ║      Password : $FW_PASSWORD"
+echo "  ║  🔑  Create your admin account on first visit.     ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
