@@ -243,19 +243,20 @@ info "docker-compose.yml created."
 
 section "Step 7: Starting Dify"
 MAX_RETRIES=3
+info "Starting database and dependencies first..."
 for attempt in $(seq 1 $MAX_RETRIES); do
     if docker compose version &> /dev/null; then
-        docker compose up -d && break
+        docker compose up -d dify-db dify-redis dify-sandbox && break
     else
-        docker-compose up -d && break
+        docker-compose up -d dify-db dify-redis dify-sandbox && break
     fi
-    warn "Docker pull failed on attempt $attempt/$MAX_RETRIES (registry may be temporarily unavailable)."
+    warn "Docker pull failed on attempt $attempt/$MAX_RETRIES."
     [ "$attempt" -lt "$MAX_RETRIES" ] && info "Retrying in 15s..." && sleep 15
-    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed to start after $MAX_RETRIES attempts. Run manually: cd $PWD && docker compose up -d"
+    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed to start after $MAX_RETRIES attempts."
 done
 
 info "Waiting for database to be ready..."
-for i in $(seq 1 30); do
+for i in $(seq 1 40); do
     if docker exec dify-db pg_isready -U dify -d dify &>/dev/null; then
         info "Database is ready."
         break
@@ -263,10 +264,28 @@ for i in $(seq 1 30); do
     sleep 3
 done
 sleep 5
+
+info "Starting full stack..."
+if docker compose version &> /dev/null; then
+    docker compose up -d
+else
+    docker-compose up -d
+fi
+
+info "Waiting for API container to be running..."
+for i in $(seq 1 30); do
+    if docker ps --format '{{.Names}}' | grep -q '^dify-api$'; then
+        break
+    fi
+    sleep 3
+done
+sleep 5
+
 info "Running database migrations..."
-docker exec dify-api flask db upgrade 2>/dev/null || warn "Migration output suppressed — may already be up to date."
+docker exec dify-api flask db upgrade
+info "Restarting API and worker..."
 docker restart dify-api dify-worker &>/dev/null
-info "API and worker restarted after migration."
+info "Dify started successfully."
 
 section "Step 8: Verifying Container"
 sleep 15
