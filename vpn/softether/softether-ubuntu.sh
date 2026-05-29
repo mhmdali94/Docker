@@ -161,28 +161,81 @@ info "docker-compose.yml created at $INSTALL_DIR/docker-compose.yml"
 
 # ============================================================
 #   Pull image and pre-populate bind-mount directory
-#   (Docker 29 + Ubuntu 24.04 fails to init named volumes for
-#   this image via overlayfs — bind mount avoids that path)
+#
+#   Docker 29 + Ubuntu 24.04 overlayfs fails to initialise
+#   named/anonymous volumes for this image (the VOLUME
+#   declaration in the image triggers a copy that hits the
+#   vpnserver binary and errors "is not directory").
+#   Using a pre-populated bind mount at /usr/vpnserver bypasses
+#   that code path entirely.
 # ============================================================
 
 section "Starting SoftEther VPN container"
 
 cd "$INSTALL_DIR"
 
+# Always clean up any previous failed attempt so re-running is safe
+info "Cleaning up any previous state..."
+$COMPOSE_CMD down -v 2>/dev/null || true
+docker rm -f softether-vpn softether-setup 2>/dev/null || true
+
 info "Pulling image..."
 docker pull siomiz/softethervpn:latest
 
+populate_vpndata() {
+    mkdir -p "$INSTALL_DIR/vpndata"
+
+    # Primary path: docker create + cp (fast, no disk overhead)
+    # Suppress errors — on Docker 29 + Ubuntu 24.04 this can hit
+    # the same overlayfs bug as compose up.
+    if docker create --name softether-setup siomiz/softethervpn:latest >/dev/null 2>&1; then
+        info "Extracting files via docker create..."
+        docker cp softether-setup:/usr/vpnserver/. "$INSTALL_DIR/vpndata/"
+        docker rm softether-setup >/dev/null
+        return 0
+    fi
+
+    # Fallback: extract from saved image layers without ever creating a container.
+    warn "docker create hit the overlayfs bug — falling back to layer extraction..."
+    docker rm -f softether-setup 2>/dev/null || true
+
+    local SE_TMP
+    SE_TMP="$(mktemp -d)"
+    info "Saving image and extracting layers (may take a moment)..."
+    docker save siomiz/softethervpn:latest | tar x -C "$SE_TMP"
+    mkdir -p "$SE_TMP/merged"
+
+    # Legacy Docker save format: blobs live as <hash>/layer.tar
+    find "$SE_TMP" -name "layer.tar" | sort | while IFS= read -r lf; do
+        tar xf "$lf" -C "$SE_TMP/merged" --overwrite 2>/dev/null || true
+    done
+
+    # OCI format: blobs/sha256/* — detect by checking if it's a tar archive
+    if [ -f "$SE_TMP/index.json" ]; then
+        for bf in "$SE_TMP/blobs/sha256/"*; do
+            [ -f "$bf" ] || continue
+            tar tf "$bf" 2>/dev/null | grep -q "^usr/\|^\./usr/" && \
+                tar xf "$bf" -C "$SE_TMP/merged" --overwrite 2>/dev/null || true
+        done
+    fi
+
+    if [ ! -d "$SE_TMP/merged/usr/vpnserver" ]; then
+        rm -rf "$SE_TMP"
+        error "Could not extract SoftEther files from image layers. Check that the image supports $(uname -m)."
+    fi
+
+    cp -a "$SE_TMP/merged/usr/vpnserver/." "$INSTALL_DIR/vpndata/"
+    chmod +x "$INSTALL_DIR/vpndata"/* 2>/dev/null || true
+    rm -rf "$SE_TMP"
+}
+
 if [ ! -d "$INSTALL_DIR/vpndata" ] || [ -z "$(ls -A "$INSTALL_DIR/vpndata" 2>/dev/null)" ]; then
     info "Pre-populating VPN data directory from image..."
-    mkdir -p "$INSTALL_DIR/vpndata"
-    docker create --name softether-setup siomiz/softethervpn:latest > /dev/null
-    docker cp softether-setup:/usr/vpnserver/. "$INSTALL_DIR/vpndata/"
-    docker rm softether-setup > /dev/null
+    populate_vpndata
     info "VPN data directory ready."
 fi
 
 $COMPOSE_CMD up -d
-
 info "Container started."
 
 # ============================================================
