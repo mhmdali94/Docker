@@ -29,109 +29,86 @@ echo ""
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║                                                      ║"
-echo "  ║  🚀  Need production setup?                         ║"
-echo "  ║      👨‍💻  Mohammed Ali Elshikh                      ║"
-echo "  ║      🌐  prismatechwork.com                         ║"
+echo "  ║  ⚠️   DEMO / TESTING USE ONLY                        ║"
 echo "  ║                                                      ║"
-echo "  ║  ☕  Support this script — USDT (TRC-20 only):     ║"
-echo "  ║      TCSZTkXvhibdrFre5sdTsFLRQ6d6yQkd2i           ║"
+echo "  ║  This installer is intended for demo and testing.   ║"
+echo "  ║  For a production-ready, hardened setup contact:    ║"
+echo "  ║                                                      ║"
+echo "  ║  👨‍💻  Mohammed Ali Elshikh                            ║"
+echo "  ║  🌐  prismatechwork.com                              ║"
+echo "  ║                                                      ║"
+echo "  ║  Press ENTER to continue with demo install...       ║"
+echo "  ║  Press Ctrl+C to cancel.                            ║"
 echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
+read -rp "" _DEMO_CONFIRM
 
-# ============================================================
-#   Pre-flight checks
-# ============================================================
+section "Step 0: Checking Privileges"
+if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
+info "Running as root. OK."
 
-section "Checking requirements"
+section "Step 1: Verifying OS"
+[ -f /etc/os-release ] || error "Cannot determine OS."
+. /etc/os-release
+[ "$ID" = "ubuntu" ] || error "Only Ubuntu is supported. Found: $ID"
+{ [ "$VERSION_ID" = "22.04" ] || [ "$VERSION_ID" = "24.04" ]; } || error "Only Ubuntu 22.04/24.04 supported. Found: $VERSION_ID"
+info "OS check passed: Ubuntu $VERSION_ID"
 
-if [[ $EUID -ne 0 ]]; then
-    error "This script must be run as root. Try: sudo bash softether-ubuntu.sh"
+section "Step 2: Checking Docker"
+if ! command -v docker &>/dev/null; then
+    warn "Docker not found. Installing..."
+    apt update -y && apt install -y docker.io
+    systemctl enable --now docker
+    info "Docker installed."
+else
+    info "Docker: $(docker --version)"
 fi
 
-OS=$(grep -oP '(?<=^ID=).+' /etc/os-release | tr -d '"')
-if [[ "$OS" != "ubuntu" && "$OS" != "debian" ]]; then
-    warn "This script is designed for Ubuntu/Debian. Detected: $OS — proceeding anyway."
+section "Step 3: Checking Docker Compose V2"
+if ! docker compose version &>/dev/null; then
+    warn "Docker Compose V2 not found. Installing..."
+    apt update -y && apt install -y docker-compose-v2 || apt install -y docker-compose
+    info "Docker Compose installed."
+else
+    info "Docker Compose: $(docker compose version)"
 fi
 
-info "Running on: $(lsb_release -ds 2>/dev/null || echo "$OS")"
+section "Step 4: Cleaning Up Existing Containers"
+for cname in softether-vpn softether-setup; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
+docker network prune -f &>/dev/null || true
 
-# ============================================================
-#   Collect configuration
-# ============================================================
+section "Step 5: Preparing Directory"
+SE_DIR="/root/docker/softether"
+if [ -d "$SE_DIR" ]; then
+    warn "Removing old directory $SE_DIR..."
+    rm -rf "$SE_DIR"
+fi
+mkdir -p "$SE_DIR"
+cd "$SE_DIR" || error "Cannot navigate to $SE_DIR"
+info "Directory ready: $SE_DIR"
 
-section "Configuration"
-
-read -rp "  Enter a pre-shared key (PSK) for L2TP/IPsec [default: vpnpsk]: " PSK
+section "Step 6: Configuration"
+read -rp "  Pre-shared key for L2TP/IPsec [default: vpnpsk]: " PSK
 PSK="${PSK:-vpnpsk}"
-
-read -rp "  Enter admin username for VPN hub [default: vpnuser]: " VPN_USER
+read -rp "  VPN username [default: vpnuser]: " VPN_USER
 VPN_USER="${VPN_USER:-vpnuser}"
-
-read -rsp "  Enter password for VPN user [default: vpnpass]: " VPN_PASS
+read -rsp "  VPN password [default: vpnpass]: " VPN_PASS
 echo
 VPN_PASS="${VPN_PASS:-vpnpass}"
-
-read -rsp "  Enter SoftEther management password [default: Admin1234!]: " MGMT_PASS
+read -rsp "  Management password [default: Admin1234!]: " MGMT_PASS
 echo
 MGMT_PASS="${MGMT_PASS:-Admin1234!}"
+info "Configuration set."
 
-INSTALL_DIR="/opt/softether"
-info "Install directory: $INSTALL_DIR"
-
-# ============================================================
-#   Install Docker
-# ============================================================
-
-section "Installing Docker"
-
-if command -v docker &>/dev/null; then
-    info "Docker already installed: $(docker --version)"
-else
-    info "Installing Docker..."
-    apt-get update -qq
-    apt-get install -y -qq ca-certificates curl gnupg lsb-release
-
-    install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
-        gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    chmod a+r /etc/apt/keyrings/docker.gpg
-
-    echo \
-        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-        https://download.docker.com/linux/ubuntu \
-        $(lsb_release -cs) stable" | \
-        tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-    apt-get update -qq
-    apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
-    systemctl enable --now docker
-    info "Docker installed successfully."
-fi
-
-if command -v docker compose &>/dev/null; then
-    COMPOSE_CMD="docker compose"
-elif command -v docker-compose &>/dev/null; then
-    COMPOSE_CMD="docker-compose"
-else
-    info "Installing docker-compose standalone..."
-    curl -fsSL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
-        -o /usr/local/bin/docker-compose
-    chmod +x /usr/local/bin/docker-compose
-    COMPOSE_CMD="docker-compose"
-fi
-
-info "Compose command: $COMPOSE_CMD"
-
-# ============================================================
-#   Create directory and docker-compose.yml
-# ============================================================
-
-section "Setting up SoftEther"
-
-mkdir -p "$INSTALL_DIR"
-
-cat > "$INSTALL_DIR/docker-compose.yml" <<EOF
+section "Step 7: Creating docker-compose.yml"
+cat > "$SE_DIR/docker-compose.yml" <<EOF
 services:
   softether:
     image: siomiz/softethervpn:latest
@@ -156,61 +133,32 @@ services:
     sysctls:
       - net.ipv4.ip_forward=1
 EOF
+info "docker-compose.yml created."
 
-info "docker-compose.yml created at $INSTALL_DIR/docker-compose.yml"
-
-# ============================================================
-#   Pull image and pre-populate bind-mount directory
-#
-#   Docker 29 + Ubuntu 24.04 overlayfs fails to initialise
-#   named/anonymous volumes for this image (the VOLUME
-#   declaration in the image triggers a copy that hits the
-#   vpnserver binary and errors "is not directory").
-#   Using a pre-populated bind mount at /usr/vpnserver bypasses
-#   that code path entirely.
-# ============================================================
-
-section "Starting SoftEther VPN container"
-
-cd "$INSTALL_DIR"
-
-# Always clean up any previous failed attempt so re-running is safe
-info "Cleaning up any previous state..."
-$COMPOSE_CMD down -v 2>/dev/null || true
-docker rm -f softether-vpn softether-setup 2>/dev/null || true
-
+section "Step 8: Pre-populating VPN Data Directory"
+# Docker 29 + Ubuntu 24.04 overlayfs bug: fails to initialise anonymous
+# volumes for images that declare VOLUME /usr/vpnserver. A pre-populated
+# bind mount at that exact path bypasses the broken code path entirely.
 info "Pulling image..."
 docker pull siomiz/softethervpn:latest
+mkdir -p "$SE_DIR/vpndata"
 
-populate_vpndata() {
-    mkdir -p "$INSTALL_DIR/vpndata"
-
-    # Primary path: docker create + cp (fast, no disk overhead)
-    # Suppress errors — on Docker 29 + Ubuntu 24.04 this can hit
-    # the same overlayfs bug as compose up.
-    if docker create --name softether-setup siomiz/softethervpn:latest >/dev/null 2>&1; then
-        info "Extracting files via docker create..."
-        docker cp softether-setup:/usr/vpnserver/. "$INSTALL_DIR/vpndata/"
-        docker rm softether-setup >/dev/null
-        return 0
-    fi
-
-    # Fallback: extract from saved image layers without ever creating a container.
-    warn "docker create hit the overlayfs bug — falling back to layer extraction..."
+if docker create --name softether-setup siomiz/softethervpn:latest >/dev/null 2>&1; then
+    info "Extracting files via docker create..."
+    docker cp softether-setup:/usr/vpnserver/. "$SE_DIR/vpndata/"
+    docker rm softether-setup >/dev/null
+    info "VPN data directory ready."
+else
+    warn "docker create hit overlayfs bug — extracting directly from image layers..."
     docker rm -f softether-setup 2>/dev/null || true
-
-    local SE_TMP
     SE_TMP="$(mktemp -d)"
-    info "Saving image and extracting layers (may take a moment)..."
     docker save siomiz/softethervpn:latest | tar x -C "$SE_TMP"
     mkdir -p "$SE_TMP/merged"
-
-    # Legacy Docker save format: blobs live as <hash>/layer.tar
+    # Legacy Docker save format: <hash>/layer.tar
     find "$SE_TMP" -name "layer.tar" | sort | while IFS= read -r lf; do
         tar xf "$lf" -C "$SE_TMP/merged" --overwrite 2>/dev/null || true
     done
-
-    # OCI format: blobs/sha256/* — detect by checking if it's a tar archive
+    # OCI format: blobs/sha256/* (detect tar archives by content)
     if [ -f "$SE_TMP/index.json" ]; then
         for bf in "$SE_TMP/blobs/sha256/"*; do
             [ -f "$bf" ] || continue
@@ -218,75 +166,102 @@ populate_vpndata() {
                 tar xf "$bf" -C "$SE_TMP/merged" --overwrite 2>/dev/null || true
         done
     fi
-
-    if [ ! -d "$SE_TMP/merged/usr/vpnserver" ]; then
-        rm -rf "$SE_TMP"
-        error "Could not extract SoftEther files from image layers. Check that the image supports $(uname -m)."
-    fi
-
-    cp -a "$SE_TMP/merged/usr/vpnserver/." "$INSTALL_DIR/vpndata/"
-    chmod +x "$INSTALL_DIR/vpndata"/* 2>/dev/null || true
+    [ -d "$SE_TMP/merged/usr/vpnserver" ] || { rm -rf "$SE_TMP"; error "Could not extract SoftEther files from image."; }
+    cp -a "$SE_TMP/merged/usr/vpnserver/." "$SE_DIR/vpndata/"
+    chmod +x "$SE_DIR/vpndata"/* 2>/dev/null || true
     rm -rf "$SE_TMP"
-}
-
-if [ ! -d "$INSTALL_DIR/vpndata" ] || [ -z "$(ls -A "$INSTALL_DIR/vpndata" 2>/dev/null)" ]; then
-    info "Pre-populating VPN data directory from image..."
-    populate_vpndata
-    info "VPN data directory ready."
+    info "VPN data directory ready (extracted from layers)."
 fi
 
-$COMPOSE_CMD up -d
-info "Container started."
+section "Step 9: Starting SoftEther VPN"
+MAX_RETRIES=3
+for attempt in $(seq 1 $MAX_RETRIES); do
+    if docker compose version &>/dev/null; then
+        docker compose up -d && break
+    else
+        docker-compose up -d && break
+    fi
+    warn "Attempt $attempt/$MAX_RETRIES failed."
+    [ "$attempt" -lt "$MAX_RETRIES" ] && info "Retrying in 15s..." && sleep 15
+    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed after $MAX_RETRIES attempts. Run manually: cd $SE_DIR && docker compose up -d"
+done
 
-# ============================================================
-#   Configure firewall (UFW)
-# ============================================================
+section "Step 10: Verifying Container"
+sleep 5
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^softether-vpn$' || true)
+if [ -z "$RUNNING" ]; then
+    warn "Container may not have started. Check: docker logs softether-vpn"
+else
+    info "Container running: $RUNNING"
+fi
 
-section "Configuring firewall"
+section "Step 11: Health Check"
+info "Waiting for SoftEther management port 5555 to open..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if nc -z 127.0.0.1 5555 2>/dev/null; then
+        info "Port 5555 is open — SoftEther is ready. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+if [ "$HEALTH_OK" -eq 0 ]; then
+    warn "Port 5555 is not responding after 60s."
+    docker logs --tail 20 softether-vpn 2>&1 || true
+fi
 
+section "Step 12: Opening Firewall Ports"
 if command -v ufw &>/dev/null; then
-    ufw allow 500/udp   comment "SoftEther L2TP/IPsec IKE"  2>/dev/null || true
-    ufw allow 4500/udp  comment "SoftEther L2TP/IPsec NAT-T" 2>/dev/null || true
-    ufw allow 1701/tcp  comment "SoftEther L2TP"             2>/dev/null || true
-    ufw allow 1194/udp  comment "SoftEther OpenVPN"          2>/dev/null || true
-    ufw allow 443/tcp   comment "SoftEther SSTP"             2>/dev/null || true
-    ufw allow 5555/tcp  comment "SoftEther Management"       2>/dev/null || true
+    ufw allow 500/udp   comment "SoftEther L2TP/IPsec IKE"   2>/dev/null || true
+    ufw allow 4500/udp  comment "SoftEther L2TP/IPsec NAT-T"  2>/dev/null || true
+    ufw allow 1701/tcp  comment "SoftEther L2TP"              2>/dev/null || true
+    ufw allow 1194/udp  comment "SoftEther OpenVPN"           2>/dev/null || true
+    ufw allow 443/tcp   comment "SoftEther SSTP"              2>/dev/null || true
+    ufw allow 5555/tcp  comment "SoftEther Management"        2>/dev/null || true
     info "UFW rules applied."
 else
-    warn "UFW not found — open these ports manually in your firewall/security group:"
-    warn "  UDP 500, 4500, 1194  |  TCP 443, 1701, 5555"
+    warn "UFW not found — open ports manually: UDP 500,4500,1194 | TCP 443,1701,5555"
 fi
 
-# ============================================================
-#   Done
-# ============================================================
-
-section "Installation Complete"
-
-SERVER_IP=$(curl -s https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+echo ""
+echo "  ╔══════════════════════════════════════════════════════╗"
+echo "  ║              ✅  Setup Complete!                     ║"
+echo "  ╠══════════════════════════════════════════════════════╣"
+echo "  ║                                                      ║"
+echo "  ║  🔐  L2TP/IPsec (iOS / Android / Windows):         ║"
+echo "  ║      Server  : $SERVER_IP"
+echo "  ║      PSK     : $PSK"
+echo "  ║      User    : $VPN_USER"
+echo "  ║      Pass    : $VPN_PASS"
+echo "  ║                                                      ║"
+echo "  ║  🖥️  Management (SoftEther VPN Manager app):        ║"
+echo "  ║      Host    : $SERVER_IP"
+echo "  ║      Port    : 5555"
+echo "  ║      Pass    : $MGMT_PASS"
+echo "  ║                                                      ║"
+echo "  ║  ⚠️  Port 5555 is NOT a web page.                   ║"
+echo "  ║     Use the SoftEther VPN Server Manager app:       ║"
+echo "  ║     https://www.softether-download.com              ║"
+echo "  ║                                                      ║"
+echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
+echo "  ╚══════════════════════════════════════════════════════╝"
+echo ""
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
-echo "  ║              SoftEther VPN is Running!              ║"
-echo "  ╠══════════════════════════════════════════════════════╣"
-echo "  ║  Server IP   : $SERVER_IP"
-echo "  ║  PSK         : $PSK"
-echo "  ║  VPN User    : $VPN_USER"
-echo "  ║  VPN Pass    : $VPN_PASS"
-echo "  ║  Mgmt Pass   : $MGMT_PASS"
-echo "  ╠══════════════════════════════════════════════════════╣"
-echo "  ║  Management  : $SERVER_IP:5555 (SoftEther Manager)  ║"
-echo "  ║  L2TP/IPsec  : native VPN on iOS/Android/Windows    ║"
-echo "  ║  OpenVPN     : $SERVER_IP:1194                      ║"
+echo "  ║                                                      ║"
+echo "  ║  🚀  Need production setup?                         ║"
+echo "  ║      👨‍💻  Mohammed Ali Elshikh                      ║"
+echo "  ║      🌐  prismatechwork.com                         ║"
+echo "  ║                                                      ║"
+echo "  ║  ☕  Support this script — USDT (TRC-20 only):     ║"
+echo "  ║      TCSZTkXvhibdrFre5sdTsFLRQ6d6yQkd2i           ║"
+echo "  ║                                                      ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
-echo ""
-echo "  Manage the container:"
-echo "    cd $INSTALL_DIR"
-echo "    $COMPOSE_CMD logs -f       # view logs"
-echo "    $COMPOSE_CMD restart       # restart"
-echo "    $COMPOSE_CMD down          # stop"
-echo ""
-echo "  Download SoftEther VPN Server Manager:"
-echo "    https://www.softether-download.com"
-echo "    Connect to: $SERVER_IP:5555"
 echo ""
