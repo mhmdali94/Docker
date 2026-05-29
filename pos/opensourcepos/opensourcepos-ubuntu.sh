@@ -67,11 +67,22 @@ info "Directory ready: $APP_DIR"
 
 DB_PASS=$(openssl rand -hex 16)
 
-section "Step 6: Writing docker-compose.yml"
+section "Step 6: Writing Configuration Files"
+# The opensourcepos/opensourcepos image is not on Docker Hub.
+# We build directly from the official GitHub source.
+
+info "Downloading database schema..."
+curl -fsSL \
+    "https://raw.githubusercontent.com/opensourcepos/opensourcepos/master/database/opensourcepos.sql" \
+    -o "$APP_DIR/opensourcepos.sql" \
+    || warn "Could not download schema — MySQL will start empty; run the web installer manually."
+
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   opensourcepos:
-    image: opensourcepos/opensourcepos:latest
+    build:
+      context: https://github.com/opensourcepos/opensourcepos.git#master
+    image: opensourcepos:local
     container_name: opensourcepos
     restart: unless-stopped
     ports:
@@ -95,16 +106,24 @@ services:
       MYSQL_PASSWORD: ${DB_PASS}
     volumes:
       - ./mysql:/var/lib/mysql
+      - ./opensourcepos.sql:/docker-entrypoint-initdb.d/opensourcepos.sql
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 EOF
 info "docker-compose.yml created."
 
-section "Step 7: Starting Open Source POS"
-if docker compose version &> /dev/null; then
-    docker compose up -d || error "Failed to start. Run: cd $APP_DIR && docker compose up -d"
-else
-    docker-compose up -d || error "Failed to start. Run: cd $APP_DIR && docker-compose up -d"
-fi
+section "Step 7: Building & Starting Open Source POS"
+warn "Building from source — first run takes 3-5 minutes..."
+MAX_RETRIES=3
+for attempt in $(seq 1 $MAX_RETRIES); do
+    if docker compose version &>/dev/null; then
+        docker compose up -d --build && break
+    else
+        docker-compose up -d --build && break
+    fi
+    warn "Attempt $attempt/$MAX_RETRIES failed."
+    [ "$attempt" -lt "$MAX_RETRIES" ] && info "Retrying in 15s..." && sleep 15
+    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed after $MAX_RETRIES attempts. Run manually: cd $APP_DIR && docker compose up -d --build"
+done
 
 section "Step 8: Health Check (~60s for first start)"
 info "Waiting for Open Source POS to be ready..."
