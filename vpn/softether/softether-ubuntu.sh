@@ -132,8 +132,6 @@ section "Setting up SoftEther"
 mkdir -p "$INSTALL_DIR"
 
 cat > "$INSTALL_DIR/docker-compose.yml" <<EOF
-version: "3.8"
-
 services:
   softether:
     image: siomiz/softethervpn:latest
@@ -154,24 +152,35 @@ services:
       - "443:443/tcp"
       - "5555:5555/tcp"
     volumes:
-      - softether-data:/opt/vpnserver
+      - ./vpndata:/usr/vpnserver
     sysctls:
       - net.ipv4.ip_forward=1
-
-volumes:
-  softether-data:
 EOF
 
 info "docker-compose.yml created at $INSTALL_DIR/docker-compose.yml"
 
 # ============================================================
-#   Pull image and start container
+#   Pull image and pre-populate bind-mount directory
+#   (Docker 29 + Ubuntu 24.04 fails to init named volumes for
+#   this image via overlayfs — bind mount avoids that path)
 # ============================================================
 
 section "Starting SoftEther VPN container"
 
 cd "$INSTALL_DIR"
-$COMPOSE_CMD pull
+
+info "Pulling image..."
+docker pull siomiz/softethervpn:latest
+
+if [ ! -d "$INSTALL_DIR/vpndata" ] || [ -z "$(ls -A "$INSTALL_DIR/vpndata" 2>/dev/null)" ]; then
+    info "Pre-populating VPN data directory from image..."
+    mkdir -p "$INSTALL_DIR/vpndata"
+    docker create --name softether-setup siomiz/softethervpn:latest > /dev/null
+    docker cp softether-setup:/usr/vpnserver/. "$INSTALL_DIR/vpndata/"
+    docker rm softether-setup > /dev/null
+    info "VPN data directory ready."
+fi
+
 $COMPOSE_CMD up -d
 
 info "Container started."
