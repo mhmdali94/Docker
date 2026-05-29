@@ -68,21 +68,99 @@ info "Directory ready: $APP_DIR"
 DB_PASS=$(openssl rand -hex 16)
 
 section "Step 6: Writing Configuration Files"
-# The opensourcepos/opensourcepos image is not on Docker Hub.
-# We build directly from the official GitHub source.
+# opensourcepos has no public Docker Hub image, and their own Dockerfile
+# skips composer install (it targets a pre-built CI image, not local builds).
+# We write our own Dockerfile + entrypoint that build correctly from source.
 
-info "Downloading database schema..."
-curl -fsSL \
-    "https://raw.githubusercontent.com/opensourcepos/opensourcepos/master/database/opensourcepos.sql" \
-    -o "$APP_DIR/opensourcepos.sql" \
-    || warn "Could not download schema — MySQL will start empty; run the web installer manually."
+# --- entrypoint.sh ---
+cat > "$APP_DIR/entrypoint.sh" << 'ENTRYPOINT'
+#!/bin/bash
+set -e
 
+# Write CodeIgniter 4 .env with DB connection from environment variables
+{
+    printf "CI_ENVIRONMENT = production\n"
+    printf "database.default.hostname = %s\n" "${OSWEB_DB_HOSTNAME:-localhost}"
+    printf "database.default.database = %s\n" "${OSWEB_DB_DATABASE:-ospos}"
+    printf "database.default.username = %s\n" "${OSWEB_DB_USERNAME:-ospos}"
+    printf "database.default.password = %s\n" "${OSWEB_DB_PASSWORD}"
+    printf "database.default.DBDriver = MySQLi\n"
+    printf "database.default.port = 3306\n"
+} > /app/.env
+chown www-data:www-data /app/.env
+
+# Wait for MySQL to accept connections before starting Apache
+echo "[OSPOS] Waiting for MySQL..."
+until php -r "
+try {
+    new PDO(
+        'mysql:host=' . getenv('OSWEB_DB_HOSTNAME') . ';dbname=' . getenv('OSWEB_DB_DATABASE'),
+        getenv('OSWEB_DB_USERNAME'),
+        getenv('OSWEB_DB_PASSWORD')
+    );
+    exit(0);
+} catch (Exception \$e) { exit(1); }
+" 2>/dev/null; do
+    sleep 2
+done
+echo "[OSPOS] MySQL ready."
+
+# Run CI4 migrations to create / update schema (safe to run on every start)
+cd /app
+php spark migrate --all --no-interaction 2>/dev/null || true
+
+exec apache2-foreground
+ENTRYPOINT
+chmod +x "$APP_DIR/entrypoint.sh"
+info "entrypoint.sh created."
+
+# --- Dockerfile ---
+cat > "$APP_DIR/Dockerfile" << 'DOCKERFILE'
+FROM php:8.2-apache
+
+RUN apt-get update -qq && apt-get install -y -qq \
+        git unzip curl \
+        libpng-dev libjpeg-dev libfreetype6-dev \
+        libzip-dev libicu-dev libonig-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install mysqli pdo pdo_mysql gd zip intl mbstring \
+    && a2enmod rewrite \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -sS https://getcomposer.org/installer \
+    | php -- --install-dir=/usr/local/bin --filename=composer
+
+RUN git clone --depth=1 https://github.com/opensourcepos/opensourcepos.git /app
+
+WORKDIR /app
+
+# Install PHP dependencies (vendor/ is gitignored, must be built)
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Serve from CI4's public/ directory with rewrite support
+RUN printf '<VirtualHost *:80>\n\
+    DocumentRoot /app/public\n\
+    <Directory /app/public>\n\
+        Options -Indexes +FollowSymLinks\n\
+        AllowOverride All\n\
+        Require all granted\n\
+    </Directory>\n\
+</VirtualHost>\n' > /etc/apache2/sites-enabled/000-default.conf
+
+RUN chown -R www-data:www-data /app
+
+COPY entrypoint.sh /entrypoint.sh
+
+EXPOSE 80
+ENTRYPOINT ["/entrypoint.sh"]
+DOCKERFILE
+info "Dockerfile created."
+
+# --- docker-compose.yml ---
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   opensourcepos:
-    build:
-      context: https://github.com/opensourcepos/opensourcepos.git#master
-      target: ospos
+    build: .
     image: opensourcepos:local
     container_name: opensourcepos
     restart: unless-stopped
@@ -107,7 +185,6 @@ services:
       MYSQL_PASSWORD: ${DB_PASS}
     volumes:
       - ./mysql:/var/lib/mysql
-      - ./opensourcepos.sql:/docker-entrypoint-initdb.d/opensourcepos.sql
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 EOF
 info "docker-compose.yml created."
