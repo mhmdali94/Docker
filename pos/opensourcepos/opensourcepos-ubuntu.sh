@@ -82,6 +82,7 @@ services:
   opensourcepos:
     build:
       context: https://github.com/opensourcepos/opensourcepos.git#master
+      target: ospos
     image: opensourcepos:local
     container_name: opensourcepos
     restart: unless-stopped
