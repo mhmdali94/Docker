@@ -74,7 +74,7 @@ else
 fi
 
 section "Step 4: Checking Dependencies"
-apt update -y && apt install -y openssl
+apt update -y && apt install -y openssl curl
 info "Dependencies OK."
 
 section "Step 5: Cleaning Up Existing Containers"
@@ -93,15 +93,30 @@ if [ -d "$AL_DIR" ]; then
     warn "Removing old directory $AL_DIR..."
     rm -rf "$AL_DIR"
 fi
-mkdir -p "$AL_DIR/config"
+mkdir -p "$AL_DIR/config/ssl"
 cd "$AL_DIR" || error "Cannot navigate to $AL_DIR"
 info "Directory ready: $AL_DIR"
 
-section "Step 7: Generating Credentials & Configuration"
+section "Step 7: Detecting Server IP & Domain"
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+[ -z "$SERVER_IP" ] && error "Could not detect server IP."
+AL_DOMAIN="${SERVER_IP}.nip.io"
+info "Server IP  : $SERVER_IP"
+info "Domain     : $AL_DOMAIN  (via nip.io wildcard DNS)"
+
+section "Step 8: Generating TLS Certificate"
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout "$AL_DIR/config/ssl/privkey.pem" \
+    -out    "$AL_DIR/config/ssl/cert.pem" \
+    -subj   "/CN=${AL_DOMAIN}" \
+    &>/dev/null
+info "Self-signed TLS cert generated for ${AL_DOMAIN}"
+
+section "Step 9: Generating Credentials & Configuration"
 AL_JWT_SECRET=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 64)
 AL_SESSION_SECRET=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 64)
 AL_STORAGE_KEY=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 64)
-AL_ADMIN_PASS_HASH=$(docker run --rm authelia/authelia:4.37.5 authelia crypto hash generate argon2 --password 'changeme2024' 2>/dev/null | grep 'Digest:' | awk '{print $2}' || echo '$argon2id$v=19$m=65536,t=3,p=4$PLACEHOLDER')
+AL_ADMIN_PASS_HASH=$(docker run --rm authelia/authelia:4.37.5 authelia crypto hash generate argon2 --password 'changeme2024' 2>/dev/null | grep 'Digest:' | awk '{print $2}' || echo '$argon2id$v=19$m=65536,t=3,p=4$c2FsdHNhbHRzYWx0c2FsdA$oE7bBX8tM5fY2gLVvLy5kCIqeR6qBzGVIqZrFjYRYAA')
 info "Admin User     : authelia"
 info "Admin Password : changeme2024  (CHANGE THIS AFTER FIRST LOGIN)"
 
@@ -110,17 +125,20 @@ cat > "$AL_DIR/config/configuration.yml" <<EOF
 theme: dark
 jwt_secret: $AL_JWT_SECRET
 
-default_redirection_url: http://localhost:9091
+default_redirection_url: https://${AL_DOMAIN}:9091
 
 server:
   host: 0.0.0.0
   port: 9091
+  tls:
+    key: /config/ssl/privkey.pem
+    certificate: /config/ssl/cert.pem
 
 log:
   level: info
 
 totp:
-  issuer: authelia.local
+  issuer: ${AL_DOMAIN}
 
 authentication_backend:
   file:
@@ -136,7 +154,7 @@ authentication_backend:
 access_control:
   default_policy: deny
   rules:
-    - domain: "*.local"
+    - domain: "*.${AL_DOMAIN}"
       policy: two_factor
 
 session:
@@ -144,7 +162,7 @@ session:
   secret: $AL_SESSION_SECRET
   expiration: 3600
   inactivity: 300
-  domain: localhost
+  domain: ${AL_DOMAIN}
   redis:
     host: authelia-redis
     port: 6379
@@ -215,7 +233,7 @@ networks:
 EOF
 info "Configuration and docker-compose.yml created."
 
-section "Step 8: Starting Authelia"
+section "Step 10: Starting Authelia"
 MAX_RETRIES=3
 for attempt in $(seq 1 $MAX_RETRIES); do
     if docker compose version &> /dev/null; then
@@ -228,7 +246,7 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed to start after $MAX_RETRIES attempts. Run manually: cd $PWD && docker compose up -d"
 done
 
-section "Step 9: Verifying Containers"
+section "Step 11: Verifying Containers"
 sleep 6
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E 'authelia' || true)
 if [ -z "$RUNNING" ]; then
@@ -237,11 +255,11 @@ else
     info "Containers running: $RUNNING"
 fi
 
-section "Step 10: Health Check"
+section "Step 12: Health Check"
 info "Waiting for Authelia to be ready on port 9091..."
 HEALTH_OK=0
 for i in $(seq 1 12); do
-    if curl -s --max-time 3 http://127.0.0.1:9091/api/health &>/dev/null; then
+    if curl -sk --max-time 3 https://127.0.0.1:9091/api/health &>/dev/null; then
         info "Port 9091 is responding — Authelia is healthy. ✅"
         HEALTH_OK=1
         break
@@ -261,7 +279,7 @@ if [ "$HEALTH_OK" -eq 0 ]; then
     fi
 fi
 
-section "Step 11: Opening Firewall Port 9091"
+section "Step 13: Opening Firewall Port 9091"
 if command -v ufw &> /dev/null; then
     ufw allow 9091/tcp
     info "UFW: port 9091/tcp opened."
@@ -269,14 +287,16 @@ else
     warn "UFW not found — skipping firewall rule."
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
 echo "  ║  🌐  Open Authelia in your browser:                ║"
-echo "  ║      👉  http://$SERVER_IP:9091"
+echo "  ║      👉  https://${AL_DOMAIN}:9091"
+echo "  ║                                                      ║"
+echo "  ║  ⚠️  Accept the self-signed cert warning            ║"
+echo "  ║      in your browser to proceed.                    ║"
 echo "  ║                                                      ║"
 echo "  ║  🔑  Default Credentials:                          ║"
 echo "  ║      Username : authelia"
