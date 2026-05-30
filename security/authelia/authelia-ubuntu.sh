@@ -108,19 +108,19 @@ info "Admin Password : changeme2024  (CHANGE THIS AFTER FIRST LOGIN)"
 cat > "$AL_DIR/config/configuration.yml" <<EOF
 ---
 theme: dark
-jwt_secret: $AL_JWT_SECRET
-
-default_redirection_url: http://localhost:9091
 
 server:
-  host: 0.0.0.0
-  port: 9091
+  address: 'tcp://0.0.0.0:9091'
 
 log:
   level: info
 
 totp:
   issuer: authelia.local
+
+identity_validation:
+  reset_password:
+    jwt_secret: $AL_JWT_SECRET
 
 authentication_backend:
   file:
@@ -140,11 +140,17 @@ access_control:
       policy: two_factor
 
 session:
-  name: authelia_session
   secret: $AL_SESSION_SECRET
-  expiration: 3600
-  inactivity: 300
-  domain: localhost
+  cookies:
+    - name: authelia_session
+      domain: localhost
+      authelia_url: 'http://localhost:9091'
+      default_redirection_url: 'http://localhost:9091'
+      expiration: 3600
+      inactivity: 300
+  redis:
+    host: authelia-redis
+    port: 6379
 
 regulation:
   max_retries: 3
