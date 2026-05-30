@@ -172,7 +172,7 @@ cat > "$AL_DIR/config/users_database.yml" <<EOF
 users:
   authelia:
     displayname: "Authelia Admin"
-    password: "\$argon2id\$v=19\$m=65536,t=3,p=4\$bXlzYWx0c3RyaW5nMTI\$K6s1onBxqMGRxvHb8C1T2HE9GyCepUiSfxpY3f1Lv+A"
+    password: "$AL_ADMIN_PASS_HASH"
     email: admin@example.com
     groups:
       - admins
@@ -190,13 +190,19 @@ services:
       - ./redis-data:/data
     networks:
       - authelia-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   authelia:
     image: authelia/authelia:latest
     container_name: authelia
     restart: unless-stopped
     depends_on:
-      - authelia-redis
+      authelia-redis:
+        condition: service_healthy
     ports:
       - "9091:9091"
     volumes:
