@@ -101,26 +101,26 @@ section "Step 7: Generating Credentials & Configuration"
 AL_JWT_SECRET=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 64)
 AL_SESSION_SECRET=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 64)
 AL_STORAGE_KEY=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 64)
-AL_ADMIN_PASS_HASH=$(docker run --rm authelia/authelia:latest authelia crypto hash generate argon2 --password 'changeme2024' 2>/dev/null | grep 'Digest:' | awk '{print $2}' || echo '$argon2id$v=19$m=65536,t=3,p=4$PLACEHOLDER')
+AL_ADMIN_PASS_HASH=$(docker run --rm authelia/authelia:4.37.5 authelia crypto hash generate argon2 --password 'changeme2024' 2>/dev/null | grep 'Digest:' | awk '{print $2}' || echo '$argon2id$v=19$m=65536,t=3,p=4$PLACEHOLDER')
 info "Admin User     : authelia"
 info "Admin Password : changeme2024  (CHANGE THIS AFTER FIRST LOGIN)"
 
 cat > "$AL_DIR/config/configuration.yml" <<EOF
 ---
 theme: dark
+jwt_secret: $AL_JWT_SECRET
+
+default_redirection_url: http://localhost:9091
 
 server:
-  address: 'tcp://0.0.0.0:9091'
+  host: 0.0.0.0
+  port: 9091
 
 log:
   level: info
 
 totp:
   issuer: authelia.local
-
-identity_validation:
-  reset_password:
-    jwt_secret: $AL_JWT_SECRET
 
 authentication_backend:
   file:
@@ -140,14 +140,11 @@ access_control:
       policy: two_factor
 
 session:
+  name: authelia_session
   secret: $AL_SESSION_SECRET
-  cookies:
-    - name: authelia_session
-      domain: localhost
-      authelia_url: 'http://localhost:9091'
-      default_redirection_url: 'http://localhost:9091'
-      expiration: 3600
-      inactivity: 300
+  expiration: 3600
+  inactivity: 300
+  domain: localhost
   redis:
     host: authelia-redis
     port: 6379
@@ -197,7 +194,7 @@ services:
       retries: 10
 
   authelia:
-    image: authelia/authelia:latest
+    image: authelia/authelia:4.37.5
     container_name: authelia
     restart: unless-stopped
     depends_on:
