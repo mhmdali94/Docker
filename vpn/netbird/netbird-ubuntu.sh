@@ -101,6 +101,7 @@ if [ -d "$NB_DIR" ]; then
     rm -rf "$NB_DIR"
 fi
 mkdir -p "$NB_DIR/management" "$NB_DIR/caddy" "$NB_DIR/dex-data"
+chmod 777 "$NB_DIR/dex-data"
 cd "$NB_DIR" || error "Cannot navigate to $NB_DIR"
 info "Directory ready: $NB_DIR"
 
@@ -152,7 +153,7 @@ cat > "$NB_DIR/management/management.json" <<EOF
     "Address": "0.0.0.0:8080",
     "AuthIssuer": "https://${NB_DOMAIN}/dex",
     "AuthAudience": "netbird-client",
-    "AuthKeysLocation": "https://${NB_DOMAIN}/dex/keys",
+    "AuthKeysLocation": "http://dex:5556/dex/keys",
     "AuthUserIDClaim": "sub"
   },
   "IdpManagerConfig": {
@@ -293,6 +294,7 @@ services:
     volumes:
       - ./management:/var/lib/netbird
     command:
+      - --config=/var/lib/netbird/management.json
       - --port=8080
       - --log-file=console
       - --log-level=info
@@ -315,8 +317,8 @@ services:
       - AUTH_SUPPORTED_SCOPES=openid profile email offline_access
       - NETBIRD_MGMT_API_ENDPOINT=https://${NB_DOMAIN}
       - NETBIRD_MGMT_GRPC_API_ENDPOINT=https://${NB_DOMAIN}
-      - AUTH_REDIRECT_URI=https://${NB_DOMAIN}/callback
-      - AUTH_SILENT_REDIRECT_URI=https://${NB_DOMAIN}/silent-callback
+      - AUTH_REDIRECT_URI=/callback
+      - AUTH_SILENT_REDIRECT_URI=/silent-callback
       - NGINX_SSL_PORT=443
     networks:
       - netbird-net
