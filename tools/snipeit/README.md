@@ -1,8 +1,20 @@
-# Snipe-IT
+# Snipe-IT — Self-Hosted Docker Installer
 
-Open-source IT asset management. Track laptops, servers, licenses, accessories, and consumables — know what you have, where it is, and who has it.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Snipe-IT is an open-source IT asset management system for tracking laptops, servers, licenses, accessories, and consumables.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Snipe-IT?
+
+Snipe-IT provides a complete IT asset lifecycle management platform. Track who has what asset, where it is located, and when it is due back. It supports QR/barcode label generation, check-in/check-out workflows, software license seat management, depreciation tracking, maintenance scheduling, and email notifications. It includes a REST API for integrations and supports LDAP/Active Directory for authentication.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/tools/snipeit/snipeit-ubuntu.sh
@@ -10,41 +22,68 @@ chmod +x snipeit-ubuntu.sh
 sudo bash snipeit-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure database password and app key
+- Starts Snipe-IT and MySQL 8.0
+- Runs a health check
 
-- **Snipe-IT** — IT asset management
-- **MySQL 8.0** — Database
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 8002 | Snipe-IT web UI |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Web UI | `http://<server-ip>:8002` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8002` |
+| **Setup** | Setup wizard on first visit |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's actual IP address.
 
-None — a setup wizard runs on first visit to create the admin account.
+---
 
-## Features
+## Ports
 
-- Asset tracking with QR/barcode labels
-- Check-in / check-out to users and locations
-- Software license management and seat counting
-- Accessory and consumable tracking
-- Maintenance scheduling and history
-- Email notifications for due dates and check-outs
-- REST API for integrations
-- LDAP/Active Directory support
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8002` | TCP | Web UI |
 
-## Notes
+---
 
-- Config and uploads stored in `./data/`
-- MySQL data in `./mysql/`
-- Import assets in bulk via CSV
-- Depreciation tracking for hardware
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/snipeit/` | All service data and configuration |
+| `/root/docker/snipeit/data/` | Config and uploads |
+| `/root/docker/snipeit/mysql/` | Database storage |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f snipeit
+
+# Stop
+cd /root/docker/snipeit && docker compose down
+
+# Start
+cd /root/docker/snipeit && docker compose up -d
+
+# Update to latest image
+cd /root/docker/snipeit && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8002/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

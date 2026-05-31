@@ -1,8 +1,20 @@
-# Typebot
+# Typebot — Self-Hosted Docker Installer
 
-Visual chatbot and form builder — embed conversational flows on any website without code.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Typebot is a visual chatbot and form builder — create conversational flows and embed them on any website without writing code.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Typebot?
+
+Typebot provides a drag-and-drop visual builder for creating chatbots, lead generation forms, surveys, and conversational experiences. Bots can be embedded on websites, shared via links, or integrated with messaging platforms. It supports conditional logic, variables, file uploads, payment collection (Stripe), email notifications, and webhook integrations. The builder (design interface) and viewer (runtime) run as separate containers behind a PostgreSQL database.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/tools/typebot/typebot-ubuntu.sh
@@ -10,27 +22,68 @@ chmod +x typebot-ubuntu.sh
 sudo bash typebot-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure database password and secrets
+- Starts Typebot Builder, Viewer, and PostgreSQL 15
+- Runs a health check
 
-- **Typebot Builder** — visual flow editor
-- **Typebot Viewer** — runtime that serves bots to end users
-- **PostgreSQL** — primary database
+---
 
-## Credentials
+## Access
 
-| Field | Value |
-| --- | --- |
-| Builder URL | http://\<server-ip\>:3310 |
-| Viewer URL | http://\<server-ip\>:3311 |
-| Setup | Register on first visit |
+| | |
+|---|---|
+| **Builder** | `http://SERVER_IP:3310` |
+| **Viewer** | `http://SERVER_IP:3311` |
+| **Email** | `admin@typebot.local` |
+
+> Replace `SERVER_IP` with your server's actual IP address.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 3310 | Typebot Builder |
-| 3311 | Typebot Viewer |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `3310` | TCP | Builder (admin interface) |
+| `3311` | TCP | Viewer (public bot runtime) |
 
-## Connect
+---
 
-Open the builder at `http://<server-ip>:3310` and register. Design your bot flow, then publish — the viewer at port 3311 serves it to end users. Use the embed snippet to add the bot to any webpage.
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/typebot/` | All service data and configuration |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f typebot-builder
+
+# Stop
+cd /root/docker/typebot && docker compose down
+
+# Start
+cd /root/docker/typebot && docker compose up -d
+
+# Update to latest image
+cd /root/docker/typebot && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports 3310, 3311/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

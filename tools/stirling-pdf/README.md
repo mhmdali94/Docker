@@ -1,71 +1,88 @@
-# Stirling-PDF
-
-Powerful self-hosted web application for all your PDF needs — 50+ tools in one place.
-
-**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+# Stirling-PDF — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
+Stirling-PDF is a powerful self-hosted web application with 50+ PDF tools — merge, split, compress, convert, OCR, sign, and more. All processing done locally.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
 ---
 
-## 🚀 Quick Install
+## What is Stirling-PDF?
+
+Stirling-PDF provides a comprehensive suite of PDF manipulation tools through a clean web interface. All file processing happens locally on your server — no files are uploaded to any third-party service. It supports merging, splitting, rotating, compressing, watermarking, OCR text extraction, PDF-to-image conversion, digital signatures, and over 50 more operations. No login is required to use any feature.
+
+---
+
+## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/yourusername/docker/main/tools/stirling-pdf/stirling-pdf-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/tools/stirling-pdf/stirling-pdf-ubuntu.sh
+chmod +x stirling-pdf-ubuntu.sh
 sudo bash stirling-pdf-ubuntu.sh
 ```
 
-Or:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/docker/main/tools/stirling-pdf/stirling-pdf-ubuntu.sh | sudo bash
-```
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Starts the service stack
+- Runs a health check
 
 ---
 
-## 📖 What is Stirling-PDF?
+## Access
 
-Stirling-PDF is a self-hosted web application that provides a comprehensive suite of PDF tools. All processing is done locally on your server — no files are uploaded to any third-party service.
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8087` |
+| **Login** | None (open by default) |
 
-## ✨ Features
+> Replace `SERVER_IP` with your server's actual IP address.
 
-- Merge, split, and rearrange PDFs
-- Compress PDFs
-- Convert PDF to/from Word, Excel, images, HTML
-- Add watermarks, page numbers, and stamps
-- Rotate and crop pages
-- OCR (extract text from scanned PDFs)
-- Sign and certify PDFs
-- Redact sensitive content
-- Edit PDF metadata
-- 50+ tools total — no login required
+---
 
-## 🌐 Access
-
-| URL | `http://<server-ip>:8087` |
-|-----|--------------------------|
-
-No login required. Open and start using immediately.
-
-## 🔌 Ports
+## Ports
 
 | Port | Protocol | Purpose |
 |------|----------|---------|
-| `8087` | TCP | Stirling-PDF Web UI |
-
-## 📁 Directory Structure
-
-```
-/root/docker/stirling-pdf/
-├── docker-compose.yml
-├── configs/       # App configuration
-└── logs/          # Application logs
-```
-
-## 📚 Documentation
-
-- [Stirling-PDF GitHub](https://github.com/Stirling-Tools/Stirling-PDF)
+| `8087` | TCP | Web UI |
 
 ---
 
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/stirling-pdf/` | All service data and configuration |
+| `/root/docker/stirling-pdf/configs/` | App configuration |
+| `/root/docker/stirling-pdf/logs/` | Application logs |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f stirling-pdf
+
+# Stop
+cd /root/docker/stirling-pdf && docker compose down
+
+# Start
+cd /root/docker/stirling-pdf && docker compose up -d
+
+# Update to latest image
+cd /root/docker/stirling-pdf && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8087/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

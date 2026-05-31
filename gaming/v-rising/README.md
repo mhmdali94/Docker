@@ -1,8 +1,20 @@
-# V Rising Server
+# V Rising Server — Self-Hosted Docker Installer
 
-Vampire survival action-RPG multiplayer. Powered by `trueosiris/vrising`.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+V Rising is a vampire survival action-RPG multiplayer game. Powered by `trueosiris/vrising`.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is V Rising?
+
+V Rising is an open-world vampire survival game where players awaken as a weakened vampire and must rebuild their castle, conquer territories, and dominate the living. The dedicated server supports PvE and PvP modes, optional server passwords, and admin management via Steam64 IDs. Save data and server settings are fully configurable.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/gaming/v-rising/v-rising-ubuntu.sh
@@ -10,28 +22,43 @@ chmod +x v-rising-ubuntu.sh
 sudo bash v-rising-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Prompts for server name, password, max players, and optional admin ID
+- Starts the game server
+- Runs a health check
 
-- **V Rising Dedicated Server** — via `trueosiris/vrising`
+---
+
+## Connect
+
+| | |
+|---|---|
+| **In-game** | Play → Online → Find Servers → Direct Connect → `SERVER_IP:9876` |
+
+> Replace `SERVER_IP` with your server's actual IP address.
+
+---
 
 ## Ports
 
-| Port | Protocol | Service |
-| --- | --- | --- |
-| 9876 | UDP | Game port |
-| 9877 | UDP | Query port |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `9876` | UDP | Game port |
+| `9877` | UDP | Query port |
 
-## Access
-
-In V Rising: Play → Online → Find Servers → Direct Connect → `<server-ip>:9876`
+---
 
 ## Hardware Requirements
 
 | Resource | Minimum | Recommended |
-| --- | --- | --- |
+|----------|---------|-------------|
 | RAM | 4 GB | 8 GB |
 | CPU | 4 cores | 8 cores |
 | Disk | 5 GB | 10 GB |
+
+---
 
 ## Features
 
@@ -41,6 +68,44 @@ In V Rising: Play → Online → Find Servers → Direct Connect → `<server-ip
 - Save data persisted in `./data/`
 - Server settings in `./config/Settings/`
 
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/v-rising/` | All service data and configuration |
+| `/root/docker/v-rising/data/` | Save data |
+| `/root/docker/v-rising/config/Settings/` | Server settings |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f v-rising
+
+# Stop
+cd /root/docker/v-rising && docker compose down
+
+# Start
+cd /root/docker/v-rising && docker compose up -d
+
+# Update to latest image
+cd /root/docker/v-rising && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports 9876, 9877/udp open in firewall
+
+---
+
 ## Notes
 
 - First start downloads ~3 GB — takes 5–10 minutes
@@ -48,3 +113,6 @@ In V Rising: Play → Online → Find Servers → Direct Connect → `<server-ip
 - Admin management: edit `./config/Settings/adminlist.txt` (one Steam64 ID per line)
 - Server settings: `./config/Settings/ServerGameSettings.json`
 
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

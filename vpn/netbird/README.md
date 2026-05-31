@@ -1,14 +1,20 @@
-# Netbird — Docker Setup
+# Netbird — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Automated installer for [Netbird](https://netbird.io/) — a WireGuard-based mesh VPN with a self-hosted control plane. Includes a bundled **Dex OIDC** identity provider so login works out of the box with no external accounts required.
+Netbird is a WireGuard-based mesh VPN with a self-hosted control plane. Includes a bundled Dex OIDC identity provider so login works out of the box.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
-## 🛠 Usage
+## What is Netbird?
+
+Netbird creates a secure overlay network connecting your devices anywhere in the world using WireGuard for encryption. Unlike traditional VPNs, it uses a peer-to-peer mesh architecture — devices connect directly when possible, falling back to relay servers when needed. This installer includes a complete self-hosted stack with a management service, signal service, dashboard, Dex OIDC for authentication, Coturn for NAT traversal, and Caddy as a reverse proxy with automatic TLS.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/vpn/netbird/netbird-ubuntu.sh
@@ -16,55 +22,72 @@ chmod +x netbird-ubuntu.sh
 sudo bash netbird-ubuntu.sh
 ```
 
-## 🔑 Credentials
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates domain via nip.io
+- Configures OIDC, TURN, and Caddy
+- Starts 6 services (Caddy, Signal, Management, Dashboard, Dex, Coturn)
+- Runs a health check
 
-| Field | Value |
-|-------|-------|
-| Email | `admin@netbird.local` |
-| Password | Auto-generated (shown at install) |
+---
 
-## 🌐 Ports
+## Access
 
-| Port | Purpose |
-|------|---------|
-| `8089` | Netbird Web Dashboard |
-| `8080` | Management API |
-| `10000` | Signal Server |
-| `5556` | Dex OIDC Identity Provider |
+| | |
+|---|---|
+| **Dashboard** | `https://[auto-generated-domain]` |
+| **Email** | `admin@netbird.local` |
+| **Password** | `changeme2024` (change immediately) |
 
-## 💻 Connect
+> The domain is auto-generated using nip.io and displayed in the terminal.
 
-```bash
-# Web Dashboard
-http://SERVER_IP:8089
+---
 
-# Connect a peer (after installing netbird client)
-netbird up --management-url http://SERVER_IP:8080
-```
+## Ports
 
-## 🔐 How Authentication Works
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `80` | TCP | HTTP (redirects to HTTPS) |
+| `443` | TCP | HTTPS Dashboard |
+| `10000` | TCP | Signal gRPC |
+| `3478` | UDP | TURN (NAT traversal) |
+| `49152–65535` | UDP | TURN media relay |
 
-This installer bundles **[Dex](https://dexidp.io/)** — a lightweight self-hosted OIDC provider — so you don't need Auth0, Google, or any external service to log in.
+---
 
-On first visit to the dashboard, click **Login** and you will be redirected to Dex. Enter the email and password shown at the end of the install.
+## Data Location
 
-## 📁 Directory Structure
+| Path | Description |
+|------|-------------|
+| `/root/docker/netbird/` | All service data and configuration |
 
-```
-/root/docker/netbird/
-├── docker-compose.yml
-├── dex/           # Dex OIDC config
-├── signal/        # Signal server data
-└── management/    # Management server data + management.json
-```
+---
 
-## 📱 Install Netbird Client
-
-Download from [netbird.io/downloads](https://netbird.io/downloads) and connect:
+## Management
 
 ```bash
-netbird up --management-url http://SERVER_IP:8080
+# Follow logs
+docker logs -f netbird-management
+
+# Stop
+cd /root/docker/netbird && docker compose down
+
+# Start
+cd /root/docker/netbird && docker compose up -d
+
+# Update to latest image
+cd /root/docker/netbird && docker compose pull && docker compose up -d
 ```
 
 ---
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports 80, 443, 10000/tcp and 3478, 49152–65535/udp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

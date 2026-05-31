@@ -1,76 +1,88 @@
-# Pritunl
-
-Enterprise-grade self-hosted VPN server supporting OpenVPN and WireGuard with a polished web UI.
-
-**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+# Pritunl — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
+Pritunl is an enterprise-grade self-hosted VPN server supporting OpenVPN and WireGuard with a polished web management UI.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
 ---
 
-## 🚀 Quick Install
+## What is Pritunl?
+
+Pritunl is a distributed VPN server that supports both OpenVPN and WireGuard protocols. It provides a clean web interface for managing organizations, users, servers, and routes. Features include two-factor authentication, SSO integration, split tunneling, multi-server clustering, and per-user bandwidth limits. It is designed for both small teams and enterprise deployments.
+
+---
+
+## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/yourusername/docker/main/vpn/pritunl/pritunl-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/vpn/pritunl/pritunl-ubuntu.sh
+chmod +x pritunl-ubuntu.sh
 sudo bash pritunl-ubuntu.sh
 ```
 
-Or:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/docker/main/vpn/pritunl/pritunl-ubuntu.sh | sudo bash
-```
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Starts the service stack
+- Runs a health check
 
 ---
 
-## 📖 What is Pritunl?
+## Access
 
-Pritunl is a powerful self-hosted VPN server with a clean web dashboard. It supports OpenVPN and WireGuard protocols and is one of the most popular open-source VPN solutions for teams and enterprises.
+| | |
+|---|---|
+| **Web UI** | `https://SERVER_IP:443` |
+| **Setup** | Initial setup on first visit |
 
-## ✨ Features
+> Replace `SERVER_IP` with your server's actual IP address.
 
-- OpenVPN and WireGuard support
-- Multi-user and multi-organization management
-- Two-factor authentication (2FA)
-- User groups and access policies
-- Client auto-configuration download
-- Built-in MongoDB for storage
+---
 
-## 🌐 Access
-
-| URL | `https://<server-ip>` |
-|-----|-----------------------|
-
-**To get your setup key and default credentials, run:**
-```bash
-docker exec pritunl pritunl setup-key
-docker exec pritunl pritunl default-password
-```
-
-> ⚠️ Accept the self-signed SSL certificate in your browser.
-
-## 🔌 Ports
+## Ports
 
 | Port | Protocol | Purpose |
 |------|----------|---------|
-| `80` | TCP | HTTP (redirects to HTTPS) |
-| `443` | TCP | Web UI + VPN tunnel |
-| `1194` | TCP/UDP | OpenVPN tunnel |
-
-## 📁 Directory Structure
-
-```
-/root/docker/pritunl/
-├── docker-compose.yml
-├── data/          # Pritunl data
-└── mongo/         # MongoDB data
-```
-
-## 📚 Documentation
-
-- [Pritunl Documentation](https://docs.pritunl.com)
-- [Pritunl GitHub](https://github.com/pritunl/pritunl)
+| `443` | TCP | Web UI |
+| `1194` | UDP | OpenVPN tunnel |
+| `51820` | UDP | WireGuard tunnel |
 
 ---
 
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/pritunl/` | All service data and configuration |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f pritunl
+
+# Stop
+cd /root/docker/pritunl && docker compose down
+
+# Start
+cd /root/docker/pritunl && docker compose up -d
+
+# Update to latest image
+cd /root/docker/pritunl && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports 443/tcp and 1194, 51820/udp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

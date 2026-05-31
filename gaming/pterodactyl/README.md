@@ -1,8 +1,20 @@
-# Pterodactyl Panel
+# Pterodactyl Panel — Self-Hosted Docker Installer
 
-Open-source game server management panel. Manage multiple game servers with a web UI, user permissions, resource limits, and a file manager — all running in Docker.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Pterodactyl is an open-source game server management panel with a web UI, user permissions, resource limits, and a file manager — all running in Docker.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Pterodactyl?
+
+Pterodactyl is a game server management panel designed for both individuals and hosting companies. It provides a web-based interface to manage multiple game servers with fine-grained user permissions, per-server CPU/RAM/disk limits, a built-in file manager, console access, and automated backups. The panel runs in Docker, while game servers run on separate Wings nodes.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/gaming/pterodactyl/pterodactyl-ubuntu.sh
@@ -10,41 +22,48 @@ chmod +x pterodactyl-ubuntu.sh
 sudo bash pterodactyl-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Prompts for server IP and admin email
+- Generates secure database password and app key
+- Starts Panel, MySQL 8.0, and Redis 7
+- Creates admin user
+- Runs a health check
 
-- **Pterodactyl Panel** — Web management UI
-- **MySQL 8.0** — Database
-- **Redis 7** — Queue and cache
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 8080 | Panel web UI (HTTP) |
-| 8443 | Panel web UI (HTTPS) |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Web UI | `http://<server-ip>:8080` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8080` |
+| **Username** | `admin` |
+| **Password** | Auto-generated during install (displayed in terminal) |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's actual IP address.
 
-| Field | Value |
-| --- | --- |
-| Email | Set during install |
-| Username | `admin` |
-| Password | Generated during install (shown at end) |
+---
+
+## Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8080` | TCP | Panel web UI (HTTP) |
+| `8443` | TCP | Panel web UI (HTTPS) |
+
+---
 
 ## Architecture
 
 Pterodactyl has two components:
 
 1. **Panel** — the web UI installed by this script (runs in Docker)
-2. **Wings** — the game node daemon that must be installed natively on each game server machine
+2. **Wings** — the game node daemon installed on each game server machine
 
-This script installs the Panel only. To run actual game servers, you must install Wings on a separate machine (or the same machine) following the [official Wings guide](https://pterodactyl.io/wings/1.0/installing.html).
+This script installs the Panel only. To run actual game servers, install Wings on a separate machine following the [official Wings guide](https://pterodactyl.io/wings/1.0/installing.html).
+
+---
 
 ## Features
 
@@ -56,16 +75,54 @@ This script installs the Panel only. To run actual game servers, you must instal
 - Support for 20+ game types via Eggs (config templates)
 - REST API for automation
 
-## Supported Games (via Eggs)
+---
 
-Minecraft (Java/Bedrock), Valheim, CS2, Rust, ARK, Terraria, Factorio, and many more — see the [Eggs repository](https://github.com/parkervcp/eggs).
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/pterodactyl/` | All service data and configuration |
+| `/root/docker/pterodactyl/var/` | Panel data |
+| `/root/docker/pterodactyl/logs/` | Logs |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f pterodactyl-panel
+
+# Stop
+cd /root/docker/pterodactyl && docker compose down
+
+# Start
+cd /root/docker/pterodactyl && docker compose up -d
+
+# Update to latest image
+cd /root/docker/pterodactyl && docker compose pull && docker compose up -d
+
+# Reset admin password
+docker exec pterodactyl-panel php artisan p:user:make
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports 8080, 8443/tcp open in firewall
+- 2 GB+ RAM for the panel; Wings nodes need additional RAM per game server
+
+---
 
 ## Notes
 
 - Panel data stored in `./var/`
-- Logs in `./logs/`
 - Nginx config in `./nginx/`
 - TLS certs in `./certs/`
-- Reset admin password: `docker exec pterodactyl-panel php artisan p:user:make`
-- Recommended: 2 GB+ RAM for the panel alone; each Wings node needs additional RAM per game server
 
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

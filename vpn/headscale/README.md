@@ -1,86 +1,86 @@
-# Headscale
-
-Self-hosted open-source implementation of the Tailscale control server — use all Tailscale clients with your own server.
-
-**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+# Headscale — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
+Headscale is a self-hosted, open-source implementation of the Tailscale control server — use all Tailscale clients with your own server.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
 ---
 
-## 🚀 Quick Install
+## What is Headscale?
+
+Headscale is an independent implementation of the Tailscale coordination server, allowing you to self-host your own mesh VPN control plane. It is fully compatible with all official Tailscale clients (Windows, macOS, Linux, iOS, Android), so devices connect exactly as they would with Tailscale's hosted service — but all metadata and coordination happen on your own infrastructure. It uses WireGuard under the hood for encrypted peer-to-peer connections.
+
+---
+
+## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/yourusername/docker/main/vpn/headscale/headscale-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/vpn/headscale/headscale-ubuntu.sh
+chmod +x headscale-ubuntu.sh
 sudo bash headscale-ubuntu.sh
 ```
 
-Or:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/docker/main/vpn/headscale/headscale-ubuntu.sh | sudo bash
-```
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Starts the service stack
+- Runs a health check
 
 ---
 
-## 📖 What is Headscale?
+## Access
 
-Headscale is an open-source, self-hosted implementation of the Tailscale control server. It lets you run your own Tailscale-compatible network, using all official Tailscale clients (Windows, macOS, Linux, iOS, Android) while keeping full control of your data.
+| | |
+|---|---|
+| **API** | `http://SERVER_IP:8080` |
+| **Username** | Managed via CLI |
 
-## ✨ Features
+> Replace `SERVER_IP` with your server's actual IP address.
 
-- Compatible with all official Tailscale clients
-- Full mesh WireGuard network
-- MagicDNS support
-- Pre-authentication keys for easy onboarding
-- User/namespace management
-- Web UI via headscale-ui
+---
 
-## 🌐 Access
-
-| Web UI | `http://<server-ip>:8091` |
-|--------|--------------------------|
-| API | `http://<server-ip>:8090` |
-
-## 🔌 Ports
+## Ports
 
 | Port | Protocol | Purpose |
 |------|----------|---------|
-| `8090` | TCP | Headscale API & control server |
-| `8091` | TCP | Headscale Web UI |
-
-## ⚙️ Setup Steps
-
-1. Run the installer
-2. Create your first user:
-```bash
-docker exec headscale headscale users create myuser
-```
-3. Generate a pre-auth key:
-```bash
-docker exec headscale headscale preauthkeys create --user myuser
-```
-4. Connect a Tailscale client:
-```bash
-tailscale up --login-server http://<server-ip>:8090
-```
-
-## 📁 Directory Structure
-
-```
-/root/docker/headscale/
-├── docker-compose.yml
-├── config/
-│   └── config.yaml    # Headscale configuration
-├── data/              # Database & keys
-└── run/               # Unix socket
-```
-
-## 📚 Documentation
-
-- [Headscale GitHub](https://github.com/juanfont/headscale)
-- [Headscale Documentation](https://headscale.net)
+| `8080` | TCP | Headscale API |
 
 ---
 
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/headscale/` | All service data and configuration |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f headscale
+
+# Stop
+cd /root/docker/headscale && docker compose down
+
+# Start
+cd /root/docker/headscale && docker compose up -d
+
+# Update to latest image
+cd /root/docker/headscale && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8080/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

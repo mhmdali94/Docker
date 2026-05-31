@@ -1,68 +1,86 @@
-# 3X-UI — V2Ray / Xray Panel
-
-A powerful web-based panel for managing V2Ray and Xray proxy protocols with a modern UI.
-
-**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+# 3X-UI — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
+3X-UI is a powerful web-based panel for managing V2Ray and Xray proxy protocols with a modern, user-friendly interface.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
 ---
 
-## 🚀 Quick Install
+## What is 3X-UI?
+
+3X-UI is a web management panel for Xray-core that simplifies the creation and management of proxy servers. It supports multiple protocols including VMess, VLESS, Trojan, Shadowsocks, and more. The panel provides a clean interface for managing inbound/outbound connections, user accounts, traffic statistics, and certificate management. It is a popular choice for self-hosted proxy infrastructure.
+
+---
+
+## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/yourusername/docker/main/vpn/3x-ui/3x-ui-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/vpn/3x-ui/3x-ui-ubuntu.sh
+chmod +x 3x-ui-ubuntu.sh
 sudo bash 3x-ui-ubuntu.sh
 ```
 
-Or:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/docker/main/vpn/3x-ui/3x-ui-ubuntu.sh | sudo bash
-```
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Starts the service stack
+- Runs a health check
 
 ---
 
-## 📖 What is 3X-UI?
+## Access
 
-3X-UI is a multi-protocol proxy panel built on top of Xray-core. It supports a wide range of protocols and provides a web dashboard to manage inbound connections, users, and traffic limits.
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:2053` |
+| **Setup** | Configure on first visit |
 
-## ✨ Features
+> Replace `SERVER_IP` with your server's actual IP address.
 
-- Supports VMess, VLESS, Trojan, Shadowsocks, Socks, HTTP, WireGuard
-- User traffic monitoring and limits
-- Subscription links for clients
-- TLS & Reality support
-- Multi-user management
-- Uses host network mode for maximum compatibility
+---
 
-## 🌐 Access
-
-| URL | `http://<server-ip>:2053` |
-|-----|--------------------------|
-| Username | Auto-generated during install (shown in terminal) |
-| Password | Auto-generated during install (shown in terminal) |
-
-## 🔌 Ports
+## Ports
 
 | Port | Protocol | Purpose |
 |------|----------|---------|
-| `2053` | TCP | Web panel UI |
-| Custom | TCP/UDP | Inbound ports (configured in panel) |
-
-## 📁 Directory Structure
-
-```
-/root/docker/3x-ui/
-├── docker-compose.yml
-├── db/            # Panel database
-└── certs/         # TLS certificates
-```
-
-## 📚 Documentation
-
-- [3X-UI GitHub](https://github.com/MHSanaei/3x-ui)
+| `2053` | TCP | Web Panel |
 
 ---
 
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/3x-ui/` | All service data and configuration |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f 3x-ui
+
+# Stop
+cd /root/docker/3x-ui && docker compose down
+
+# Start
+cd /root/docker/3x-ui && docker compose up -d
+
+# Update to latest image
+cd /root/docker/3x-ui && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 2053/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)
