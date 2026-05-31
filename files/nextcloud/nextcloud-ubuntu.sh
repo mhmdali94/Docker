@@ -93,6 +93,8 @@ mkdir -p "$NC_DIR"
 cd "$NC_DIR" || error "Cannot navigate to $NC_DIR"
 info "Directory ready: $NC_DIR"
 
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+
 section "Step 6: Generating Credentials & docker-compose.yml"
 NC_DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 24)
 NC_ADMIN_PASS=$(tr -dc 'A-Za-z0-9!@#$%' < /dev/urandom | head -c 20)
@@ -131,6 +133,7 @@ services:
       MYSQL_PASSWORD: $NC_DB_PASS
       NEXTCLOUD_ADMIN_USER: admin
       NEXTCLOUD_ADMIN_PASSWORD: $NC_ADMIN_PASS
+      NEXTCLOUD_TRUSTED_DOMAINS: localhost 127.0.0.1 $SERVER_IP
     volumes:
       - ./data:/var/www/html
     networks:
@@ -196,7 +199,6 @@ else
     warn "UFW not found — skipping firewall rule."
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
