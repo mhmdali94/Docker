@@ -104,6 +104,8 @@ IMMICH_VERSION=release
 DB_PASSWORD=$DB_PASS
 DB_USERNAME=postgres
 DB_DATABASE_NAME=immich
+DB_HOST=immich-db
+REDIS_HOSTNAME=immich-redis
 EOF
 
 cat > "$IMMICH_DIR/docker-compose.yml" <<EOF
