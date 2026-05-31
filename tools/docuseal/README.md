@@ -1,8 +1,20 @@
-# DocuSeal
+# DocuSeal — Self-Hosted Docker Installer
 
-Open-source document signing platform. Create PDF forms, collect legally binding e-signatures, and manage signing workflows — self-hosted DocuSign alternative.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+DocuSeal is an open-source document signing platform for creating PDF forms, collecting legally binding e-signatures, and managing signing workflows.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is DocuSeal?
+
+DocuSeal is a self-hosted alternative to DocuSign and HelloSign. It allows you to upload PDF documents, define form fields and signature positions, and send them to recipients for electronic signing. It supports templates, audit trails, email notifications, and a REST API for integration.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/tools/docuseal/docuseal-ubuntu.sh
@@ -10,37 +22,67 @@ chmod +x docuseal-ubuntu.sh
 sudo bash docuseal-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Starts the DocuSeal container
+- Runs a health check
 
-- **DocuSeal** — Document e-signing platform (SQLite built-in)
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 3008 | DocuSeal web UI |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Web UI | `http://<server-ip>:3008` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:3008` |
+| **Username** | Created on first visit |
+| **Password** | Created on first visit |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's actual IP address.
 
-None — the first visit creates your admin account.
+---
 
-## Features
+## Ports
 
-- Upload PDF templates and add signature/text/date fields visually
-- Send signing requests via email with unique links
-- Signers don't need an account — sign directly from the email link
-- Audit trail with timestamps and IP addresses
-- Multiple signers per document with defined order
-- REST API for automation and integration
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `3008` | TCP | Web UI |
 
-## Notes
+---
 
-- All data stored in `./data/` using SQLite
-- Documents and signatures stored locally — no cloud upload
-- SMTP email configuration available in Settings for sending signing requests
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/docuseal/` | All service data and configuration |
+| `/root/docker/docuseal/data/` | Documents and database |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f docuseal
+
+# Stop
+cd /root/docker/docuseal && docker compose down
+
+# Start
+cd /root/docker/docuseal && docker compose up -d
+
+# Update to latest image
+cd /root/docker/docuseal && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 3008/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

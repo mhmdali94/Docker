@@ -1,8 +1,20 @@
-# Rocket.Chat
+# Rocket.Chat — Self-Hosted Docker Installer
 
-Self-hosted team messaging and collaboration platform. A Slack alternative with channels, DMs, video calls, and a marketplace of integrations.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Self-hosted team messaging and collaboration platform — a Slack alternative with channels, DMs, video calls, and integrations.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Rocket.Chat?
+
+Rocket.Chat is a comprehensive open-source communication platform with channels, direct messages, threads, file sharing, video conferencing, and a marketplace of integrations. It supports LDAP, SAML, and OAuth for enterprise authentication, has iOS and Android apps, and offers a LiveChat module for customer support — a self-hosted alternative to Slack.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/communication/rocketchat/rocketchat-ubuntu.sh
@@ -10,31 +22,68 @@ chmod +x rocketchat-ubuntu.sh
 sudo bash rocketchat-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **Rocket.Chat** — Team messaging platform
-- **MongoDB 5.0** — Database with replica set
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 3100 | Rocket.Chat web interface |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Rocket.Chat | `http://<server-ip>:3100` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:3100` |
+| **Username** | First user to register becomes admin |
+| **Password** | Created on first visit |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's IP address.
 
-No default credentials — the first user to register becomes the admin.
+---
 
-## Notes
+## Ports
 
-- Requires MongoDB with replica set enabled (configured automatically)
-- First startup takes ~60 seconds for replica set initialization
-- Supports LDAP, SAML, OAuth for enterprise authentication
-- Mobile apps available for iOS and Android
-- Minimum 2 GB RAM recommended
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `3100` | TCP | Web UI / API |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/rocketchat/` | All service data and configuration |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f rocketchat
+
+# Stop the service
+cd /root/docker/rocketchat && docker compose down
+
+# Start the service
+cd /root/docker/rocketchat && docker compose up -d
+
+# Update to latest image
+cd /root/docker/rocketchat && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Minimum 2 GB RAM
+- Ports open in firewall: 3100/tcp
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

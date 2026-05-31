@@ -1,8 +1,20 @@
-# Kimai
+# Kimai — Self-Hosted Docker Installer
 
-Open-source time tracking for freelancers and teams. Track time on projects and clients, generate invoices, and export reports — all self-hosted.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Kimai is an open-source time tracking application for freelancers and teams to track time on projects and clients, generate invoices, and export reports.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Kimai?
+
+Kimai is a professional time tracking tool that supports multiple users, projects, clients, and activities. It generates detailed reports, supports invoice creation, exports to various formats, and provides REST API access. It is suitable for freelancers billing by the hour and teams needing accurate project time tracking.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/tools/kimai/kimai-ubuntu.sh
@@ -10,42 +22,70 @@ chmod +x kimai-ubuntu.sh
 sudo bash kimai-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts Kimai and MySQL
+- Runs a health check
 
-- **Kimai 2** — Time tracking application
-- **MySQL 8.0** — Database
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 8001 | Kimai web UI |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Web UI | `http://<server-ip>:8001` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8001` |
+| **Email** | Set during install (default: `admin@kimai.local`) |
+| **Password** | Auto-generated during install (displayed in terminal) |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's actual IP address.
 
-| Field | Value |
-| --- | --- |
-| Email | Set during install |
-| Password | Generated during install (shown at end) |
+---
 
-## Features
+## Ports
 
-- Start/stop timers with one click
-- Assign time to projects, activities, and customers
-- Invoice generation (PDF) from tracked time
-- Team management with role-based access
-- Detailed reports by date, project, user, or customer
-- Mobile-friendly — use from phone browser
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8001` | TCP | Web UI |
 
-## Notes
+---
 
-- Data stored in `./data/`, plugins in `./plugins/`
-- MySQL data in `./mysql/`
-- REST API available for integrations
-- Export to Excel, CSV, PDF, and more
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/kimai/` | All service data and configuration |
+| `/root/docker/kimai/data/` | Application data |
+| `/root/docker/kimai/plugins/` | Installed plugins |
+| `/root/docker/kimai/mysql/` | Database storage |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f kimai
+
+# Stop
+cd /root/docker/kimai && docker compose down
+
+# Start
+cd /root/docker/kimai && docker compose up -d
+
+# Update to latest image
+cd /root/docker/kimai && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8001/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

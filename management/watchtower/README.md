@@ -1,8 +1,20 @@
-# Watchtower
+# Watchtower — Self-Hosted Docker Installer
 
-Automatic Docker container updater — polls for new image versions and restarts containers in place.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Watchtower is an automated Docker container updater that monitors your running containers and restarts them with the latest image versions on a configurable schedule.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Watchtower?
+
+Watchtower runs silently as a background daemon, polling Docker Hub (or your private registry) for updated images. When a new version is found, it gracefully stops the container, pulls the new image, and restarts it with the same parameters. Old images are cleaned up automatically. No web UI — it is a pure background service.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/management/watchtower/watchtower-ubuntu.sh
@@ -10,30 +22,70 @@ chmod +x watchtower-ubuntu.sh
 sudo bash watchtower-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Starts the service stack
+- Confirms the daemon is running
 
-- **Watchtower** — automated container update daemon
+---
 
-## Credentials
+## Access
 
-| Field | Value |
-| --- | --- |
-| Web UI | None — daemon only |
+| | |
+|---|---|
+| **Web UI** | None — background daemon only |
+| **Update Schedule** | Daily at 04:00 UTC |
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| — | Daemon, no web port |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| — | — | No ports exposed (outbound only) |
 
-## Connect
+---
 
-Watchtower runs silently in the background. By default it checks for updates daily at 4:00 AM and removes old images after updating (`WATCHTOWER_CLEANUP=true`).
+## Data Location
 
-Check logs with: `docker logs watchtower`
+| Path | Description |
+|------|-------------|
+| `/root/docker/watchtower/` | Service configuration |
 
-To exclude a container from updates, add the label:
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f watchtower
+
+# Stop
+cd /root/docker/watchtower && docker compose down
+
+# Start
+cd /root/docker/watchtower && docker compose up -d
+
+# Update to latest image
+cd /root/docker/watchtower && docker compose pull && docker compose up -d
+```
+
+To exclude a specific container from automatic updates, add this label to it:
+
 ```yaml
 labels:
   - "com.centurylinklabs.watchtower.enable=false"
 ```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Outbound internet access for image pulls
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

@@ -1,14 +1,20 @@
-# DefectDojo — Docker Setup
+# DefectDojo — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Automated installer for [DefectDojo](https://www.defectdojo.com/) — open-source vulnerability management platform. Import scanner results, track findings lifecycle, manage remediations, and measure your security posture over time.
+DefectDojo is an open-source application vulnerability management platform for tracking security findings across products and engagements.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
-## 🛠 Usage
+## What is DefectDojo?
+
+DefectDojo is a DevSecOps and vulnerability management tool that aggregates findings from security scanners (Burp Suite, OWASP ZAP, Nessus, etc.), tracks remediation progress, and generates compliance reports. It supports deduplication, SLA tracking, risk scoring, and integrates with CI/CD pipelines.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/security/defectdojo/defectdojo-ubuntu.sh
@@ -16,36 +22,68 @@ chmod +x defectdojo-ubuntu.sh
 sudo bash defectdojo-ubuntu.sh
 ```
 
-## 🔑 Credentials
-
-| Field | Value |
-|-------|-------|
-| Username | `admin` |
-| Password | Auto-generated (shown at install) |
-
-## 🌐 Ports
-
-| Port | Purpose |
-|------|---------|
-| `8092` | DefectDojo Web UI |
-
-## 💻 Connect
-
-```bash
-# Web UI
-http://SERVER_IP:8092
-
-# Import findings via API
-curl -X POST http://SERVER_IP:8092/api/v2/import-scan/ \
-  -H "Authorization: Token YOUR_API_TOKEN" \
-  -F "scan_type=ZAP Scan" \
-  -F "file=@zap-report.xml" \
-  -F "engagement=1"
-```
-
-## 💡 Supported Scanners
-
-DefectDojo imports results from 100+ scanners including Burp Suite, OWASP ZAP, Nessus, Trivy, Semgrep, SonarQube, and more.
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the full DefectDojo stack
+- Runs a health check (may take ~3 minutes)
 
 ---
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+
+## Access
+
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8092` |
+| **Username** | `admin` |
+| **Password** | Auto-generated during install (displayed in terminal) |
+
+> Replace `SERVER_IP` with your server's actual IP address.
+
+---
+
+## Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8092` | TCP | Web UI |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/defectdojo/` | All service data and configuration |
+| `/root/docker/defectdojo/media/` | Uploaded reports and media |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f defectdojo
+
+# Stop
+cd /root/docker/defectdojo && docker compose down
+
+# Start
+cd /root/docker/defectdojo && docker compose up -d
+
+# Update to latest image
+cd /root/docker/defectdojo && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8092/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

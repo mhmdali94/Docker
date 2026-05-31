@@ -1,99 +1,91 @@
-# AdGuard Home
+# AdGuard Home — Self-Hosted Docker Installer
 
-Network-wide ad & tracker blocker that works at the DNS level.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
+
+AdGuard Home is a network-wide DNS-based ad and tracker blocker that operates as a private DNS server for your entire network.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is AdGuard Home?
+
+AdGuard Home functions as a DNS server that filters advertising and tracking domains before they reach any device on your network. It supports DNS-over-HTTPS and DNS-over-TLS, offers detailed query logs, and provides per-client filtering rules. It is commonly used as a self-hosted alternative to Pi-hole.
+
+---
 
 ## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/yourusername/docker/main/adguardhome/adguardhome-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/networking/adguardhome/adguardhome-ubuntu.sh
+chmod +x adguardhome-ubuntu.sh
 sudo bash adguardhome-ubuntu.sh
 ```
 
-Or:
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/docker/main/adguardhome/adguardhome-ubuntu.sh | sudo bash
-```
+---
 
-## What is AdGuard Home?
+## Access
 
-AdGuard Home is a network-wide ad and tracker blocking DNS server. It blocks ads, trackers, and malicious domains before they even load on your devices.
+| | |
+|---|---|
+| **Web UI (Setup)** | `http://SERVER_IP:3000` (initial setup wizard) |
+| **Admin UI** | `http://SERVER_IP:80` (after setup) |
+| **Username** | Created on first visit |
+| **Password** | Created on first visit |
 
-## Features
+> Replace `SERVER_IP` with your server's actual IP address.
 
-- Blocks ads on all devices (phones, TVs, IoT, computers)
-- Works at the DNS level (no app installation needed)
-- Privacy protection (blocks trackers)
-- Faster page loading
-- Parental controls
-- Custom filtering rules
-- Encrypted DNS support (DoH/DoT)
+---
 
 ## Ports
 
 | Port | Protocol | Purpose |
 |------|----------|---------|
-| 53 | TCP/UDP | DNS server (required) |
-| 80 | TCP | Web admin panel (after setup) |
-| 443 | TCP/UDP | HTTPS/DNS-over-HTTPS |
-| 3000 | TCP | Initial setup wizard |
+| `3000` | TCP | Initial setup wizard |
+| `80` | TCP | Admin web UI (after setup) |
+| `53` | TCP/UDP | DNS queries |
 
-## Setup Steps
+---
 
-1. Run the installer
-2. Open `http://SERVER_IP:3000` in your browser
-3. Complete the setup wizard
-4. Set AdGuard Home as your DNS server on your devices or router
+## Data Location
 
-## Using as DNS Server
+| Path | Description |
+|------|-------------|
+| `/root/docker/adguardhome/` | All service data and configuration |
 
-After setup, configure your devices to use your server's IP as the DNS:
+---
 
-**Windows:**
-```
-Settings → Network → Change adapter settings → IPv4 → DNS: YOUR_SERVER_IP
-```
+## Management
 
-**Mac:**
-```
-System Preferences → Network → Advanced → DNS → Add YOUR_SERVER_IP
-```
+```bash
+# Follow logs
+docker logs -f adguardhome
 
-**Router (recommended):**
-Set DNS server to YOUR_SERVER_IP in your router settings to protect all devices on your network.
+# Stop
+cd /root/docker/adguardhome && docker compose down
 
-## Directory Structure
+# Start
+cd /root/docker/adguardhome && docker compose up -d
 
-```
-/root/docker/adguardhome/
-├── docker-compose.yml
-├── work/          # Working directory
-└── conf/          # Configuration files
+# Update to latest image
+cd /root/docker/adguardhome && docker compose pull && docker compose up -d
 ```
 
-## Default Upstream DNS
+---
 
-After installation, you can configure upstream DNS servers like:
-- `94.140.14.14` (AdGuard DNS)
-- `1.1.1.1` (Cloudflare)
-- `8.8.8.8` (Google)
+## Requirements
 
-## Web Admin Panel
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports 53/tcp, 53/udp, 80/tcp, and 3000/tcp open in firewall
 
-After initial setup, access the admin panel at:
-```
-http://YOUR_SERVER_IP
-```
+---
 
-## Documentation
-
-- [AdGuard Home GitHub](https://github.com/AdguardTeam/AdGuardHome)
-- [Official Wiki](https://github.com/AdguardTeam/AdGuardHome/wiki)
-
-## ⚠️ Disclaimer
-
-This script is for **demo/testing purposes only**. Not intended for production use.
-
-## Author
-
-Made by: Mohammed Ali Elshikh | [prismatechwork.com](https://prismatechwork.com)
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

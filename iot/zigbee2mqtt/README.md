@@ -1,8 +1,20 @@
-# Zigbee2MQTT
+# Zigbee2MQTT — Self-Hosted Docker Installer
 
-Bridge Zigbee devices to MQTT without a proprietary hub. 3000+ supported devices — Philips Hue, IKEA, Aqara, Sonoff, and more. Works with Home Assistant.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Zigbee2MQTT bridges Zigbee devices to an MQTT broker without any proprietary hub, supporting over 3,000 devices from Philips Hue, IKEA, Aqara, Sonoff, and more.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Zigbee2MQTT?
+
+Zigbee2MQTT allows you to use Zigbee devices without manufacturer clouds or proprietary apps. A USB Zigbee coordinator on your server talks to all your Zigbee devices, and Zigbee2MQTT publishes their state to an MQTT broker — integrating seamlessly with Home Assistant and other automation platforms.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/iot/zigbee2mqtt/zigbee2mqtt-ubuntu.sh
@@ -10,58 +22,70 @@ chmod +x zigbee2mqtt-ubuntu.sh
 sudo bash zigbee2mqtt-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Prompts for Zigbee adapter path and MQTT broker details
+- Starts the service stack
+- Runs a health check
 
-- **Zigbee2MQTT** — Zigbee to MQTT bridge with web frontend
-
-## Requirements
-
-- A Zigbee USB coordinator (not included):
-  - **Sonoff Zigbee 3.0 USB Dongle Plus** (recommended)
-  - **ConBee II** or **RaspBee II**
-  - **CC2531** (older, limited)
-- A running **MQTT broker** (install Mosquitto first)
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 8080 | Zigbee2MQTT web frontend |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Frontend | `http://<server-ip>:8080` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8080` |
+| **Username** | None (configure in the frontend settings) |
+| **Password** | None (configure in the frontend settings) |
 
-## Pairing Devices
+> Replace `SERVER_IP` with your server's actual IP address. A Zigbee USB coordinator and a running MQTT broker (e.g., Mosquitto) are required before install.
 
-1. Open the web frontend
-2. Pairing is enabled by default (`permit_join: true`)
-3. Put your Zigbee device in pairing mode (usually hold the button)
-4. It appears in the frontend within seconds
-5. **Disable pairing after setup** — edit `./data/configuration.yaml`:
-   ```yaml
-   permit_join: false
-   ```
+---
 
-## Integration with Home Assistant
+## Ports
 
-Zigbee2MQTT publishes device data to MQTT topics. Home Assistant auto-discovers devices via MQTT integration:
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8080` | TCP | Zigbee2MQTT Web Frontend |
 
-1. Install Mosquitto (this repo)
-2. Install Zigbee2MQTT (this script)
-3. In Home Assistant: **Settings → Devices & Services → Add Integration → MQTT**
+---
 
-## Configuration
+## Data Location
 
-Edit `./data/configuration.yaml` — restart container after changes:
+| Path | Description |
+|------|-------------|
+| `/root/docker/zigbee2mqtt/` | All service data and configuration |
+| `/root/docker/zigbee2mqtt/data/` | Device database and configuration YAML |
+
+---
+
+## Management
+
 ```bash
-docker restart zigbee2mqtt
+# Follow logs
+docker logs -f zigbee2mqtt
+
+# Stop
+cd /root/docker/zigbee2mqtt && docker compose down
+
+# Start
+cd /root/docker/zigbee2mqtt && docker compose up -d
+
+# Update to latest image
+cd /root/docker/zigbee2mqtt && docker compose pull && docker compose up -d
 ```
 
-## Notes
+---
 
-- 3000+ supported devices at [zigbee2mqtt.io/supported-devices](https://www.zigbee2mqtt.io/supported-devices/)
-- Device pairing data stored in `./data/`
-- No cloud required — fully local
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- A supported Zigbee USB coordinator (e.g., Sonoff Zigbee 3.0 Dongle Plus)
+- A running MQTT broker (e.g., Mosquitto)
+- Port 8080/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

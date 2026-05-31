@@ -1,8 +1,20 @@
-# OpenEMR
+# OpenEMR — Self-Hosted Docker Installer
 
-The most widely deployed open-source electronic health records and medical practice management system. Covers patient scheduling, clinical notes, e-prescribing, billing, and reporting.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+The world's most widely deployed open-source electronic health records and medical practice management system.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is OpenEMR?
+
+OpenEMR is a comprehensive open-source EHR and practice management system covering patient scheduling, clinical documentation, e-prescribing, billing, and reporting. It supports 30+ languages including Arabic (RTL), HIPAA compliance tools, and an optional patient portal. Used by clinics and hospitals in over 100 countries. First startup takes 3–5 minutes while the database initializes.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/clinic/openemr/openemr-ubuntu.sh
@@ -10,31 +22,69 @@ chmod +x openemr-ubuntu.sh
 sudo bash openemr-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure database and admin credentials
+- Starts the service stack (OpenEMR + MariaDB)
+- Runs a health check (allow 3–5 minutes for DB initialization)
 
-- **OpenEMR** — EHR and practice management
-- **MariaDB 10.6** — database backend
+---
 
-## Credentials
+## Access
 
-| Field | Value |
-| --- | --- |
-| URL | http://\<server-ip\>:8124 |
-| Username | admin |
-| Password | Generated at install |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8124` |
+| **Username** | `admin` |
+| **Password** | Auto-generated during install (displayed in terminal) |
+
+> Replace `SERVER_IP` with your server's actual IP address.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 8124 | OpenEMR Web UI |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8124` | TCP | Web UI |
 
-## Connect
+---
 
-Open `http://<server-ip>:8124` and log in with `admin` and the password shown at install. Complete the initial setup wizard to configure your practice details, patient portal, and billing settings.
+## Data Location
 
-## Notes
+| Path | Description |
+|------|-------------|
+| `/root/docker/openemr/` | All service data and configuration |
+| `/root/docker/openemr/sites/` | OpenEMR site data |
+| `/root/docker/openemr/logs/` | Application logs |
 
-- First startup takes 3-5 minutes while OpenEMR initializes and migrates the database
-- Supports Arabic (RTL) and 30+ other languages via Administration → Internationalization
-- Optional patient portal can be enabled after initial setup
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f openemr
+
+# Stop
+cd /root/docker/openemr && docker compose down
+
+# Start
+cd /root/docker/openemr && docker compose up -d
+
+# Update to latest image
+cd /root/docker/openemr && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8124/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

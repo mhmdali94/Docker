@@ -1,8 +1,20 @@
-# EspoCRM
+# EspoCRM — Self-Hosted Docker Installer
 
-Modern open-source CRM with a clean UI. Covers leads, contacts, accounts, opportunities, activities, email client, calendar, and workflow automation.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Modern open-source CRM with a clean UI covering leads, contacts, accounts, opportunities, activities, and workflow automation.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is EspoCRM?
+
+EspoCRM is a modern, lightweight open-source CRM that covers the full sales lifecycle: leads, contacts, accounts, opportunities, activities, email client, calendar, and workflow automation. It supports Arabic (RTL) and 30+ languages, offers a REST API, and has an extension marketplace for VoIP, email marketing, and customer portal features.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/crm/espocrm/espocrm-ubuntu.sh
@@ -10,32 +22,67 @@ chmod +x espocrm-ubuntu.sh
 sudo bash espocrm-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **EspoCRM** — CRM application
-- **EspoCRM Daemon** — background job processor
-- **MariaDB 10.6** — database backend
+---
 
-## Credentials
+## Access
 
-| Field | Value |
-| --- | --- |
-| URL | http://\<server-ip\>:8130 |
-| Username | admin |
-| Password | Generated at install |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8130` |
+| **Username** | `admin` |
+| **Password** | Auto-generated (shown at install) |
+
+> Replace `SERVER_IP` with your server's IP address.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 8130 | EspoCRM Web UI |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8130` | TCP | Web UI / API |
 
-## Connect
+---
 
-Open `http://<server-ip>:8130` and log in with `admin` and the password shown at install. Configure your organization, import leads/contacts, and set up workflow automations from the Administration panel.
+## Data Location
 
-## Notes
+| Path | Description |
+|------|-------------|
+| `/root/docker/espocrm/` | All service data and configuration |
 
-- A separate daemon container handles scheduled jobs, emails, and background workflows
-- EspoCRM supports Arabic (RTL) and 30+ other languages
-- Extension marketplace available at EspoCRM Store for email marketing, VoIP, and portal features
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f espocrm
+
+# Stop the service
+cd /root/docker/espocrm && docker compose down
+
+# Start the service
+cd /root/docker/espocrm && docker compose up -d
+
+# Update to latest image
+cd /root/docker/espocrm && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports open in firewall: 8130/tcp
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

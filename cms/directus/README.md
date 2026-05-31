@@ -1,8 +1,20 @@
-# Directus
+# Directus — Self-Hosted Docker Installer
 
-Real-time headless CMS and data platform. Wraps any SQL database with an instant REST and GraphQL API, plus a beautiful no-code data studio.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Real-time headless CMS and data platform that wraps any SQL database with an instant REST and GraphQL API.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Directus?
+
+Directus is an open-source headless CMS and data platform that sits on top of any SQL database and instantly provides REST and GraphQL APIs alongside a no-code data studio. It supports real-time subscriptions, automation flows, webhooks, role-based access control, and file management — without changing your database schema.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/cms/directus/directus-ubuntu.sh
@@ -10,37 +22,69 @@ chmod +x directus-ubuntu.sh
 sudo bash directus-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials and secret
+- Starts the service stack (Directus + PostgreSQL + Redis)
+- Runs a health check
 
-- **Directus** — Headless CMS + data platform
-- **PostgreSQL 15** — Database
-- **Redis 7** — Cache
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 8055 | Directus (app + API) |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| App | `http://<server-ip>:8055` |
-| REST API | `http://<server-ip>:8055/items/<collection>` |
-| GraphQL | `http://<server-ip>:8055/graphql` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8055` |
+| **Email** | Set during install (default: `admin@directus.local`) |
+| **Password** | Auto-generated during install (displayed in terminal) |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's actual IP address.
 
-| Field | Value |
-| --- | --- |
-| Email | Set during install (default: `admin@directus.local`) |
-| Password | Generated during install (shown at end) |
+---
 
-## Notes
+## Ports
 
-- Uploaded files stored in `./uploads/`
-- Custom extensions go in `./extensions/`
-- PostgreSQL data in `./postgres/`, Redis in `./redis/`
-- Works with existing databases — point it at your schema and get an instant API
-- Supports real-time subscriptions, flows (automation), and webhooks
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8055` | TCP | Web UI / REST API / GraphQL |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/directus/` | All service data and configuration |
+| `/root/docker/directus/uploads/` | Uploaded media files |
+| `/root/docker/directus/extensions/` | Custom extensions |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f directus
+
+# Stop
+cd /root/docker/directus && docker compose down
+
+# Start
+cd /root/docker/directus && docker compose up -d
+
+# Update to latest image
+cd /root/docker/directus && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8055/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

@@ -1,8 +1,20 @@
-# Home Assistant
+# Home Assistant — Self-Hosted Docker Installer
 
-Open-source home automation platform. Integrates with 3000+ devices and services — smart lights, thermostats, cameras, sensors, voice assistants, and more.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Home Assistant is the leading open-source home automation platform, integrating with over 3,000 devices and services to give you local control of your entire smart home.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Home Assistant?
+
+Home Assistant acts as a central hub for smart home devices — lights, thermostats, cameras, sensors, locks, and more. It runs entirely on your local network with no cloud dependency, supports complex automations, and provides a beautiful dashboard for monitoring and control. Mobile apps are available for iOS and Android.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/iot/homeassistant/homeassistant-ubuntu.sh
@@ -10,50 +22,70 @@ chmod +x homeassistant-ubuntu.sh
 sudo bash homeassistant-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Prompts for your timezone
+- Starts the service stack
+- Runs a health check
 
-- **Home Assistant** — Home automation hub
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 8123 | Home Assistant web UI |
-
-Home Assistant uses `network_mode: host` so it can discover devices on your local network via mDNS, Bluetooth, and Zigbee bridges.
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Dashboard | `http://<server-ip>:8123` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8123` |
+| **Username** | Created on first visit |
+| **Password** | Created on first visit |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's actual IP address.
 
-None — the first visit creates your owner account.
+---
 
-## Configuration
+## Ports
 
-All config lives in `./config/`:
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8123` | TCP | Web UI / API |
 
-| File | Purpose |
-| --- | --- |
-| `configuration.yaml` | Core settings, integrations |
-| `automations.yaml` | Automation rules |
-| `scripts.yaml` | Reusable scripts |
-| `scenes.yaml` | Device scenes |
+> Home Assistant uses host networking mode to discover LAN devices via mDNS, Bluetooth, and local protocols.
 
-## Common Integrations
+---
 
-- **Zigbee2MQTT** — Zigbee devices via USB dongle
-- **Mosquitto** — MQTT broker for IoT devices
-- **Google Home / Alexa** — Voice assistant control
-- **ESPHome** — DIY ESP32/ESP8266 devices
-- **Tasmota** — Flashed smart plugs and switches
+## Data Location
 
-## Notes
+| Path | Description |
+|------|-------------|
+| `/root/docker/homeassistant/` | All service data and configuration |
+| `/root/docker/homeassistant/config/` | YAML configs, automations, integrations |
 
-- Runs privileged with host networking for full device discovery
-- Config persists in `./config/` across restarts
-- Supports energy monitoring, dashboards (Lovelace), and automations
-- Mobile apps available for iOS and Android
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f homeassistant
+
+# Stop
+cd /root/docker/homeassistant && docker compose down
+
+# Start
+cd /root/docker/homeassistant && docker compose up -d
+
+# Update to latest image
+cd /root/docker/homeassistant && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8123/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

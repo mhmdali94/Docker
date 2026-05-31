@@ -1,8 +1,20 @@
-# Saleor
+# Saleor — Self-Hosted Docker Installer
 
-High-performance headless e-commerce platform built on GraphQL. API-first architecture — connect any storefront (Next.js, React, mobile) to a powerful commerce backend.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+High-performance headless e-commerce platform built on GraphQL — API-first architecture for any storefront.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Saleor?
+
+Saleor is an open-source, API-first e-commerce platform built with Python and Django, exposing a full GraphQL API. It supports multi-channel, multi-currency, multi-warehouse, webhooks, and an app marketplace. Connect any storefront built with Next.js, React Native, or mobile apps to the commerce backend.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/ecommerce/saleor/saleor-ubuntu.sh
@@ -10,40 +22,69 @@ chmod +x saleor-ubuntu.sh
 sudo bash saleor-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **Saleor API** — GraphQL commerce backend
-- **Saleor Dashboard** — React admin UI
-- **PostgreSQL 15** — Database
-- **Redis 7** — Cache and task queue
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 8010 | GraphQL API |
-| 9001 | Admin Dashboard |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| GraphQL API | `http://<server-ip>:8010/graphql/` |
-| Dashboard | `http://<server-ip>:9001` |
-| GraphQL Playground | `http://<server-ip>:8010/graphql/` |
+| | |
+|---|---|
+| **GraphQL API** | `http://SERVER_IP:8010/graphql/` |
+| **Admin Dashboard** | `http://SERVER_IP:9001` |
+| **Email** | `admin@saleor.local` |
+| **Password** | Set on first dashboard login |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's IP address.
 
-| Field | Value |
-| --- | --- |
-| Email | `admin@saleor.local` |
-| Password | Set on first dashboard login |
+---
 
-## Notes
+## Ports
 
-- First startup takes ~2 minutes while database migrations run
-- Media files stored in `./media/`
-- PostgreSQL data in `./postgres/`, Redis in `./redis/`
-- Build your storefront with [Saleor Storefront](https://github.com/saleor/storefront) (Next.js)
-- Supports multi-channel, multi-currency, and multi-warehouse
-- Webhooks and apps marketplace for extensions
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8010` | TCP | GraphQL API |
+| `9001` | TCP | Admin Dashboard |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/saleor/` | All service data and configuration |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f saleor-api
+
+# Stop the service
+cd /root/docker/saleor && docker compose down
+
+# Start the service
+cd /root/docker/saleor && docker compose up -d
+
+# Update to latest image
+cd /root/docker/saleor && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports open in firewall: 8010/tcp, 9001/tcp
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

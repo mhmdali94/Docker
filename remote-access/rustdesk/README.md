@@ -1,90 +1,98 @@
-# RustDesk Server Auto-Installer for Ubuntu
+# RustDesk Server — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-This script (`rustdesk-ubuntu.sh`) provides a fully automated way to install and configure a [RustDesk Self-Hosted Server](https://rustdesk.com/docs/en/self-host/) using Docker Compose.
+RustDesk Server is the self-hosted relay and signaling backend for the RustDesk open-source remote desktop client.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
-## 🚀 What It Does
+## What is RustDesk Server?
 
-1. **OS Check** — Verifies Ubuntu 22.04 or 24.04
-2. **Docker Check** — Installs Docker if missing
-3. **Docker Compose V2 Check** — Installs the latest Compose V2 if needed
-4. **Auto-detects WAN IP** — Pre-fills your VPS public IP as the default
-5. **Full Cleanup** — Removes any existing `hbbs` / `hbbr` containers (including ghost containers with hash prefixes), prunes stale networks, and wipes the old directory
-6. **Generates `docker-compose.yml`** — Injected with your custom domain or IP
-7. **Starts Containers** — Auto-runs `docker compose up -d`
-8. **Verifies Startup** — Confirms containers started successfully
+RustDesk is an open-source TeamViewer alternative. This installer sets up the server-side components: `hbbs` (ID/signaling server) and `hbbr` (relay server). RustDesk clients are configured to use your self-hosted server instead of the public RustDesk infrastructure, keeping all remote access traffic on your own infrastructure.
 
 ---
 
-## 📋 Prerequisites
+## Quick Install
 
-| Requirement | Details |
-|---|---|
-| **OS** | Ubuntu 22.04 or 24.04 |
-| **Permissions** | Must be run as root (`sudo`) |
-| **Network** | Ports 21115–21119 must be open in firewall/security groups |
-
----
-
-## 🛠 Usage Instructions
-
-**1. Download the script**
 ```bash
-wget https://raw.githubusercontent.com/mhmdali94/Docker/main/rustdesk/rustdesk-ubuntu.sh
-```
-
-**2. Make the script executable**
-```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/remote-access/rustdesk/rustdesk-ubuntu.sh
 chmod +x rustdesk-ubuntu.sh
-```
-
-**3. Run as root**
-```bash
 sudo bash rustdesk-ubuntu.sh
 ```
 
-**3. Follow the prompt**
-Press **Enter** to accept the auto-detected WAN IP, or type a custom domain/IP:
-```
-Enter your domain or IP address [203.0.113.10]:
-```
-
-**4. Done!**
-The script installs, cleans, configures, and starts everything automatically.
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Prompts for your server's public IP or domain
+- Starts the hbbs and hbbr containers
+- Retrieves and displays the server's public key
 
 ---
 
-## 🌐 Ports Used
+## Access
+
+| | |
+|---|---|
+| **Web UI** | N/A — configure via RustDesk client app |
+| **Server Address** | Your server's public IP or domain |
+| **Public Key** | Auto-generated and displayed in terminal |
+
+Configure the RustDesk client under **Settings → Network → ID/Relay Server**:
+- ID Server: `SERVER_IP`
+- Relay Server: `SERVER_IP`
+- Key: `<public key displayed in terminal>`
+
+---
+
+## Ports
 
 | Port | Protocol | Purpose |
-|---|---|---|
+|------|----------|---------|
 | `21115` | TCP | NAT type test |
-| `21116` | TCP + UDP | ID service & hole punching |
-| `21117` | TCP | Relay service (`hbbr`) |
-| `21118` | TCP | Web client support |
-| `21119` | TCP | Relay web client support |
+| `21116` | TCP/UDP | ID server / hole punching |
+| `21117` | TCP | Relay server |
+| `21118` | TCP | WebSocket (hbbs) |
+| `21119` | TCP | WebSocket (hbbr) |
 
 ---
 
-## 📁 Files Location
+## Data Location
 
-All configuration files are stored at:
+| Path | Description |
+|------|-------------|
+| `/root/docker/rustdesk/` | All service data and configuration |
+| `/root/docker/rustdesk/hbbs/` | ID server data and key files |
+| `/root/docker/rustdesk/hbbr/` | Relay server data |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f hbbs
+docker logs -f hbbr
+
+# Stop
+cd /root/docker/rustdesk && docker compose down
+
+# Start
+cd /root/docker/rustdesk && docker compose up -d
+
+# Update to latest image
+cd /root/docker/rustdesk && docker compose pull && docker compose up -d
 ```
-/root/docker/rustdesk/docker-compose.yml
-```
 
 ---
 
-## ⚠️ Disclaimer
+## Requirements
 
-This script is provided **strictly for demo and testing purposes**.
-It is **not hardened for production environments**.
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports 21115–21119/tcp and 21116/udp open in firewall
 
 ---
 
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

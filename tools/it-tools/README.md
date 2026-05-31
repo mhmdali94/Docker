@@ -1,75 +1,87 @@
-# IT-Tools
-
-Collection of 100+ handy online tools for developers and IT professionals — self-hosted.
-
-**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+# IT-Tools — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
+IT-Tools is a collection of 100+ handy online utilities for developers and IT professionals, all accessible from a clean self-hosted web interface.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
 ---
 
-## 🚀 Quick Install
+## What is IT-Tools?
+
+IT-Tools provides a comprehensive set of browser-based utilities including base64 encoder/decoder, UUID generator, JWT decoder, hash generators, color converters, regex testers, URL parsers, YAML/JSON converters, QR code generators, and many more. It requires no login and runs entirely in the browser — no data is sent to any external server.
+
+---
+
+## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/yourusername/docker/main/tools/it-tools/it-tools-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/tools/it-tools/it-tools-ubuntu.sh
+chmod +x it-tools-ubuntu.sh
 sudo bash it-tools-ubuntu.sh
 ```
 
-Or:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/docker/main/tools/it-tools/it-tools-ubuntu.sh | sudo bash
-```
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Starts the IT-Tools container
+- Runs a health check
 
 ---
 
-## 📖 What is IT-Tools?
+## Access
 
-IT-Tools is a self-hosted web app that bundles over 100 useful utilities for developers and sysadmins into a single, fast, clean interface. No ads, no tracking, and everything runs locally on your server.
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8080` |
+| **Username** | N/A — no login required |
+| **Password** | N/A — no login required |
 
-## ✨ Tools Included
+> Replace `SERVER_IP` with your server's actual IP address.
 
-- UUID / ULID generator
-- JWT encoder / decoder
-- Hash generator (MD5, SHA1, SHA256...)
-- Base64 encoder/decoder
-- URL encoder/decoder
-- Cron expression parser
-- Color picker & converter
-- IP subnet calculator
-- QR code generator
-- Regex tester
-- JSON formatter & validator
-- YAML / TOML converter
-- Password generator
-- Text diff checker
-- Docker run → Compose converter
-- And 80+ more tools
+---
 
-## 🌐 Access
-
-| URL | `http://<server-ip>:8088` |
-|-----|--------------------------|
-
-No login required. Open and start using immediately.
-
-## 🔌 Ports
+## Ports
 
 | Port | Protocol | Purpose |
 |------|----------|---------|
-| `8088` | TCP | IT-Tools Web UI |
-
-## 📁 Directory Structure
-
-```
-/root/docker/it-tools/
-└── docker-compose.yml
-```
-
-## 📚 Documentation
-
-- [IT-Tools GitHub](https://github.com/CorentinTh/it-tools)
+| `8080` | TCP | Web UI |
 
 ---
 
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/it-tools/` | All service data and configuration |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f it-tools
+
+# Stop
+cd /root/docker/it-tools && docker compose down
+
+# Start
+cd /root/docker/it-tools && docker compose up -d
+
+# Update to latest image
+cd /root/docker/it-tools && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8080/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

@@ -1,65 +1,32 @@
-# 🐳 Docker Self-Hosted Services Collection
+# Docker Self-Hosted Services Collection
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Services](https://img.shields.io/badge/Services-124-brightgreen)
-![Categories](https://img.shields.io/badge/Categories-22-purple)
+![Services](https://img.shields.io/badge/Services-130+-brightgreen)
+![Categories](https://img.shields.io/badge/Categories-28-purple)
 ![Platform](https://img.shields.io/badge/Platform-Ubuntu%2022.04%20%7C%2024.04-orange)
+![Made by](https://img.shields.io/badge/Made%20by-Mohammed%20Ali%20Elshikh-blue)
 
-A collection of one-command Docker installer scripts for self-hosted services, organized by category.
+> ⚠️ **Scripts in this repository are provided for demo and testing purposes only and are not intended for production use.**
 
-Each service directory contains:
+A growing collection of one-command Docker installer scripts for self-hosted services, organized by category. Each script handles Docker installation, credential generation, stack startup, and a basic health check — no manual configuration required.
 
-- a `README.md` with usage, ports, credentials, and access notes
-- a `*-ubuntu.sh` installer script for Ubuntu `22.04` and `24.04`
-
-**Made by:** Mohammed Ali Elshikh - [prismatechwork.com](https://prismatechwork.com)
-
-> ⚠️ Scripts in this repository are provided for **demo and testing purposes only** and are not intended for production use.
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
-## 📌 At A Glance
+## At a Glance
 
-- 124 services across 22 categories
-- Ubuntu-focused installers with Docker and Docker Compose V2 checks built in
-- Per-service deployments are typically created under `/root/docker/<service>`
-- Most scripts generate credentials, start the stack, and run a basic health check
-- Re-running a script often removes the previous deployment for a clean reinstall
-
----
-
-## 📂 Categories
-
-| Category | Count | Services |
-| --- | ---: | --- |
-| Accounting | 2 | [Akaunting](./accounting/akaunting/), [Invoice Ninja](./accounting/invoice-ninja/) |
-| AI | 6 | [Ollama + Open WebUI](./ai/ollama/), [AnythingLLM](./ai/anythingllm/), [Flowise](./ai/flowise/), [LocalAI](./ai/localai/), [Dify](./ai/dify/), [Langfuse](./ai/langfuse/) |
-| Analytics | 6 | [Plausible](./analytics/plausible/), [Umami](./analytics/umami/), [Metabase](./analytics/metabase/), [NocoDB](./analytics/nocodb/), [Baserow](./analytics/baserow/), [Redash](./analytics/redash/) |
-| Automation | 3 | [N8N](./automation/n8n/), [Node-RED](./automation/node-red/), [ActivePieces](./automation/activepieces/) |
-| Backup | 3 | [Duplicati](./backup/duplicati/), [Kopia](./backup/kopia/), [Restic REST Server](./backup/restic/) |
-| Clinic | 3 | [OpenMRS](./clinic/openmrs/), [GNU Health](./clinic/gnu-health/), [OpenEMR](./clinic/openemr/) |
-| CRM | 2 | [SuiteCRM](./crm/suitecrm/), [EspoCRM](./crm/espocrm/) |
-| Communication | 5 | [Mattermost](./communication/mattermost/), [ntfy](./communication/ntfy/), [Chatwoot](./communication/chatwoot/), [Zulip](./communication/zulip/), [Matrix + Element](./communication/matrix/) |
-| Databases | 6 | [InfluxDB](./databases/influxdb/), [MariaDB](./databases/mariadb/), [MinIO](./databases/minio/), [MongoDB](./databases/mongodb/), [PostgreSQL](./databases/postgres/), [Redis](./databases/redis/) |
-| Dev | 11 | [Gitea](./dev/gitea/), [Harbor](./dev/harbor/), [Woodpecker](./dev/woodpecker/), [SonarQube](./dev/sonarqube/), [Infisical](./dev/infisical/), [Plane](./dev/plane/), [Nexus](./dev/nexus/), [GlitchTip](./dev/glitchtip/), [Code-Server](./dev/code-server/), [Verdaccio](./dev/verdaccio/), [Coder](./dev/coder/) |
-| ERP | 6 | [Odoo 16](./erp/odoo-16/), [Odoo 17](./erp/odoo-17/), [Odoo 18](./erp/odoo-18/), [ERPNext](./erp/erpnext/), [Dolibarr](./erp/dolibarr/), [iDempiere](./erp/idempiere/) |
-| HR | 2 | [OrangeHRM](./hr/orangehrm/), [IceHRM](./hr/icehrm/) |
-| Email | 3 | [Listmonk](./email/listmonk/), [Mailcow](./email/mailcow/), [Mailu](./email/mailu/) |
-| Files | 3 | [FileBrowser](./files/filebrowser/), [Nextcloud](./files/nextcloud/), [Paperless-ngx](./files/paperless-ngx/) |
-| Management | 5 | [Portainer](./management/portainer/), [Dockge](./management/dockge/), [Watchtower](./management/watchtower/), [Dashy](./management/dashy/), [Homarr](./management/homarr/) |
-| Media | 10 | [Audiobookshelf](./media/audiobookshelf/), [Immich](./media/immich/), [Jellyfin](./media/jellyfin/), [Kavita](./media/kavita/), [Navidrome](./media/navidrome/), [PhotoPrism](./media/photoprism/), [FreshRSS](./media/freshrss/), [Komga](./media/komga/), [TubeArchivist](./media/tubearchivist/), [Overseerr](./media/overseerr/) |
-| Monitoring | 9 | [Beszel](./monitoring/beszel/), [Grafana](./monitoring/grafana/), [Graylog](./monitoring/graylog/), [Netdata](./monitoring/netdata/), [Prometheus](./monitoring/prometheus/), [Uptime Kuma](./monitoring/uptime-kuma/), [Loki](./monitoring/loki/), [SigNoz](./monitoring/signoz/), [OpenObserve](./monitoring/openobserve/) |
-| Networking | 7 | [AdGuard Home](./networking/adguardhome/), [Nginx Proxy Manager](./networking/npm/), [Pi-hole](./networking/pihole/), [Traefik](./networking/traefik/), [Technitium DNS](./networking/technitium/), [Cloudflared](./networking/cloudflared/), [FRP](./networking/frp/) |
-| Remote Access | 3 | [Guacamole](./remote-access/guacamole/), [Remotely](./remote-access/remotely/), [RustDesk](./remote-access/rustdesk/) |
-| Security | 9 | [Authentik](./security/authentik/), [Authelia](./security/authelia/), [Vaultwarden](./security/vaultwarden/), [Wazuh](./security/wazuh/), [CrowdSec](./security/crowdsec/), [Passbolt](./security/passbolt/), [DefectDojo](./security/defectdojo/), [OpenVAS](./security/openvas/), [Trivy](./security/trivy/) |
-| Tools | 12 | [IT-Tools](./tools/it-tools/), [Stirling-PDF](./tools/stirling-pdf/), [Excalidraw](./tools/excalidraw/), [Outline Wiki](./tools/outline/), [Memos](./tools/memos/), [BookStack](./tools/bookstack/), [Docmost](./tools/docmost/), [Vikunja](./tools/vikunja/), [Firefly III](./tools/firefly-iii/), [Monica](./tools/monica/), [Twenty](./tools/twenty/), [Typebot](./tools/typebot/) |
-| VPN | 8 | [3X-UI](./vpn/3x-ui/), [Headscale](./vpn/headscale/), [NetBird](./vpn/netbird/), [OpenVPN AS](./vpn/openvpn-as/), [Outline](./vpn/outline/), [Pritunl](./vpn/pritunl/), [SoftEther](./vpn/softether/), [WireGuard Easy](./vpn/wireguard-easy/) |
+- **130+ services** across **28 categories**
+- One-command install — just `wget` and `bash`
+- Ubuntu 22.04 and 24.04 support
+- Auto-installs Docker & Docker Compose V2 if missing
+- Generates secure credentials on every run
+- Clean reinstall — re-running removes the previous deployment
+- Each service deploys under `/root/docker/<service>`
 
 ---
 
-## 🛠 Usage
-
-Pick a service folder, then run its installer script.
+## Quick Start
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/<category>/<service>/<service>-ubuntu.sh
@@ -67,106 +34,189 @@ chmod +x <service>-ubuntu.sh
 sudo bash <service>-ubuntu.sh
 ```
 
-Examples:
-
+**Example — install Jellyfin:**
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/media/jellyfin/jellyfin-ubuntu.sh
 chmod +x jellyfin-ubuntu.sh
 sudo bash jellyfin-ubuntu.sh
 ```
 
+**Example — install Vaultwarden:**
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/security/vaultwarden/vaultwarden-ubuntu.sh
 chmod +x vaultwarden-ubuntu.sh
 sudo bash vaultwarden-ubuntu.sh
 ```
 
-For exact ports, credentials, and post-install steps, use the `README.md` inside the selected service folder.
+See the `README.md` inside each service folder for exact ports, credentials, and post-install steps.
 
 ---
 
-## 📋 Requirements
+## Requirements
 
 - Ubuntu `22.04` or `24.04`
 - Root or sudo access
-- Internet access for package installs and Docker image pulls
-- Open firewall ports as required by the selected service
+- Internet access (for package installs and Docker image pulls)
+- Firewall ports open as required by the selected service
 
 ---
 
-## 🧱 Repository Structure
+## Categories
 
-```text
+| Category | Services |
+|---|---|
+| [AI](./ai/) | Ollama, Open WebUI, AnythingLLM, Flowise, LocalAI, Dify, Langfuse, LibreChat, ComfyUI, Whisper, Qdrant, SearXNG |
+| [Analytics](./analytics/) | Plausible, Umami, Metabase, NocoDB, Baserow, Redash, Matomo |
+| [Accounting](./accounting/) | Akaunting, Invoice Ninja |
+| [Automation](./automation/) | N8N, Node-RED, ActivePieces |
+| [Backup](./backup/) | Duplicati, Kopia, Restic REST Server |
+| [Clinic](./clinic/) | OpenMRS, GNU Health, OpenEMR |
+| [CMS](./cms/) | Directus, Strapi, Payload, PocketBase, WordPress |
+| [Communication](./communication/) | Mattermost, ntfy, Chatwoot, Zulip, Matrix + Element, RocketChat, Jitsi |
+| [CRM](./crm/) | SuiteCRM, EspoCRM |
+| [Databases](./databases/) | PostgreSQL, MariaDB, MongoDB, Redis, MinIO, InfluxDB, Elasticsearch, ClickHouse, Neo4j, MeiliSearch, Adminer, pgAdmin |
+| [Dev](./dev/) | Gitea, GitLab, Harbor, Woodpecker, SonarQube, Infisical, Plane, Nexus, GlitchTip, Code-Server, Verdaccio, Coder, Jenkins, Coolify, Weblate |
+| [Ecommerce](./ecommerce/) | Medusa, PrestaShop, Saleor, Shopware |
+| [Education](./education/) | Moodle, Open edX |
+| [Email](./email/) | Listmonk, Mailcow, Mailu, Mautic |
+| [ERP](./erp/) | Odoo 16, Odoo 17, Odoo 18, ERPNext, Dolibarr, iDempiere |
+| [Files](./files/) | FileBrowser, Nextcloud, Paperless-ngx |
+| [Finance](./finance/) | Maybe Finance |
+| [Gaming](./gaming/) | GameVault, Pterodactyl |
+| [HR](./hr/) | OrangeHRM, IceHRM |
+| [Low-Code](./low-code/) | Appsmith, Tooljet |
+| [Management](./management/) | Portainer, Dockge, Watchtower, Dashy, Homarr |
+| [Media](./media/) | Immich, Jellyfin, PhotoPrism, Navidrome, Audiobookshelf, Kavita, Komga, FreshRSS, TubeArchivist, Overseerr, PeerTube, Plex, Sonarr, Radarr, Lidarr, Bazarr, Prowlarr |
+| [Monitoring](./monitoring/) | Grafana, Prometheus, Uptime Kuma, Netdata, Beszel, Graylog, Loki, SigNoz, OpenObserve, VictoriaMetrics, Healthchecks, Cachet, Gatus |
+| [Networking](./networking/) | Nginx Proxy Manager, Traefik, Caddy, AdGuard Home, Pi-hole, Technitium DNS, Cloudflared, FRP, HAProxy, Nginx |
+| [Project Management](./project-management/) | Leantime, OpenProject |
+| [Remote Access](./remote-access/) | Guacamole, RustDesk, Remotely, Kasm |
+| [Security](./security/) | Authelia, Authentik, Vaultwarden, Keycloak, CrowdSec, Wazuh, Passbolt, DefectDojo, OpenVAS, Trivy, Vault, OWASP ZAP |
+| [Social](./social/) | Mastodon, Lemmy, Pixelfed, Misskey, WriteFreely |
+| [Support](./support/) | Zammad, osTicket, Faveo, FreeScout, Peppermint |
+| [Tools](./tools/) | IT-Tools, Stirling-PDF, Excalidraw, Outline, Memos, BookStack, Docmost, Vikunja, Firefly III, Monica, Twenty, Typebot, Ghost, HedgeDoc, Formbricks, Mealie, Tandoor, Kimai, Shlink, Wallabag, Hoarder, LibreTranslate, Docuseal, Actual Budget, Changedetection, Joplin Server, Linkwarden |
+| [VPN](./vpn/) | WireGuard Easy, NetBird, Headscale, 3X-UI, OpenVPN AS, Pritunl, SoftEther, Outline |
+
+---
+
+## How Scripts Work
+
+Every script follows the same flow:
+
+1. Check for root privileges
+2. Verify Ubuntu 22.04 / 24.04
+3. Install or verify Docker
+4. Install or verify Docker Compose V2
+5. Remove any previous deployment of the same service
+6. Create `/root/docker/<service>` and subdirectories
+7. Generate credentials and write configuration files
+8. Pull images and start the Docker Compose stack
+9. Verify containers are running
+10. Run a basic HTTP health check
+11. Open required firewall ports via UFW (if installed)
+12. Print access URL, credentials, and management tips
+
+---
+
+## Repository Structure
+
+```
 .
-|- accounting/
-|- ai/
-|- analytics/
-|- automation/
-|- backup/
-|- clinic/
-|- communication/
-|- crm/
-|- databases/
-|- dev/
-|- email/
-|- erp/
-|- files/
-|- gpt.md
-|- hr/
-|- management/
-|- media/
-|- monitoring/
-|- networking/
-|- remote-access/
-|- security/
-|- tools/
-|- vpn/
-|- CONTRIBUTING.md
-|- LICENSE
-`- README.md
+├── ai/
+├── analytics/
+├── accounting/
+├── automation/
+├── backup/
+├── clinic/
+├── cms/
+├── communication/
+├── crm/
+├── databases/
+├── dev/
+├── ecommerce/
+├── education/
+├── email/
+├── erp/
+├── files/
+├── finance/
+├── gaming/
+├── hr/
+├── low-code/
+├── management/
+├── media/
+├── monitoring/
+├── networking/
+├── project-management/
+├── remote-access/
+├── security/
+├── social/
+├── support/
+├── tools/
+├── vpn/
+├── CONTRIBUTING.md
+├── LICENSE
+└── README.md
 ```
 
 Per-service layout:
 
-```text
+```
 category/service-name/
-|- README.md
-`- service-name-ubuntu.sh
+├── README.md
+└── service-name-ubuntu.sh
 ```
 
 ---
 
-## ⚙️ Common Script Behavior
+## Management Commands
 
-Most scripts follow the same high-level flow:
+After installation, use these commands to manage any service:
 
-1. check for root privileges
-2. verify supported Ubuntu version
-3. install or verify Docker
-4. install or verify Docker Compose V2
-5. clean up old containers and previous service data
-6. prepare `/root/docker/<service>`
-7. generate credentials and write configuration
-8. start the stack with Docker Compose
-9. verify the container is running
-10. perform a basic health check
+```bash
+# View live logs
+docker logs -f <container-name>
 
----
+# Stop the service
+cd /root/docker/<service> && docker compose down
 
-## ⚠️ Important Notes
+# Start the service
+cd /root/docker/<service> && docker compose up -d
 
-- These setups are intended for demos, testing, and lab use.
-- Some scripts expose default or generated credentials during installation.
-- Some services require additional manual configuration after install, such as DNS, SMTP, OAuth, or client-side setup.
-- Some installers use broad host mounts, Docker socket access, host networking, or elevated capabilities where the service requires it.
-- If you need production-grade deployments, treat these scripts as starting points rather than final hardened setups.
+# Restart the service
+cd /root/docker/<service> && docker compose restart
 
----
+# Update to the latest image
+cd /root/docker/<service> && docker compose pull && docker compose up -d
 
-## 🤝 Contributing
-
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the script structure, naming conventions, cleanup rules, health check patterns, and port allocation guidance used in this repository.
+# Remove service completely (including data)
+cd /root/docker/<service> && docker compose down -v
+rm -rf /root/docker/<service>
+```
 
 ---
 
-**Made by Mohammed Ali Elshikh - [prismatechwork.com](https://prismatechwork.com)**
+## Important Notes
+
+- These setups are intended for **demo, testing, and lab use only**.
+- Credentials are generated or set to defaults during installation — change them before exposing services publicly.
+- Some services require additional post-install steps (DNS, SMTP, OAuth, reverse proxy config, client-side setup).
+- Some installers use host networking, Docker socket access, or elevated capabilities where required by the service.
+- For production-grade deployments, treat these scripts as starting points and apply proper hardening.
+
+---
+
+## Contributing
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for script structure, naming conventions, cleanup rules, health check patterns, and port allocation guidance.
+
+---
+
+## Support
+
+If these scripts save you time, you can support the project:
+
+**USDT (TRC-20):** `TCSZTkXvhibdrFre5sdTsFLRQ6d6yQkd2i`
+
+---
+
+**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**

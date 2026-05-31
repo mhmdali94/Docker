@@ -1,160 +1,88 @@
-# Pi-hole
+# Pi-hole — Self-Hosted Docker Installer
 
-Network-wide ad blocker - blocks ads on all your devices.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
+
+Pi-hole is a network-wide ad blocker that acts as a DNS sinkhole, blocking advertising and tracking domains for every device on your network.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Pi-hole?
+
+Pi-hole works as a local DNS server that intercepts domain name lookups. When a device requests a known ad or tracker domain, Pi-hole returns a blank response, effectively blocking the request network-wide without touching any device. It provides a web dashboard with query logs, block lists, and per-client statistics.
+
+---
 
 ## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/yourusername/docker/main/pihole/pihole-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/networking/pihole/pihole-ubuntu.sh
+chmod +x pihole-ubuntu.sh
 sudo bash pihole-ubuntu.sh
 ```
 
-Or:
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/docker/main/pihole/pihole-ubuntu.sh | sudo bash
-```
+---
 
-## What is Pi-hole?
+## Access
 
-Pi-hole is a DNS sinkhole that blocks ads and trackers at the network level. It acts as your DNS server and blocks known ad domains before they even reach your devices.
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP/admin` |
+| **Password** | Auto-generated during install (displayed in terminal) |
 
-## Features
+> Replace `SERVER_IP` with your server's actual IP address.
 
-- Blocks ads on all devices (phones, TVs, computers, IoT)
-- Works at the DNS level - no app installation needed
-- Blocks trackers and malware domains
-- Custom allowlists and blocklists
-- Detailed statistics and query logging
-- DHCP server capability
-- Per-client reporting
-- API for automation
+---
 
 ## Ports
 
 | Port | Protocol | Purpose |
 |------|----------|---------|
-| 53 | TCP/UDP | DNS server (required) |
-| 80 | TCP | Web admin panel |
+| `53` | TCP/UDP | DNS queries |
+| `80` | TCP | Admin web UI |
 
-## Accessing Pi-hole
+---
 
-After installation:
-- Admin panel: `http://SERVER_IP/admin`
-- Default admin password is shown at the end of installation
+## Data Location
 
-## Setup Steps
+| Path | Description |
+|------|-------------|
+| `/root/docker/pihole/` | All service data and configuration |
 
-1. Run the installer
-2. Open `http://SERVER_IP/admin` in your browser
-3. Login with the password shown during installation
-4. Configure your devices or router to use Pi-hole as DNS
+---
 
-## Using Pi-hole as DNS
-
-**Windows:**
-```
-Settings → Network → Change adapter settings → IPv4 → DNS: YOUR_SERVER_IP
-```
-
-**Mac:**
-```
-System Preferences → Network → Advanced → DNS → Add YOUR_SERVER_IP
-```
-
-**Router (recommended):**
-Set DNS server to YOUR_SERVER_IP in your router settings to protect all devices.
-
-**Android/iOS:**
-```
-Settings → WiFi → (i) on network → Configure DNS → Manual → Add YOUR_SERVER_IP
-```
-
-## Directory Structure
-
-```
-/root/docker/pihole/
-├── docker-compose.yml
-├── etc-pihole/          # Pi-hole configuration
-└── etc-dnsmasq.d/       # DNS configuration
-```
-
-## Default Blocklists
-
-Pi-hole comes with default blocklists that block:
-- Advertising domains
-- Tracking domains
-- Malware domains
-
-You can add more lists in the admin panel under **Group Management → Adlists**.
-
-## Popular Blocklists
-
-- StevenBlack's hosts
-- OISD (Online International Server Domain)
-- Firebog's lists
-
-Add these in the admin panel for more comprehensive blocking.
-
-## Changing Admin Password
+## Management
 
 ```bash
-docker exec -it pihole pihole -a -p
+# Follow logs
+docker logs -f pihole
+
+# Stop
+cd /root/docker/pihole && docker compose down
+
+# Start
+cd /root/docker/pihole && docker compose up -d
+
+# Update to latest image
+cd /root/docker/pihole && docker compose pull && docker compose up -d
 ```
 
-Or visit the admin panel → Settings → Web Interface → Web password.
+---
 
-## Updating Pi-hole
+## Requirements
 
-```bash
-cd /root/docker/pihole
-docker compose pull
-docker compose up -d
-```
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports 53/tcp, 53/udp, and 80/tcp open in firewall
 
-## Useful Commands
+---
 
-```bash
-# Check Pi-hole status
-docker exec pihole pihole status
-
-# Update blocklists
-docker exec pihole pihole -g
-
-# View logs
-docker logs pihole
-
-# Restart Pi-hole
-docker restart pihole
-```
-
-## Troubleshooting
-
-**Port 53 already in use:**
-```bash
-# Check what's using port 53
-sudo lsof -i :53
-
-# Disable systemd-resolved if needed
-sudo systemctl stop systemd-resolved
-sudo systemctl disable systemd-resolved
-```
-
-**Not blocking ads:**
-- Check if DNS is set correctly on your device
-- Clear DNS cache on your device
-- Check query log in admin panel to see if queries are being processed
-
-## Documentation
-
-- [Pi-hole Official Site](https://pi-hole.net/)
-- [Pi-hole Documentation](https://docs.pi-hole.net/)
-- [Pi-hole GitHub](https://github.com/pi-hole/pi-hole)
-
-## ⚠️ Disclaimer
-
-This script is for **demo/testing purposes only**. Not intended for production use.
-
-## Author
-
-Made by: Mohammed Ali Elshikh | [prismatechwork.com](https://prismatechwork.com)
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

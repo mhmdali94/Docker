@@ -1,8 +1,20 @@
-# PeerTube
+# PeerTube — Self-Hosted Docker Installer
 
-Self-hosted video platform that federates with the Fediverse. Upload, host, and stream videos — YouTube alternative with no ads, no algorithms, and no data collection.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+PeerTube is a self-hosted, federated video hosting platform — a YouTube alternative with no ads, no algorithms, and no data collection that connects with the Fediverse.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is PeerTube?
+
+PeerTube lets you host, manage, and stream videos on your own server while federating with other PeerTube instances and Mastodon. It uses WebTorrent for peer-assisted video delivery to reduce server bandwidth. Features include channels, playlists, live streaming, chapters, subtitles, and a full admin panel.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/media/peertube/peertube-ubuntu.sh
@@ -10,35 +22,73 @@ chmod +x peertube-ubuntu.sh
 sudo bash peertube-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Prompts for your domain name (required for federation)
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **PeerTube** — Video hosting platform
-- **PostgreSQL 15** — Database
-- **Redis 7** — Cache and job queue
+---
+
+## Access
+
+| | |
+|---|---|
+| **Web UI** | `http://YOUR_DOMAIN:9300` |
+| **Admin Email** | `admin@YOUR_DOMAIN` |
+| **Admin Password** | Run: `docker logs peertube 2>&1 \| grep -i password` |
+
+> A real domain name is required. Replace `YOUR_DOMAIN` with the domain you provided during install.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 9300 | PeerTube web UI + API |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `9300` | TCP | Web UI / API |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/peertube/` | All service data and configuration |
+| `/root/docker/peertube/data/` | Video files and thumbnails |
+| `/root/docker/peertube/postgres/` | PostgreSQL database |
+| `/root/docker/peertube/redis/` | Redis cache |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f peertube
+
+# Stop
+cd /root/docker/peertube && docker compose down
+
+# Start
+cd /root/docker/peertube && docker compose up -d
+
+# Update to latest image
+cd /root/docker/peertube && docker compose pull && docker compose up -d
+```
+
+---
 
 ## Requirements
 
-- A **real domain name** for federation
-- Sufficient disk space — videos can be large
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- A real domain name pointing to this server
+- Port 9300/tcp open in firewall
+- Sufficient disk space for video storage
 
-## Default Credentials
+---
 
-Admin password is auto-generated on first start:
-```bash
-docker logs peertube 2>&1 | grep -i password
-```
-
-## Notes
-
-- Videos and thumbnails stored in `./data/`
-- PostgreSQL in `./postgres/`, Redis in `./redis/`
-- Federates with other PeerTube instances and Mastodon (follow channels from Mastodon)
-- Uses WebTorrent for P2P video delivery — reduces server bandwidth
-- Supports live streaming, chapters, subtitles, playlists, and channels
-- Recommended: put behind Caddy/Nginx with HTTPS for production
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

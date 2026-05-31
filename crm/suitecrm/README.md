@@ -1,8 +1,20 @@
-# SuiteCRM
+# SuiteCRM — Self-Hosted Docker Installer
 
-The world's most popular open-source CRM. A full fork of SugarCRM covering leads, opportunities, contacts, accounts, campaigns, cases, contracts, and reporting.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+The world's most popular open-source CRM — a full fork of SugarCRM covering leads, opportunities, contacts, accounts, campaigns, cases, and reporting.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is SuiteCRM?
+
+SuiteCRM is a comprehensive open-source CRM platform forked from SugarCRM. It covers the full sales and service lifecycle: leads, opportunities, accounts, contacts, campaigns, cases, contracts, invoices, and advanced reporting. Supports module customization through a Module Loader, workflow automation, and a REST API.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/crm/suitecrm/suitecrm-ubuntu.sh
@@ -10,31 +22,67 @@ chmod +x suitecrm-ubuntu.sh
 sudo bash suitecrm-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **SuiteCRM** — CRM application
-- **MariaDB** — database backend (via Bitnami)
+---
 
-## Credentials
+## Access
 
-| Field | Value |
-| --- | --- |
-| URL | http://\<server-ip\>:8129 |
-| Username | admin |
-| Password | Generated at install |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8129` |
+| **Username** | `admin` |
+| **Password** | Auto-generated (shown at install) |
+
+> Replace `SERVER_IP` with your server's IP address. First startup takes 3-5 minutes for database initialization.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 8129 | SuiteCRM Web UI |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8129` | TCP | Web UI |
 
-## Connect
+---
 
-Open `http://<server-ip>:8129` and log in with `admin` and the password shown at install. Complete the initial configuration wizard to set up your currency, timezone, and email settings.
+## Data Location
 
-## Notes
+| Path | Description |
+|------|-------------|
+| `/root/docker/suitecrm/` | All service data and configuration |
 
-- First startup takes 3-5 minutes while SuiteCRM initializes and seeds the database
-- Uses the Bitnami SuiteCRM image which includes automatic HTTPS and a pre-configured PHP environment
-- Module Loader allows adding community extensions without modifying core files
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f suitecrm
+
+# Stop the service
+cd /root/docker/suitecrm && docker compose down
+
+# Start the service
+cd /root/docker/suitecrm && docker compose up -d
+
+# Update to latest image
+cd /root/docker/suitecrm && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports open in firewall: 8129/tcp
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

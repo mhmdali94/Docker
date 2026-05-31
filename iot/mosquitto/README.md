@@ -1,8 +1,20 @@
-# Mosquitto
+# Mosquitto — Self-Hosted Docker Installer
 
-Lightweight MQTT message broker by Eclipse. The backbone for IoT device communication — smart home sensors, ESP devices, Zigbee gateways, and Home Assistant all use MQTT.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Eclipse Mosquitto is a lightweight, open-source MQTT message broker that serves as the backbone for IoT device communication, smart home sensors, and Home Assistant integrations.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Mosquitto?
+
+Mosquitto implements the MQTT protocol, enabling low-overhead publish/subscribe messaging between IoT devices. It is the standard broker used with Home Assistant, ESP devices, Zigbee2MQTT, Tasmota, and thousands of other IoT systems. The installer offers optional username/password authentication.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/iot/mosquitto/mosquitto-ubuntu.sh
@@ -10,55 +22,72 @@ chmod +x mosquitto-ubuntu.sh
 sudo bash mosquitto-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Prompts for authentication mode (anonymous or username/password)
+- Starts the service stack
+- Runs a health check
 
-- **Eclipse Mosquitto 2** — MQTT broker
-
-## Ports
-
-| Port | Protocol | Service |
-| --- | --- | --- |
-| 1883 | TCP | MQTT |
-| 9001 | TCP | MQTT over WebSocket |
+---
 
 ## Access
 
-Connect any MQTT client to `<server-ip>:1883`.
+| | |
+|---|---|
+| **MQTT (TCP)** | `SERVER_IP:1883` |
+| **MQTT (WebSocket)** | `SERVER_IP:9001` |
+| **Username** | Auto-generated during install (if auth enabled) |
+| **Password** | Auto-generated during install (if auth enabled) |
 
-## Authentication
+> Replace `SERVER_IP` with your server's actual IP address.
 
-The installer asks whether to enable username/password auth. If enabled, credentials are shown at the end and stored in `./config/passwd`.
+---
 
-To add more users after install:
+## Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `1883` | TCP | MQTT broker |
+| `9001` | TCP | MQTT over WebSocket |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/mosquitto/` | All service data and configuration |
+| `/root/docker/mosquitto/config/` | Broker configuration and password file |
+| `/root/docker/mosquitto/data/` | Persistent message storage |
+| `/root/docker/mosquitto/log/` | Broker logs |
+
+---
+
+## Management
+
 ```bash
-docker exec mosquitto mosquitto_passwd /mosquitto/config/passwd newuser
-docker restart mosquitto
+# Follow logs
+docker logs -f mosquitto
+
+# Stop
+cd /root/docker/mosquitto && docker compose down
+
+# Start
+cd /root/docker/mosquitto && docker compose up -d
+
+# Update to latest image
+cd /root/docker/mosquitto && docker compose pull && docker compose up -d
 ```
 
-## Testing
+---
 
-```bash
-# Subscribe to a topic
-mosquitto_sub -h <server-ip> -t "test/#" -u mqtt -P password
+## Requirements
 
-# Publish a message
-mosquitto_pub -h <server-ip> -t "test/hello" -m "world" -u mqtt -P password
-```
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports 1883/tcp and 9001/tcp open in firewall
 
-## Integration with Home Assistant
+---
 
-In Home Assistant's `configuration.yaml`:
-```yaml
-mqtt:
-  broker: <server-ip>
-  port: 1883
-  username: mqtt
-  password: yourpassword
-```
-
-## Notes
-
-- Messages persisted in `./data/`
-- Logs in `./log/mosquitto.log`
-- Config in `./config/mosquitto.conf` — restart after changes
-- WebSocket support on port 9001 for browser-based MQTT clients
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

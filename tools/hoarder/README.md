@@ -1,8 +1,20 @@
-# Hoarder
+# Hoarder — Self-Hosted Docker Installer
 
-AI-powered bookmark manager with automatic tagging, full-text search, and screenshot capture. Save links, notes, and images — search everything instantly.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Hoarder is an AI-powered bookmark manager with automatic tagging, full-text search, and screenshot capture for saved links, notes, and images.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Hoarder?
+
+Hoarder is a self-hosted bookmark and read-later manager. When you save a link, it automatically fetches the page, takes a screenshot, and uses AI (optional OpenAI integration) to generate tags. It supports full-text search via Meilisearch, browser extensions for one-click saving, and a mobile-friendly web UI.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/tools/hoarder/hoarder-ubuntu.sh
@@ -10,51 +22,69 @@ chmod +x hoarder-ubuntu.sh
 sudo bash hoarder-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Optionally prompts for an OpenAI API key for AI tagging
+- Starts Hoarder, Meilisearch, and a headless Chrome browser
+- Runs a health check
 
-- **Hoarder** — Bookmark manager web app
-- **Meilisearch** — Full-text search engine
-- **Chromium** — Headless browser for screenshots and page archiving
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 3777 | Hoarder web interface |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Web UI | `http://<server-ip>:3777` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:3777` |
+| **Username** | Created on first visit |
+| **Password** | Created on first visit |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's actual IP address.
 
-None — the first visit creates your admin account.
+---
 
-## AI Tagging
+## Ports
 
-Hoarder can automatically tag bookmarks using AI:
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `3777` | TCP | Web UI |
 
-| Provider | Setup |
-| --- | --- |
-| OpenAI | Provide your API key during install |
-| Ollama (local) | Set `OLLAMA_BASE_URL` in docker-compose.yml |
+---
 
-To enable Ollama after install, edit `docker-compose.yml` and add:
-```yaml
-environment:
-  OLLAMA_BASE_URL: http://<ollama-host>:11434
-  INFERENCE_TEXT_MODEL: llama3.2:3b
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/hoarder/` | All service data and configuration |
+| `/root/docker/hoarder/data/` | Bookmarks and metadata |
+| `/root/docker/hoarder/meilisearch/` | Search index |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f hoarder
+
+# Stop
+cd /root/docker/hoarder && docker compose down
+
+# Start
+cd /root/docker/hoarder && docker compose up -d
+
+# Update to latest image
+cd /root/docker/hoarder && docker compose pull && docker compose up -d
 ```
 
-## Browser Extension
+---
 
-Install the Hoarder browser extension (Chrome/Firefox) to save bookmarks with one click from any page.
+## Requirements
 
-## Notes
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 3777/tcp open in firewall
 
-- Screenshots and archived pages stored in `./data/`
-- Meilisearch index stored in `./meilisearch/`
-- Supports RSS feeds, highlights, and notes
-- REST API available for automation
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

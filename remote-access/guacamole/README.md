@@ -1,71 +1,90 @@
-# Apache Guacamole — Docker Setup
+# Apache Guacamole — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Automated installer for [Apache Guacamole](https://guacamole.apache.org/) — a clientless remote desktop gateway that supports VNC, RDP, and SSH entirely through a web browser.
+Apache Guacamole is a clientless remote desktop gateway that supports RDP, VNC, and SSH entirely through a web browser with no plugins required.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
-## 🚀 What the Script Does
+## What is Apache Guacamole?
 
-1. **OS Check** — Verifies Ubuntu 22.04 or 24.04
-2. **Docker Check** — Installs Docker if missing
-3. **Docker Compose V2 Check** — Installs if missing
-4. **Cleanup** — Removes any existing Guacamole containers and directory
-5. **Generates `docker-compose.yml`** — Ready-to-run stack
-6. **Starts Container** — `docker compose up -d`
-7. **Shows login info** — Admin URL and credentials
+Apache Guacamole acts as a centralized HTML5 remote access gateway. Users connect to remote desktops and servers directly from a browser without installing any client software. It supports RDP (Windows), VNC, SSH, and Telnet, and provides user/group management with connection sharing.
 
 ---
 
-## 🛠 Usage
+## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/mhmdali94/Docker/main/guacamole/guacamole-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/remote-access/guacamole/guacamole-ubuntu.sh
 chmod +x guacamole-ubuntu.sh
 sudo bash guacamole-ubuntu.sh
 ```
 
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
+
 ---
 
-## 🔑 Default Login Credentials
+## Access
 
-| Field | Value |
-|-------|-------|
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8085` |
 | **Username** | `guacadmin` |
 | **Password** | `guacadmin` |
 
-> ⚠️ Change these immediately after first login!
+> Replace `SERVER_IP` with your server's actual IP address.
+> **Change the default credentials immediately after first login.**
 
 ---
 
-## 🌐 Ports Used
+## Ports
 
-| Port | Purpose |
-|------|---------|
-| `8090` | Guacamole Web UI |
-
-Access the panel at: `http://<your-server-ip>:8090/guacamole`
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8085` | TCP | Web UI |
 
 ---
 
-## 📁 Files Location
+## Data Location
 
+| Path | Description |
+|------|-------------|
+| `/root/docker/guacamole/` | All service data and configuration |
+| `/root/docker/guacamole/postgres/` | Database storage |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f guacamole
+
+# Stop
+cd /root/docker/guacamole && docker compose down
+
+# Start
+cd /root/docker/guacamole && docker compose up -d
+
+# Update to latest image
+cd /root/docker/guacamole && docker compose pull && docker compose up -d
 ```
-/root/docker/guacamole/
-├── docker-compose.yml
-└── postgres/     ← persistent config & data volume
-```
 
 ---
 
-## ⚠️ Disclaimer
+## Requirements
 
-This setup is provided **strictly for demo and testing purposes**.
-It is **not hardened for production environments**.
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8085/tcp open in firewall
 
 ---
 
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

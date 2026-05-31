@@ -1,8 +1,20 @@
-# OrangeHRM
+# OrangeHRM — Self-Hosted Docker Installer
 
-Open-source human resource management system covering employee records, leave management, time tracking, performance reviews, recruitment, and payroll.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+OrangeHRM is an open-source human resource management system covering employee records, leave management, time tracking, performance reviews, recruitment, and payroll.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is OrangeHRM?
+
+OrangeHRM is a feature-rich HR platform used by organizations worldwide. It provides employee self-service, leave and time-off workflows, performance appraisals, a recruitment module, and detailed HR reporting — all through a polished web interface.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/hr/orangehrm/orangehrm-ubuntu.sh
@@ -10,31 +22,69 @@ chmod +x orangehrm-ubuntu.sh
 sudo bash orangehrm-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **OrangeHRM** — HR management application
-- **MariaDB 10.6** — database backend
+---
 
-## Credentials
+## Access
 
-| Field | Value |
-| --- | --- |
-| URL | http://\<server-ip\>:8125 |
-| Username | admin |
-| Password | Generated at install |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8125` |
+| **Username** | `admin` |
+| **Password** | Auto-generated during install (displayed in terminal) |
+
+> Replace `SERVER_IP` with your server's actual IP address.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 8125 | OrangeHRM Web UI |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8125` | TCP | Web UI |
 
-## Connect
+---
 
-Open `http://<server-ip>:8125` and log in with `admin` and the password shown at install. Complete the setup wizard to configure your organization structure, leave types, and employee records.
+## Data Location
 
-## Notes
+| Path | Description |
+|------|-------------|
+| `/root/docker/orangehrm/` | All service data and configuration |
+| `/root/docker/orangehrm/db/` | MariaDB database |
+| `/root/docker/orangehrm/data/` | Application uploads and configuration |
 
-- First startup takes 2-3 minutes while OrangeHRM initializes the database
-- The Community Edition covers core HR features; the Enterprise edition adds payroll and advanced analytics
-- Employee self-service portal is available at the same URL
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f orangehrm
+
+# Stop
+cd /root/docker/orangehrm && docker compose down
+
+# Start
+cd /root/docker/orangehrm && docker compose up -d
+
+# Update to latest image
+cd /root/docker/orangehrm && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8125/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

@@ -1,8 +1,20 @@
-# Moodle
+# Moodle — Self-Hosted Docker Installer
 
-The world's most popular open-source Learning Management System. Create online courses, quizzes, assignments, and certificates — used by universities, schools, and businesses globally.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+The world's most popular open-source Learning Management System — create online courses, quizzes, assignments, and certificates.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Moodle?
+
+Moodle is the leading open-source LMS used by universities, schools, and businesses globally. It supports online courses with lessons, quizzes, assignments, forums, and discussion boards. Features include student enrollment, automated grading, certificates, SCORM/xAPI content, 1000+ plugins, and iOS/Android mobile apps.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/education/moodle/moodle-ubuntu.sh
@@ -10,44 +22,68 @@ chmod +x moodle-ubuntu.sh
 sudo bash moodle-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **Moodle** — Learning Management System
-- **MariaDB 10.11** — Database
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 8083 | Moodle web UI |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Web UI | `http://<server-ip>:8083` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8083` |
+| **Username** | Set during install |
+| **Password** | Auto-generated (shown at install) |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's IP address. First startup takes 3-5 minutes.
 
-| Field | Value |
-| --- | --- |
-| Username | Set during install |
-| Password | Generated during install (shown at end) |
+---
 
-## Features
+## Ports
 
-- Course creation with lessons, quizzes, assignments, and forums
-- Student enrollment and progress tracking
-- Automated grading with gradebook
-- SCORM and xAPI content support
-- Video, audio, and document embedding
-- Certificates and badges on completion
-- 1000+ plugins in the Moodle plugin directory
-- Mobile app for iOS and Android
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8083` | TCP | Web UI |
 
-## Notes
+---
 
-- Course files and uploads stored in `./moodledata/`
-- MariaDB data in `./mariadb/`
-- First startup takes 3–5 minutes for installation
-- Recommended: 2 GB+ RAM, SSD storage for large student counts
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/moodle/` | All service data and configuration |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f moodle
+
+# Stop the service
+cd /root/docker/moodle && docker compose down
+
+# Start the service
+cd /root/docker/moodle && docker compose up -d
+
+# Update to latest image
+cd /root/docker/moodle && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Minimum 2 GB RAM recommended
+- Ports open in firewall: 8083/tcp
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

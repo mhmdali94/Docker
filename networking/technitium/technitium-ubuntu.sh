@@ -96,9 +96,11 @@ info "Directory ready: $TECH_DIR"
 
 info "Checking for systemd-resolved conflict on port 53..."
 if systemctl is-active --quiet systemd-resolved 2>/dev/null; then
-    warn "systemd-resolved is running and may conflict with port 53."
-    warn "To disable it: systemctl disable --now systemd-resolved"
-    warn "Continuing anyway — Technitium may fail to bind port 53."
+    warn "systemd-resolved is running and occupying port 53. Disabling it..."
+    systemctl disable --now systemd-resolved
+    rm -f /etc/resolv.conf
+    echo "nameserver 8.8.8.8" > /etc/resolv.conf
+    info "systemd-resolved stopped. Using 8.8.8.8 as temporary DNS."
 fi
 
 section "Step 6: Generating Credentials & docker-compose.yml"

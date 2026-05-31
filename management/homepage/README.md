@@ -1,8 +1,20 @@
-# Homepage
+# Homepage — Self-Hosted Docker Installer
 
-A highly customizable self-hosted dashboard for all your services. Shows live stats, Docker container status, and integrates with 100+ services.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Homepage is a fast, modern self-hosted dashboard that displays live stats from your services and Docker containers through a clean, YAML-configured interface.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Homepage?
+
+Homepage provides a central start page for all your self-hosted services. It integrates with over 100 services (Sonarr, Radarr, Grafana, Portainer, and more) to show live data alongside your service tiles. Docker socket integration enables automatic container discovery and status display.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/management/homepage/homepage-ubuntu.sh
@@ -10,68 +22,68 @@ chmod +x homepage-ubuntu.sh
 sudo bash homepage-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Writes default config files
+- Starts the service stack
+- Runs a health check
 
-- **Homepage** — Modern, fast self-hosted dashboard
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 3333 | Homepage dashboard |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Dashboard | `http://<server-ip>:3333` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:3333` |
+| **Username** | None (no auth by default) |
+| **Password** | None (no auth by default) |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's actual IP address.
 
-None — open access. Restrict with a reverse proxy if needed.
+---
 
-## Configuration
+## Ports
 
-All config lives in `./config/` as YAML files:
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `3333` | TCP | Web UI |
 
-| File | Purpose |
-| --- | --- |
-| `settings.yaml` | Theme, title, layout |
-| `services.yaml` | Service tiles with links and icons |
-| `bookmarks.yaml` | Quick-access bookmarks |
-| `widgets.yaml` | Live stats widgets |
+---
 
-### Adding a Service
+## Data Location
 
-Edit `./config/services.yaml`:
-```yaml
-- Monitoring:
-    - Grafana:
-        href: http://server-ip:3000
-        description: Metrics dashboard
-        icon: grafana.png
-    - Uptime Kuma:
-        href: http://server-ip:3001
-        description: Uptime monitoring
-        icon: uptime-kuma.png
+| Path | Description |
+|------|-------------|
+| `/root/docker/homepage/` | All service data and configuration |
+| `/root/docker/homepage/config/` | YAML config files (services, bookmarks, widgets) |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f homepage
+
+# Stop
+cd /root/docker/homepage && docker compose down
+
+# Start
+cd /root/docker/homepage && docker compose up -d
+
+# Update to latest image
+cd /root/docker/homepage && docker compose pull && docker compose up -d
 ```
 
-### Docker Integration
+---
 
-Homepage reads the Docker socket (`/var/run/docker.sock`) and can show live container status automatically. Add labels to containers:
+## Requirements
 
-```yaml
-labels:
-  homepage.group: Monitoring
-  homepage.name: Grafana
-  homepage.icon: grafana.png
-  homepage.href: http://server-ip:3000
-  homepage.description: Metrics dashboard
-```
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 3333/tcp open in firewall
 
-## Notes
+---
 
-- 6000+ service icons available automatically by name
-- Supports 100+ service integrations (Sonarr, Radarr, Portainer, etc.) with live stats
-- Hot-reloads config files — no restart needed after edits
-- Dark and light themes supported
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

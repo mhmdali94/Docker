@@ -1,105 +1,88 @@
-# FileBrowser
+# FileBrowser — Self-Hosted Docker Installer
 
-Web-based file manager for your server.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
+
+FileBrowser is a lightweight, web-based file manager that lets you access, upload, download, and manage files on your server through a clean browser interface.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is FileBrowser?
+
+FileBrowser provides a web UI for managing files directly on your server without needing FTP or SSH. It supports user management, custom commands, file sharing, and works with any directory on the host. Ideal for quickly browsing or managing server files from any device.
+
+---
 
 ## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/yourusername/docker/main/filebrowser/filebrowser-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/files/filebrowser/filebrowser-ubuntu.sh
+chmod +x filebrowser-ubuntu.sh
 sudo bash filebrowser-ubuntu.sh
 ```
 
-Or:
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
+
+---
+
+## Access
+
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8080` |
+| **Username** | `admin` |
+| **Password** | `admin` (change on first login) |
+
+> Replace `SERVER_IP` with your server's actual IP address.
+
+---
+
+## Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8080` | TCP | Web UI |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/filebrowser/` | All service data and configuration |
+
+---
+
+## Management
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/docker/main/filebrowser/filebrowser-ubuntu.sh | sudo bash
+# Follow logs
+docker logs -f filebrowser
+
+# Stop
+cd /root/docker/filebrowser && docker compose down
+
+# Start
+cd /root/docker/filebrowser && docker compose up -d
+
+# Update to latest image
+cd /root/docker/filebrowser && docker compose pull && docker compose up -d
 ```
 
-## What is FileBrowser?
+---
 
-FileBrowser provides a simple web interface to manage files on your server. Access your files from any device with a web browser.
+## Requirements
 
-## Features
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8080/tcp open in firewall
 
-- Browse files and folders
-- Upload files (drag & drop support)
-- Download files
-- Create folders
-- Rename and delete files
-- Edit text files in browser
-- Preview images, videos, documents
-- Multi-user support
+---
 
-## Port
-
-| Port | Purpose |
-|------|---------|
-| 8080 | Web interface |
-
-## Default Credentials
-
-- **Username:** `admin`
-- **Password:** `admin`
-
-⚠️ **Change these immediately after login!**
-
-## Accessing FileBrowser
-
-After installation, open:
-```
-http://SERVER_IP:8080
-```
-
-## Directory Structure
-
-```
-/root/docker/filebrowser/
-├── docker-compose.yml
-├── database/      # User database
-└── config/        # Configuration files
-```
-
-## Browsable Files
-
-By default, FileBrowser is configured to browse `/root` (root home directory).
-
-To browse a different location, edit the volume in `docker-compose.yml`:
-
-```yaml
-volumes:
-  - /path/to/browse:/srv
-```
-
-## Managing Users
-
-After logging in:
-1. Click Settings (gear icon)
-2. Go to "User Management"
-3. Add or edit users
-
-## Use Cases
-
-- Access server files without SSH
-- Quick file uploads/downloads
-- Share files with team members
-- Manage media files
-- Edit configuration files
-
-## Security Notes
-
-- Default credentials are `admin/admin` - change immediately
-- Run behind Nginx Proxy Manager for HTTPS
-- Restrict access with firewall rules if needed
-
-## Documentation
-
-- [FileBrowser GitHub](https://github.com/filebrowser/filebrowser)
-- [Official Documentation](https://filebrowser.org/)
-
-## ⚠️ Disclaimer
-
-This script is for **demo/testing purposes only**. Not intended for production use.
-
-## Author
-
-Made by: Mohammed Ali Elshikh | [prismatechwork.com](https://prismatechwork.com)
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

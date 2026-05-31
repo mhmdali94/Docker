@@ -1,8 +1,20 @@
-# IceHRM
+# IceHRM — Self-Hosted Docker Installer
 
-Open-source HR management system with employee profiles, leave management, attendance tracking, payroll, and document management.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+IceHRM is an open-source human resource management system that covers employee profiles, leave management, attendance tracking, payroll, and document management.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is IceHRM?
+
+IceHRM is a lightweight HR platform suitable for small and medium-sized businesses. It provides employee self-service, time and attendance tracking, leave workflows, payroll support, and document storage — all in a single, easy-to-use web interface.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/hr/icehrm/icehrm-ubuntu.sh
@@ -10,31 +22,69 @@ chmod +x icehrm-ubuntu.sh
 sudo bash icehrm-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **IceHRM** — HR management application
-- **MySQL 8** — database backend
+---
 
-## Credentials
+## Access
 
-| Field | Value |
-| --- | --- |
-| URL | http://\<server-ip\>:8126 |
-| Username | admin |
-| Password | Generated at install |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8126` |
+| **Username** | `admin` |
+| **Password** | Auto-generated during install (displayed in terminal) |
+
+> Replace `SERVER_IP` with your server's actual IP address.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 8126 | IceHRM Web UI |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8126` | TCP | Web UI |
 
-## Connect
+---
 
-Open `http://<server-ip>:8126` and log in with `admin` and the password shown at install. Start by adding your company structure, departments, and employee records.
+## Data Location
 
-## Notes
+| Path | Description |
+|------|-------------|
+| `/root/docker/icehrm/` | All service data and configuration |
+| `/root/docker/icehrm/db/` | MySQL database |
+| `/root/docker/icehrm/data/` | Application data and uploads |
 
-- IceHRM is lightweight and suitable for SME deployments
-- Attendance can be tracked via IP-based or biometric device integration
-- Payroll module supports custom salary components and tax rules
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f icehrm
+
+# Stop
+cd /root/docker/icehrm && docker compose down
+
+# Start
+cd /root/docker/icehrm && docker compose up -d
+
+# Update to latest image
+cd /root/docker/icehrm && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8126/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

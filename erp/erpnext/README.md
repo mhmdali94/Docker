@@ -1,8 +1,20 @@
-# ERPNext
+# ERPNext — Self-Hosted Docker Installer
 
-100% open-source ERP built on the Frappe framework. Covers Accounting, HR, Manufacturing, CRM, Projects, Buying, Selling, Stock, and more.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+100% open-source ERP covering Accounting, HR, Manufacturing, CRM, Projects, Buying, Selling, and Stock.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is ERPNext?
+
+ERPNext is a comprehensive open-source ERP built on the Frappe framework. It covers the full business lifecycle: accounting, inventory, purchasing, sales, CRM, HR and payroll, manufacturing, project management, and more. Widely used by SMEs and supported by a large global community. Supports Arabic (RTL) and multilingual operation.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/erp/erpnext/erpnext-ubuntu.sh
@@ -10,32 +22,68 @@ chmod +x erpnext-ubuntu.sh
 sudo bash erpnext-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **ERPNext v15** — ERP application (Frappe framework)
-- **MariaDB 10.6** — database backend
-- **Redis** — caching and queue
+---
 
-## Credentials
+## Access
 
-| Field | Value |
-| --- | --- |
-| URL | http://\<server-ip\>:8119 |
-| Username | administrator |
-| Password | Generated at install |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8119` |
+| **Username** | `administrator` |
+| **Password** | Auto-generated (shown at install) |
+
+> Replace `SERVER_IP` with your server's IP address. First startup takes 5-10 minutes for initialization.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 8119 | ERPNext Web UI |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8119` | TCP | Web UI |
 
-## Connect
+---
 
-Open `http://<server-ip>:8119` and log in with `administrator` and the password shown at install. Complete the setup wizard to configure your company, currency, and modules.
+## Data Location
 
-## Notes
+| Path | Description |
+|------|-------------|
+| `/root/docker/erpnext/` | All service data and configuration |
 
-- First startup takes 5-10 minutes for site initialization and migrations
-- The installer runs `bench new-site` and `bench install-app erpnext` automatically
-- For production use, see the official frappe_docker repository for a hardened multi-worker setup
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f erpnext
+
+# Stop the service
+cd /root/docker/erpnext && docker compose down
+
+# Start the service
+cd /root/docker/erpnext && docker compose up -d
+
+# Update to latest image
+cd /root/docker/erpnext && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Minimum 4 GB RAM recommended
+- Ports open in firewall: 8119/tcp
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

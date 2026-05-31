@@ -1,8 +1,20 @@
-# Cloudflared (Cloudflare Tunnel)
+# Cloudflared — Self-Hosted Docker Installer
 
-Expose self-hosted services to the internet without opening firewall ports — tunnels traffic through Cloudflare's network.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Cloudflared runs a Cloudflare Tunnel agent that securely exposes local services to the internet without opening any inbound firewall ports.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Cloudflared?
+
+Cloudflare Tunnel creates an outbound-only encrypted connection from your server to Cloudflare's global network. This allows you to expose internal services publicly without a public IP or open firewall ports. You manage hostnames and routing rules from the Cloudflare Zero Trust dashboard.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/networking/cloudflared/cloudflared-ubuntu.sh
@@ -10,25 +22,75 @@ chmod +x cloudflared-ubuntu.sh
 sudo bash cloudflared-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Prompts for your Cloudflare Tunnel token
+- Starts the tunnel container
+- Verifies tunnel registration
 
-- **Cloudflared** — Cloudflare Tunnel connector daemon
+---
 
-## Credentials
+## Pre-requisite
 
-| Field | Value |
-| --- | --- |
-| Tunnel Token | Required — obtained from Cloudflare Zero Trust dashboard |
+You need a Cloudflare account and a tunnel token:
+
+1. Log in to [https://one.dash.cloudflare.com](https://one.dash.cloudflare.com)
+2. Go to **Networks → Tunnels → Create a Tunnel**
+3. Copy the tunnel token shown in the setup step
+
+---
+
+## Access
+
+| | |
+|---|---|
+| **Management Dashboard** | [https://one.dash.cloudflare.com](https://one.dash.cloudflare.com) |
+
+> Cloudflared uses outbound connections only — no inbound ports are required on your server.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| — | Outbound tunnel only, no inbound ports |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| None | — | Outbound only — no listening ports required |
 
-## Connect
+---
 
-1. Log in to [Cloudflare Zero Trust](https://one.dash.cloudflare.com) → Networks → Tunnels
-2. Create a tunnel, copy the token
-3. Run this installer and paste the token when prompted
-4. Add public hostnames in the Cloudflare dashboard to route traffic to your local services
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/cloudflared/` | All service data and configuration |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f cloudflared
+
+# Stop
+cd /root/docker/cloudflared && docker compose down
+
+# Start
+cd /root/docker/cloudflared && docker compose up -d
+
+# Update to latest image
+cd /root/docker/cloudflared && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- A Cloudflare account with a configured tunnel token
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

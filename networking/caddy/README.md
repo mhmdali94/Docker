@@ -1,8 +1,20 @@
-# Caddy
+# Caddy — Self-Hosted Docker Installer
 
-Modern web server and reverse proxy with automatic HTTPS. Zero-config TLS via Let's Encrypt, simple config syntax, and hot reload — no restart needed after changes.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Caddy is a modern, automatic HTTPS web server and reverse proxy that provisions TLS certificates automatically via Let's Encrypt.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Caddy?
+
+Caddy is a powerful, production-ready open-source web server written in Go. It automatically obtains and renews TLS certificates from Let's Encrypt, supports HTTP/2 and HTTP/3, and provides simple declarative configuration via Caddyfile. It is widely used as a reverse proxy to front other self-hosted services with zero-config TLS.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/networking/caddy/caddy-ubuntu.sh
@@ -10,66 +22,87 @@ chmod +x caddy-ubuntu.sh
 sudo bash caddy-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Writes a default Caddyfile
+- Starts the service stack
+- Runs a health check
 
-- **Caddy 2** — Web server, reverse proxy, and TLS termination
+---
+
+## Access
+
+| | |
+|---|---|
+| **Web (HTTP)** | `http://SERVER_IP:80` |
+| **Admin API** | `http://SERVER_IP:2019` |
+| **Username** | N/A — no login required |
+| **Password** | N/A — no login required |
+
+> Replace `SERVER_IP` with your server's actual IP address.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 80 | HTTP |
-| 443 | HTTPS (auto TLS) |
-| 2019 | Admin API |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `80` | TCP | HTTP |
+| `443` | TCP | HTTPS (auto TLS) |
+| `2019` | TCP | Admin API |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/caddy/` | All service data and configuration |
+| `/root/docker/caddy/config/Caddyfile` | Main configuration file (auto-reloads on change) |
+| `/root/docker/caddy/data/` | TLS certificates and state |
+| `/root/docker/caddy/site/` | Static file root |
+
+---
 
 ## Configuration
 
-Edit `/root/docker/caddy/config/Caddyfile` — Caddy hot-reloads on save:
+Edit `/root/docker/caddy/config/Caddyfile` to add reverse proxy rules. Example:
 
-### Reverse proxy with auto HTTPS
 ```
 yourdomain.com {
-    reverse_proxy localhost:3000
-}
-```
-
-### Multiple services
-```
-grafana.yourdomain.com {
-    reverse_proxy localhost:3000
-}
-
-portainer.yourdomain.com {
-    reverse_proxy localhost:9443
-}
-```
-
-### Basic auth on a service
-```
-admin.yourdomain.com {
-    basicauth {
-        admin $2a$14$hashed_password_here
-    }
     reverse_proxy localhost:8080
 }
 ```
 
-### Force reload after editing
+Point a domain at this server's IP and Caddy will obtain a TLS certificate automatically.
+
+---
+
+## Management
+
 ```bash
-docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+# Follow logs
+docker logs -f caddy
+
+# Stop
+cd /root/docker/caddy && docker compose down
+
+# Start
+cd /root/docker/caddy && docker compose up -d
+
+# Update to latest image
+cd /root/docker/caddy && docker compose pull && docker compose up -d
 ```
 
-## Auto HTTPS
+---
 
-Point your domain's DNS A record at this server's IP. Caddy automatically:
-1. Obtains a Let's Encrypt certificate
-2. Renews it before expiry
-3. Redirects HTTP → HTTPS
+## Requirements
 
-No ports 80/443 must be in use by other services.
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports 80/tcp and 443/tcp open in firewall
 
-## Notes
+---
 
-- TLS certificates stored in `./data/`
-- Static site files go in `./site/`
-- Runs with `network_mode: host` for direct access to all local services
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

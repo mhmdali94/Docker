@@ -1,8 +1,20 @@
-# GNU Health
+# GNU Health — Self-Hosted Docker Installer
 
-Free and open-source health and hospital information system (HIS). Covers patient management, electronic health records, laboratory, pharmacy, and epidemiology.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Free and open-source health and hospital information system covering patient management, EHR, laboratory, pharmacy, and epidemiology.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is GNU Health?
+
+GNU Health is a comprehensive open-source Health and Hospital Information System (HIS) built on the Tryton platform. It covers patient registration, electronic health records, clinical workflows, laboratory management, pharmacy, and public health epidemiology. Widely adopted by hospitals and clinics in developing countries and recognized by the World Health Organization.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/clinic/gnu-health/gnu-health-ubuntu.sh
@@ -10,32 +22,71 @@ chmod +x gnu-health-ubuntu.sh
 sudo bash gnu-health-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure database and admin credentials
+- Starts the service stack (GNU Health + Tryton Web + PostgreSQL)
+- Runs a health check
 
-- **GNU Health Server** — Tryton-based HIS application
-- **PostgreSQL 14** — database backend
+---
 
-## Credentials
+## Access
 
-| Field | Value |
-| --- | --- |
-| Server | \<server-ip\>:8000 |
-| Username | admin |
-| Password | Generated at install |
+| | |
+|---|---|
+| **Web UI (Tryton SAO)** | `http://SERVER_IP:8123` |
+| **Tryton Server (desktop client)** | `SERVER_IP:8000` |
+| **Username** | `admin` |
+| **Password** | Auto-generated during install (displayed in terminal) |
+
+> Replace `SERVER_IP` with your server's actual IP address. Select the `gnuhealth` database when connecting.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 8000 | GNU Health / Tryton server |
-| 8123 | Tryton Web Client |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8123` | TCP | Web UI (Tryton SAO client) |
+| `8000` | TCP | GNU Health / Tryton server (desktop client) |
 
-## Connect
+---
 
-Open `http://<server-ip>:8123` in your browser to access the Tryton Web Client. Connect to the server at `<server-ip>:8000`, select the `gnuhealth` database, and log in with `admin` and the password shown at install.
+## Data Location
 
-## Notes
+| Path | Description |
+|------|-------------|
+| `/root/docker/gnu-health/` | All service data and configuration |
+| `/root/docker/gnu-health/data/` | Application data |
 
-- GNU Health is built on the Tryton platform — the web client is the primary interface
-- First startup initializes the PostgreSQL database and may take 2-3 minutes
-- For full clinical workflows, install the GNU Health HMIS modules from the Tryton Module Manager
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f gnuhealth
+
+# Stop
+cd /root/docker/gnu-health && docker compose down
+
+# Start
+cd /root/docker/gnu-health && docker compose up -d
+
+# Update to latest image
+cd /root/docker/gnu-health && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8123/tcp open in firewall
+- Port 8000/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

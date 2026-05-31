@@ -1,14 +1,20 @@
-# CrowdSec — Docker Setup
+# CrowdSec — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Automated installer for [CrowdSec](https://www.crowdsec.net/) — open-source crowd-sourced IPS. Analyzes logs to detect attacks and contributes threat intelligence to a global security community. Block IPs that are attacking others — before they attack you.
+CrowdSec is a collaborative, open-source security engine that analyzes logs and blocks malicious IPs using a shared community threat intelligence feed.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
-## 🛠 Usage
+## What is CrowdSec?
+
+CrowdSec parses system and application logs, detects attack patterns (brute force, scanning, exploitation), and can share anonymized threat intelligence with the CrowdSec community. Bouncers integrate with firewalls and reverse proxies to automatically block detected attackers. It is designed to complement existing security tools.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/security/crowdsec/crowdsec-ubuntu.sh
@@ -16,41 +22,86 @@ chmod +x crowdsec-ubuntu.sh
 sudo bash crowdsec-ubuntu.sh
 ```
 
-## 🔑 Credentials
-
-| Field | Value |
-|-------|-------|
-| Local API Key | Auto-generated (shown at install) |
-
-## 🌐 Ports
-
-| Port | Purpose |
-|------|---------|
-| `6060` | Prometheus metrics |
-| `8181` | Local API |
-
-## 💻 Connect
-
-```bash
-# Check CrowdSec status
-docker exec crowdsec cscli metrics
-
-# View active decisions (blocked IPs)
-docker exec crowdsec cscli decisions list
-
-# View alerts
-docker exec crowdsec cscli alerts list
-
-# Add a bouncer (e.g. firewall)
-docker exec crowdsec cscli bouncers add my-firewall-bouncer
-```
-
-## 💡 Bouncers
-
-CrowdSec itself only detects threats — install a **bouncer** to actively block them:
-- `cs-firewall-bouncer` — blocks at iptables/nftables level
-- `cs-nginx-bouncer` — blocks at Nginx level
-- `cs-cloudflare-bouncer` — integrates with Cloudflare
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Starts CrowdSec with SSH and Linux collections pre-loaded
+- Generates a bouncer API key
+- Runs a health check
 
 ---
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+
+## Access
+
+| | |
+|---|---|
+| **Metrics** | `http://SERVER_IP:6060/metrics` |
+| **Local API** | `http://SERVER_IP:8181` |
+| **Username** | N/A — API key based |
+| **Bouncer API Key** | Auto-generated during install (displayed in terminal) |
+
+> Replace `SERVER_IP` with your server's actual IP address.
+
+---
+
+## Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `6060` | TCP | Metrics endpoint |
+| `8181` | TCP | Local API |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/crowdsec/` | All service data and configuration |
+| `/root/docker/crowdsec/data/` | CrowdSec database |
+| `/root/docker/crowdsec/config/` | Configuration files |
+
+---
+
+## Useful Commands
+
+```bash
+# View current alerts
+docker exec crowdsec cscli alerts list
+
+# Add a bouncer
+docker exec crowdsec cscli bouncers add my-bouncer
+
+# View decisions (blocked IPs)
+docker exec crowdsec cscli decisions list
+```
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f crowdsec
+
+# Stop
+cd /root/docker/crowdsec && docker compose down
+
+# Start
+cd /root/docker/crowdsec && docker compose up -d
+
+# Update to latest image
+cd /root/docker/crowdsec && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports 6060/tcp and 8181/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

@@ -1,8 +1,20 @@
-# Jitsi Meet
+# Jitsi Meet — Self-Hosted Docker Installer
 
-Self-hosted video conferencing. No accounts needed — share a link and start a meeting instantly.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Self-hosted video conferencing — no accounts needed, share a link and start a meeting instantly.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Jitsi Meet?
+
+Jitsi Meet is an open-source video conferencing platform that requires no account creation. Users click a link, enter a room name, and start a meeting directly in the browser. It supports screen sharing, chat, hand raising, recording, and moderator controls. A self-hosted alternative to Zoom and Google Meet.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/communication/jitsi/jitsi-ubuntu.sh
@@ -10,40 +22,72 @@ chmod +x jitsi-ubuntu.sh
 sudo bash jitsi-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **jitsi/web** — Web interface
-- **jitsi/prosody** — XMPP signaling server
-- **jitsi/jicofo** — Conference focus component
-- **jitsi/jvb** — Video bridge (media relay)
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 8080 | Web interface (HTTP) |
-| 8443 | Web interface (HTTPS) |
-| 10000/udp | Media (video/audio) |
-| 4443/tcp | Media fallback |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Jitsi Meet | `http://<server-ip>:8080` |
+| | |
+|---|---|
+| **Web UI (HTTP)** | `http://SERVER_IP:8080` |
+| **Web UI (HTTPS)** | `https://SERVER_IP:8443` |
+| **Username** | None required |
+| **Password** | None required (room passwords optional) |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's IP address. A public IP is required for remote participants to connect via the media bridge.
 
-None — anyone can create a room. Set a room password inside the meeting if needed.
+---
+
+## Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8080` | TCP | Web UI (HTTP) |
+| `8443` | TCP | Web UI (HTTPS) |
+| `10000` | UDP | Media (video/audio) |
+| `4443` | TCP | Media fallback |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/jitsi/` | All service data and configuration |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f jitsi-web
+
+# Stop the service
+cd /root/docker/jitsi && docker compose down
+
+# Start the service
+cd /root/docker/jitsi && docker compose up -d
+
+# Update to latest image
+cd /root/docker/jitsi && docker compose pull && docker compose up -d
+```
+
+---
 
 ## Requirements
 
-- **Public IP required** — Jitsi does not work reliably on LAN-only for remote participants (the JVB media bridge needs to be reachable)
-- Minimum 2 GB RAM for small meetings, 4 GB+ recommended
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Public IP address (required for remote participants)
+- Ports open in firewall: 8080/tcp, 8443/tcp, 10000/udp, 4443/tcp
 
-## Notes
+---
 
-- The installer asks for your public IP or domain — this is critical for remote participants to connect
-- For production, point a domain and enable HTTPS with Let's Encrypt
-- Room passwords can be set by the moderator (first person in the room) during the call
-- Recordings require the Jibri component (not included in this installer)
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

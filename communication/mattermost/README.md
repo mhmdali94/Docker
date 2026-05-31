@@ -1,14 +1,20 @@
-# Mattermost — Docker Setup
+# Mattermost — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Automated installer for [Mattermost](https://mattermost.com/) — an open-source, self-hosted team messaging platform as an alternative to Slack.
+Open-source team messaging platform — a self-hosted Slack alternative with channels, direct messages, and integrations.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
-## 🛠 Usage
+## What is Mattermost?
+
+Mattermost is an open-source collaboration platform providing team channels, direct messages, file sharing, search, and integrations with development tools like Jira, GitHub, and GitLab. It includes desktop and mobile apps, slash commands, and a plugin marketplace — a self-hosted alternative to Slack.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/communication/mattermost/mattermost-ubuntu.sh
@@ -16,30 +22,67 @@ chmod +x mattermost-ubuntu.sh
 sudo bash mattermost-ubuntu.sh
 ```
 
-## 🔑 Credentials
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-| Field | Value |
-|-------|-------|
-| Admin account | Created on first visit |
+---
 
-## 🌐 Ports
+## Access
 
-| Port | Purpose |
-|------|---------|
-| `8065` | Mattermost Web UI & API |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8065` |
+| **Username** | Created via first-run wizard |
+| **Password** | Created via first-run wizard |
 
-## 💻 Connect
+> Replace `SERVER_IP` with your server's IP address. Desktop and mobile apps connect to `http://SERVER_IP:8065`.
+
+---
+
+## Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8065` | TCP | Web UI / API |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/mattermost/` | All service data and configuration |
+
+---
+
+## Management
 
 ```bash
-# Web UI
-http://SERVER_IP:8065
+# Follow logs
+docker logs -f mattermost
 
-# Desktop app
-# Server URL: http://SERVER_IP:8065
+# Stop the service
+cd /root/docker/mattermost && docker compose down
 
-# Mobile apps available for iOS and Android
-# https://mattermost.com/download/
+# Start the service
+cd /root/docker/mattermost && docker compose up -d
+
+# Update to latest image
+cd /root/docker/mattermost && docker compose pull && docker compose up -d
 ```
 
 ---
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports open in firewall: 8065/tcp
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

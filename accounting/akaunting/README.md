@@ -1,8 +1,20 @@
-# Akaunting
+# Akaunting — Self-Hosted Docker Installer
 
-Free and open-source accounting software. Covers invoicing, expenses, bank reconciliation, tax reports, and multi-currency transactions.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Free and open-source accounting software for invoicing, expenses, bank reconciliation, tax reports, and multi-currency transactions.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Akaunting?
+
+Akaunting is a modern, web-based accounting platform built for small businesses and freelancers. It covers double-entry accounting, invoicing, expense tracking, multi-currency support, and tax reporting. A marketplace of free and paid add-ons extends it with payroll, inventory, and advanced analytics.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/accounting/akaunting/akaunting-ubuntu.sh
@@ -10,31 +22,68 @@ chmod +x akaunting-ubuntu.sh
 sudo bash akaunting-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure database credentials
+- Starts the service stack (Akaunting + MySQL)
+- Runs a health check
 
-- **Akaunting** — accounting and invoicing application
-- **MySQL 8** — database backend
+---
 
-## Credentials
+## Access
 
-| Field | Value |
-| --- | --- |
-| URL | http://\<server-ip\>:8127 |
-| Email | admin@example.com |
-| Password | Generated at install |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8127` |
+| **Username** | Created on first visit (setup wizard) |
+| **Password** | Created on first visit (setup wizard) |
+
+> Replace `SERVER_IP` with your server's actual IP address.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 8127 | Akaunting Web UI |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8127` | TCP | Web UI |
 
-## Connect
+---
 
-Open `http://<server-ip>:8127` and log in with `admin@example.com` and the password shown at install. Complete the company setup wizard to configure your currency, tax settings, and chart of accounts.
+## Data Location
 
-## Notes
+| Path | Description |
+|------|-------------|
+| `/root/docker/akaunting/` | All service data and configuration |
+| `/root/docker/akaunting/storage/` | Application storage |
 
-- First startup takes 2-3 minutes while Akaunting seeds the database
-- Supports 60+ languages including Arabic (RTL)
-- Free marketplace apps for payroll, inventory, and advanced reports are available
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f akaunting
+
+# Stop
+cd /root/docker/akaunting && docker compose down
+
+# Start
+cd /root/docker/akaunting && docker compose up -d
+
+# Update to latest image
+cd /root/docker/akaunting && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8127/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

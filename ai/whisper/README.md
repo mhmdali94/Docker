@@ -1,8 +1,20 @@
-# Whisper ASR
+# Whisper ASR — Self-Hosted Docker Installer
 
-Local speech-to-text API powered by OpenAI's Whisper model. Transcribe audio files in 99 languages — no cloud, no API key.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Local speech-to-text REST API powered by OpenAI's Whisper model, supporting 99 languages with no cloud dependency.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Whisper ASR?
+
+Whisper ASR Webservice wraps OpenAI's Whisper model with the faster-whisper engine behind a REST API. It transcribes audio files in 99 languages including Arabic, English, and French. The interactive Swagger UI at `/docs` lets you test the API directly in the browser, and any HTTP client or automation tool can call the `/asr` endpoint. The installer prompts for model size (tiny / base / small / medium / large).
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/ai/whisper/whisper-ubuntu.sh
@@ -10,56 +22,72 @@ chmod +x whisper-ubuntu.sh
 sudo bash whisper-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Prompts for model size (tiny / base / small / medium / large)
+- Starts the service stack
+- Runs a health check
 
-- **Whisper ASR Webservice** — REST API wrapping OpenAI Whisper with faster-whisper engine
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 9000 | Whisper REST API |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| API | `http://<server-ip>:9000` |
-| Swagger Docs | `http://<server-ip>:9000/docs` |
+| | |
+|---|---|
+| **API Endpoint** | `http://SERVER_IP:9000/asr` |
+| **API Docs (Swagger)** | `http://SERVER_IP:9000/docs` |
+| **Username** | Not required |
+| **Password** | Not required |
 
-## Models
+> Replace `SERVER_IP` with your server's actual IP address.
 
-The installer lets you choose the model at setup time:
+---
 
-| Model | Size | Speed | Accuracy |
-| --- | --- | --- | --- |
-| tiny | ~75 MB | Fastest | Low |
-| base | ~145 MB | Fast | Good |
-| small | ~466 MB | Medium | Better |
-| medium | ~1.5 GB | Slow | High |
-| large | ~3 GB | Slowest | Best |
+## Ports
 
-## API Usage
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `9000` | TCP | REST API / Swagger UI |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/whisper/` | All service data and configuration |
+| `/root/docker/whisper/models/` | Downloaded Whisper model files |
+
+---
+
+## Management
 
 ```bash
+# Follow logs
+docker logs -f whisper
+
 # Transcribe an audio file
-curl -X POST http://<server-ip>:9000/asr \
-  -F "audio_file=@recording.mp3"
+curl -X POST http://SERVER_IP:9000/asr -F "audio_file=@audio.mp3"
 
-# With language hint (faster)
-curl -X POST "http://<server-ip>:9000/asr?language=ar" \
-  -F "audio_file=@recording.mp3"
+# Stop
+cd /root/docker/whisper && docker compose down
 
-# Get word-level timestamps
-curl -X POST "http://<server-ip>:9000/asr?word_timestamps=true" \
-  -F "audio_file=@recording.mp3"
+# Start
+cd /root/docker/whisper && docker compose up -d
+
+# Update to latest image
+cd /root/docker/whisper && docker compose pull && docker compose up -d
 ```
 
-Supported formats: mp3, wav, m4a, ogg, flac, mp4, webm
+---
 
-## Notes
+## Requirements
 
-- Pure REST API — no web UI (use the `/docs` Swagger page to test interactively)
-- Models are cached in `./models/` and persist across restarts
-- Arabic, English, French, and 96 other languages supported
-- Integrate with n8n, Make, or any HTTP client
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 9000/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

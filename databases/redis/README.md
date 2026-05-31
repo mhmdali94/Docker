@@ -1,36 +1,90 @@
-# Redis — Docker Setup
+# Redis — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Automated installer for [Redis](https://redis.io/) — an in-memory data store used as a database, cache, and message broker.
+In-memory data store used as a database, cache, and message broker — ultra-fast key-value storage.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
-## 🛠 Usage
+## What is Redis?
+
+Redis is an open-source in-memory data structure store that can be used as a database, cache, message broker, and streaming engine. It supports strings, hashes, lists, sets, sorted sets, bitmaps, and streams. Widely used as the caching and session layer for web applications and as the backend for queue-based systems.
+
+---
+
+## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/mhmdali94/Docker/main/redis/redis-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/databases/redis/redis-ubuntu.sh
 chmod +x redis-ubuntu.sh
 sudo bash redis-ubuntu.sh
 ```
 
-## 🔑 Credentials
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-The script **auto-generates a secure password**. It is shown at the end of the setup. Save it!
+---
 
-## 🌐 Ports
+## Access
 
-| Port | Purpose |
-|------|---------|
-| `6379` | Redis |
+| | |
+|---|---|
+| **Database Port** | `SERVER_IP:6379` |
+| **Password** | Auto-generated (shown at install) |
 
-## 💻 Connect
+> Replace `SERVER_IP` with your server's IP address. Connect: `redis-cli -h SERVER_IP -p 6379 -a PASSWORD`
+
+---
+
+## Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `6379` | TCP | Redis protocol |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/redis/` | All service data and configuration |
+
+---
+
+## Management
 
 ```bash
-redis-cli -h <server-ip> -p 6379 -a <generated-password>
+# Connect via Docker
+docker exec -it redis redis-cli -a PASSWORD
+
+# Follow logs
+docker logs -f redis
+
+# Stop the service
+cd /root/docker/redis && docker compose down
+
+# Start the service
+cd /root/docker/redis && docker compose up -d
+
+# Update to latest image
+cd /root/docker/redis && docker compose pull && docker compose up -d
 ```
 
 ---
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports open in firewall: 6379/tcp
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

@@ -1,8 +1,20 @@
-# Meilisearch
+# Meilisearch — Self-Hosted Docker Installer
 
-Lightning-fast, typo-tolerant search engine. Add full-text search to any app with a simple REST API. Returns results in under 50ms even on millions of documents.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Lightning-fast, typo-tolerant search engine — add full-text search to any app with a simple REST API.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Meilisearch?
+
+Meilisearch is an open-source search engine designed for speed and relevance. It returns search results in under 50ms even on millions of documents, supports typo tolerance, faceted filtering, geosearch, and multi-tenant API keys. SDKs are available for JavaScript, Python, PHP, Go, Ruby, and more.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/databases/meilisearch/meilisearch-ubuntu.sh
@@ -10,46 +22,66 @@ chmod +x meilisearch-ubuntu.sh
 sudo bash meilisearch-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **Meilisearch v1.6** — Search engine
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 7700 | Meilisearch API + UI |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Web UI (Mini Dashboard) | `http://<server-ip>:7700` |
-| API | `http://<server-ip>:7700` |
+| | |
+|---|---|
+| **Web UI / API** | `http://SERVER_IP:7700` |
+| **Master Key** | Auto-generated (shown at install) |
 
-## Quick Start
+> Replace `SERVER_IP` with your server's IP address. Use the Master Key in the `Authorization: Bearer` header for all API calls.
+
+---
+
+## Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `7700` | TCP | REST API / Web UI |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/meilisearch/` | All service data and configuration |
+
+---
+
+## Management
 
 ```bash
-# Create an index
-curl -X POST http://localhost:7700/indexes \
-  -H "Authorization: Bearer <master-key>" \
-  -H "Content-Type: application/json" \
-  -d '{"uid":"products","primaryKey":"id"}'
+# Follow logs
+docker logs -f meilisearch
 
-# Add documents
-curl -X POST http://localhost:7700/indexes/products/documents \
-  -H "Authorization: Bearer <master-key>" \
-  -H "Content-Type: application/json" \
-  -d '[{"id":1,"name":"Apple iPhone"},{"id":2,"name":"Samsung Galaxy"}]'
+# Stop the service
+cd /root/docker/meilisearch && docker compose down
 
-# Search
-curl "http://localhost:7700/indexes/products/search?q=iphone" \
-  -H "Authorization: Bearer <master-key>"
+# Start the service
+cd /root/docker/meilisearch && docker compose up -d
+
+# Update to latest image
+cd /root/docker/meilisearch && docker compose pull && docker compose up -d
 ```
 
-## Notes
+---
 
-- Data stored in `./data/`
-- Analytics disabled by default for privacy
-- SDKs available for JavaScript, Python, PHP, Go, Ruby, Rust, and more
-- Supports faceted search, filters, sorting, geosearch, and multi-tenant API keys
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports open in firewall: 7700/tcp
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

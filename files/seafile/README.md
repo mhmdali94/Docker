@@ -1,8 +1,20 @@
-# Seafile
+# Seafile — Self-Hosted Docker Installer
 
-Self-hosted Dropbox alternative with file versioning, encryption, and team collaboration. Desktop and mobile sync clients available.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Seafile is a high-performance, enterprise-grade file sync and share platform that lets you host your own cloud storage with client-side encryption support.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Seafile?
+
+Seafile provides file synchronization across devices, file sharing with access controls, and optional client-side encryption for maximum privacy. It is known for its reliability and speed even with large libraries, making it suitable for teams and power users who demand more than basic cloud storage.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/files/seafile/seafile-ubuntu.sh
@@ -10,43 +22,68 @@ chmod +x seafile-ubuntu.sh
 sudo bash seafile-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-- **Seafile** — File sync and share server
-- **MariaDB** — Database
-- **Memcached** — Cache layer
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 8090 | Seafile web interface |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Seafile | `http://<server-ip>:8090` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8090` |
+| **Username** | `admin@seafile.local` |
+| **Password** | Auto-generated during install (displayed in terminal) |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's actual IP address.
 
-| Field | Value |
-| --- | --- |
-| Email | `admin@seafile.local` |
-| Password | Generated during install (shown at end) |
+---
 
-## Sync Clients
+## Ports
 
-Download desktop/mobile clients from [seafile.com/download](https://www.seafile.com/en/download/):
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8090` | TCP | Web UI / API |
 
-| Platform | Client |
-| --- | --- |
-| Windows / macOS / Linux | Seafile Drive / Seafile Client |
-| Android / iOS | Seafile mobile app |
+---
 
-## Notes
+## Data Location
 
-- Files are stored in `./data/` and versioned automatically
-- File versioning keeps deleted/modified files for 30 days by default
-- Supports server-side encryption per library
-- Initialization takes ~60 seconds on first start
+| Path | Description |
+|------|-------------|
+| `/root/docker/seafile/` | All service data and configuration |
+| `/root/docker/seafile/data/` | File storage and MariaDB database |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f seafile
+
+# Stop
+cd /root/docker/seafile && docker compose down
+
+# Start
+cd /root/docker/seafile && docker compose up -d
+
+# Update to latest image
+cd /root/docker/seafile && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8090/tcp open in firewall
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

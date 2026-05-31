@@ -1,8 +1,20 @@
-# Zammad
+# Zammad — Self-Hosted Docker Installer
 
-Full-featured open-source helpdesk and ticketing system. Manage support requests from email, chat, phone, and social media in one place — self-hosted Zendesk alternative.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+Zammad is a full-featured open-source helpdesk and ticketing system for managing support requests from email, chat, phone, and social media in one place.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is Zammad?
+
+Zammad is a modern, enterprise-grade customer support platform. It centralizes tickets from multiple channels (email, web form, chat, Twitter, Facebook), provides a powerful search powered by Elasticsearch, supports SLAs, workflows, automation, and integrates with LDAP and OAuth providers. It is a self-hosted alternative to Zendesk or Freshdesk.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/support/zammad/zammad-ubuntu.sh
@@ -10,44 +22,71 @@ chmod +x zammad-ubuntu.sh
 sudo bash zammad-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Starts the full Zammad stack (Rails, Websocket, Nginx, PostgreSQL, Redis, Elasticsearch, Memcached)
+- Runs a health check (first start takes 2–4 minutes)
 
-- **Zammad** — Helpdesk (web + websocket + scheduler)
-- **PostgreSQL 15** — Database
-- **Elasticsearch 8** — Full-text search
-- **Redis 7** — Cache
-- **Memcached** — Session cache
-- **Nginx** — Reverse proxy
-
-## Ports
-
-| Port | Service |
-| --- | --- |
-| 3036 | Zammad web UI |
+---
 
 ## Access
 
-| | URL |
-| --- | --- |
-| Web UI | `http://<server-ip>:3036` |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:3036` |
+| **Username** | Created on first visit (setup wizard) |
+| **Password** | Created on first visit (setup wizard) |
 
-## Default Credentials
+> Replace `SERVER_IP` with your server's actual IP address.
 
-None — a setup wizard runs on first visit.
+---
 
-## Features
+## Ports
 
-- Unified inbox for email, chat, Twitter, Facebook, and phone
-- Ticket assignment, escalation, and SLA management
-- Knowledge base / FAQ for self-service
-- Customer portal with ticket tracking
-- Agent performance reports and dashboards
-- Macro automation and triggers
-- REST API for integrations
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `3036` | TCP | Web UI (Nginx) |
 
-## Notes
+---
 
-- Storage (attachments) in `./storage/`
-- PostgreSQL in `./postgres/`
-- First startup takes 2–4 minutes while the database is initialized
-- Requires 4 GB+ RAM for comfortable operation (Elasticsearch is heavy)
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/zammad/` | All service data and configuration |
+| `/root/docker/zammad/storage/` | Attachments and uploads |
+| `/root/docker/zammad/postgres/` | Database storage |
+| `/root/docker/zammad/elasticsearch/` | Search index |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f zammad-railsserver
+docker logs -f zammad-nginx
+
+# Stop
+cd /root/docker/zammad && docker compose down
+
+# Start
+cd /root/docker/zammad && docker compose up -d
+
+# Update to latest image
+cd /root/docker/zammad && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 3036/tcp open in firewall
+- At least 4 GB RAM recommended
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

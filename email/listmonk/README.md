@@ -1,80 +1,89 @@
-# Listmonk
+# Listmonk — Self-Hosted Docker Installer
+
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
 High-performance self-hosted newsletter and mailing list manager with a modern web UI.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
-> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
+---
+
+## What is Listmonk?
+
+Listmonk is a fast, open-source newsletter and mailing list manager. It provides subscriber management, HTML/plain-text campaign creation, open and click tracking, transactional email support, and a REST API. Listmonk requires an external SMTP provider (Gmail, AWS SES, Postmark, Mailgun) to send emails — it is a management platform, not a mail server.
 
 ---
 
-## 🚀 Quick Install
+## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/yourusername/docker/main/email/listmonk/listmonk-ubuntu.sh
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/email/listmonk/listmonk-ubuntu.sh
+chmod +x listmonk-ubuntu.sh
 sudo bash listmonk-ubuntu.sh
 ```
 
-Or:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/docker/main/email/listmonk/listmonk-ubuntu.sh | sudo bash
-```
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
 ---
 
-## 📖 What is Listmonk?
+## Access
 
-Listmonk is a fast, self-hosted newsletter and mailing list manager. It is **not** a full email server — it requires an external SMTP service (like Gmail SMTP, AWS SES, Postmark, Mailgun) to actually send emails. It provides a powerful dashboard for managing subscribers, campaigns, and analytics.
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:9000` |
+| **Username** | `admin` |
+| **Password** | Auto-generated (shown at install) |
 
-## ✨ Features
+> Replace `SERVER_IP` with your server's IP address. Configure SMTP under Settings → SMTP after first login.
 
-- Manage multiple mailing lists and subscribers
-- Create and send HTML/plain-text newsletters
-- Campaign analytics (open rates, click rates)
-- Transactional email support
-- Subscriber import/export via CSV
-- Template system for emails
-- REST API
-- Powered by PostgreSQL
+---
 
-## 🌐 Access
-
-| URL | `http://<server-ip>:9000` |
-|-----|--------------------------|
-| Username | `admin` |
-| Password | Auto-generated during install (shown in terminal) |
-
-## 🔌 Ports
+## Ports
 
 | Port | Protocol | Purpose |
 |------|----------|---------|
-| `9000` | TCP | Listmonk Web UI |
-
-## ⚙️ Configure SMTP
-
-After install, go to **Settings → SMTP** and add your SMTP provider:
-- Gmail SMTP
-- AWS SES
-- Postmark
-- Mailgun
-- Or any custom SMTP server
-
-## 📁 Directory Structure
-
-```
-/root/docker/listmonk/
-├── docker-compose.yml
-├── config.toml      # App configuration
-├── uploads/         # Media uploads
-└── pgdata/          # PostgreSQL data
-```
-
-## 📚 Documentation
-
-- [Listmonk Documentation](https://listmonk.app/docs)
-- [Listmonk GitHub](https://github.com/knadh/listmonk)
+| `9000` | TCP | Web UI / API |
 
 ---
 
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/listmonk/` | All service data and configuration |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f listmonk
+
+# Stop the service
+cd /root/docker/listmonk && docker compose down
+
+# Start the service
+cd /root/docker/listmonk && docker compose up -d
+
+# Update to latest image
+cd /root/docker/listmonk && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports open in firewall: 9000/tcp
+- External SMTP provider for sending emails
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

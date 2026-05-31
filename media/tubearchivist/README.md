@@ -1,8 +1,20 @@
-# Tubearchivist
+# TubeArchivist — Self-Hosted Docker Installer
 
-Self-hosted YouTube media server — subscribe to channels, download videos, and browse your archive.
+> ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-## Usage
+TubeArchivist is a self-hosted YouTube media server that lets you subscribe to channels, download videos, and browse your personal video archive with full-text search.
+
+**Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
+
+---
+
+## What is TubeArchivist?
+
+TubeArchivist downloads and organizes YouTube videos into a local media archive. It supports channel and playlist subscriptions, automatic scheduled downloads, metadata indexing via Elasticsearch, and a clean web interface for browsing and playing your archived content. Ideal for archivists and anyone who wants an offline YouTube library.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/media/tubearchivist/tubearchivist-ubuntu.sh
@@ -10,26 +22,73 @@ chmod +x tubearchivist-ubuntu.sh
 sudo bash tubearchivist-ubuntu.sh
 ```
 
-## What It Installs
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Tunes `vm.max_map_count` for Elasticsearch
+- Starts the service stack
+- Runs a health check
 
-- **Tubearchivist** — YouTube archive manager
-- **Elasticsearch** — search index
-- **Redis** — task queue
+---
 
-## Credentials
+## Access
 
-| Field | Value |
-| --- | --- |
-| URL | http://\<server-ip\>:8098 |
-| Username | admin |
-| Password | Generated at install |
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8098` |
+| **Username** | `admin` |
+| **Password** | Auto-generated during install (displayed in terminal) |
+
+> Replace `SERVER_IP` with your server's actual IP address.
+
+---
 
 ## Ports
 
-| Port | Service |
-| --- | --- |
-| 8098 | Tubearchivist Web UI |
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8098` | TCP | Web UI / API |
 
-## Connect
+---
 
-Log in at `http://<server-ip>:8098`. Add YouTube channel or playlist URLs to start downloading. Requires a YouTube cookies file for age-restricted or member content.
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/tubearchivist/` | All service data and configuration |
+| `/root/docker/tubearchivist/youtube/` | Downloaded video files |
+| `/root/docker/tubearchivist/cache/` | Temporary download cache |
+| `/root/docker/tubearchivist/es/` | Elasticsearch index data |
+
+---
+
+## Management
+
+```bash
+# Follow logs
+docker logs -f tubearchivist
+
+# Stop
+cd /root/docker/tubearchivist && docker compose down
+
+# Start
+cd /root/docker/tubearchivist && docker compose up -d
+
+# Update to latest image
+cd /root/docker/tubearchivist && docker compose pull && docker compose up -d
+```
+
+---
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Port 8098/tcp open in firewall
+- At least 4 GB RAM (Elasticsearch requirement)
+- Sufficient disk space for video archives
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)

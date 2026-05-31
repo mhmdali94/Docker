@@ -1,14 +1,20 @@
-# Woodpecker CI — Docker Setup
+# Woodpecker CI — Self-Hosted Docker Installer
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Automated installer for [Woodpecker CI](https://woodpecker-ci.org/) — a simple, yet powerful CI/CD engine with YAML pipeline definitions and Docker-native execution.
+Simple, powerful CI/CD engine with YAML pipeline definitions and Docker-native execution.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
 ---
 
-## 🛠 Usage
+## What is Woodpecker CI?
+
+Woodpecker CI is a lightweight, open-source continuous integration and delivery system forked from Drone. It uses YAML pipeline definitions similar to GitHub Actions, runs pipeline steps in Docker containers, and integrates with Gitea, GitHub, and GitLab via OAuth. Minimal resource usage and simple configuration make it ideal for self-hosted teams.
+
+---
+
+## Quick Install
 
 ```bash
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/dev/woodpecker/woodpecker-ubuntu.sh
@@ -16,32 +22,68 @@ chmod +x woodpecker-ubuntu.sh
 sudo bash woodpecker-ubuntu.sh
 ```
 
-## 🔑 Credentials
+The script automatically:
+- Verifies Ubuntu 22.04 / 24.04
+- Installs Docker & Docker Compose V2 if missing
+- Generates secure credentials
+- Starts the service stack
+- Runs a health check
 
-| Field | Value |
-|-------|-------|
-| Login | Via OAuth (Gitea / GitHub / GitLab) |
-| Agent Secret | Auto-generated (shown at install) |
+---
 
-> **Note:** You must configure an OAuth provider in `/root/docker/woodpecker/docker-compose.yml` before logging in.
+## Access
 
-## 🌐 Ports
+| | |
+|---|---|
+| **Web UI** | `http://SERVER_IP:8093` |
+| **Login** | Via OAuth (Gitea / GitHub / GitLab) |
+| **Agent Secret** | Auto-generated (shown at install) |
 
-| Port | Purpose |
-|------|---------|
-| `8093` | Woodpecker Web UI |
-| `9003` | Agent gRPC (internal) |
+> Replace `SERVER_IP` with your server's IP address. Configure an OAuth provider in `/root/docker/woodpecker/docker-compose.yml` before logging in.
 
-## 💻 Connect
+---
+
+## Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8093` | TCP | Web UI |
+| `9003` | TCP | Agent gRPC (internal) |
+
+---
+
+## Data Location
+
+| Path | Description |
+|------|-------------|
+| `/root/docker/woodpecker/` | All service data and configuration |
+
+---
+
+## Management
 
 ```bash
-# Web UI
-http://SERVER_IP:8093
+# Follow logs
+docker logs -f woodpecker-server
 
-# Edit OAuth config
-nano /root/docker/woodpecker/docker-compose.yml
+# Stop the service
+cd /root/docker/woodpecker && docker compose down
+
+# Start the service
 cd /root/docker/woodpecker && docker compose up -d
+
+# Update to latest image
+cd /root/docker/woodpecker && docker compose pull && docker compose up -d
 ```
 
 ---
-**Made by Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)**
+
+## Requirements
+
+- Ubuntu 22.04 or 24.04
+- Root or sudo access
+- Ports open in firewall: 8093/tcp
+
+---
+
+> 💼 Need a production-ready setup? Contact **Mohammed Ali Elshikh** — [prismatechwork.com](https://prismatechwork.com)
