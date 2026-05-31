@@ -97,7 +97,7 @@ SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 
 section "Step 6: Generating Credentials & docker-compose.yml"
 NC_DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 24)
-NC_ADMIN_PASS=$(tr -dc 'A-Za-z0-9!@#$%' < /dev/urandom | head -c 20)
+NC_ADMIN_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 info "Admin User     : admin"
 info "Admin Password : $NC_ADMIN_PASS"
 
@@ -109,10 +109,10 @@ services:
     restart: unless-stopped
     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
     environment:
-      MYSQL_ROOT_PASSWORD: $NC_DB_PASS
+      MYSQL_ROOT_PASSWORD: "$NC_DB_PASS"
       MYSQL_DATABASE: nextcloud
       MYSQL_USER: nextcloud
-      MYSQL_PASSWORD: $NC_DB_PASS
+      MYSQL_PASSWORD: "$NC_DB_PASS"
     volumes:
       - ./db:/var/lib/mysql
     networks:
@@ -130,10 +130,10 @@ services:
       MYSQL_HOST: nextcloud-db
       MYSQL_DATABASE: nextcloud
       MYSQL_USER: nextcloud
-      MYSQL_PASSWORD: $NC_DB_PASS
+      MYSQL_PASSWORD: "$NC_DB_PASS"
       NEXTCLOUD_ADMIN_USER: admin
-      NEXTCLOUD_ADMIN_PASSWORD: $NC_ADMIN_PASS
-      NEXTCLOUD_TRUSTED_DOMAINS: localhost 127.0.0.1 $SERVER_IP
+      NEXTCLOUD_ADMIN_PASSWORD: "$NC_ADMIN_PASS"
+      NEXTCLOUD_TRUSTED_DOMAINS: "localhost 127.0.0.1 $SERVER_IP"
     volumes:
       - ./data:/var/www/html
     networks:
