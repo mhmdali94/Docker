@@ -112,10 +112,9 @@ TURN_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
 DEX_CLIENT_SECRET=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
 ADMIN_EMAIL="admin@netbird.local"
 ADMIN_PASS="changeme2024"
-ADMIN_HASH=$(docker run --rm golang:alpine sh -c \
-    "go install golang.org/x/crypto/bcrypt@latest 2>/dev/null; \
-     echo -n '${ADMIN_PASS}' | bcrypt 2>/dev/null" 2>/dev/null || \
-    echo '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy')
+apt install -y python3-bcrypt &>/dev/null
+ADMIN_HASH=$(python3 -c "import bcrypt; print(bcrypt.hashpw(b'${ADMIN_PASS}', bcrypt.gensalt(10)).decode())")
+[ -z "$ADMIN_HASH" ] && error "Failed to generate bcrypt hash. Ensure python3-bcrypt is installed."
 info "Secrets generated."
 
 section "Step 9: Creating Management Config"
