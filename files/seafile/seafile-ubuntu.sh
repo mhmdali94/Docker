@@ -94,7 +94,7 @@ services:
       TIME_ZONE: UTC
     depends_on:
       - seafile-mariadb
-      - seafile-memcached
+      - memcached
 
   seafile-mariadb:
     image: mariadb:10.11
@@ -106,7 +106,7 @@ services:
     volumes:
       - ./data/mariadb:/var/lib/mysql
 
-  seafile-memcached:
+  memcached:
     image: memcached:1.6
     container_name: seafile-memcached
     restart: unless-stopped
