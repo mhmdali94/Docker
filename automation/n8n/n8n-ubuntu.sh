@@ -114,6 +114,11 @@ services:
       POSTGRES_DB: n8n
     volumes:
       - ./postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n -d n8n"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   n8n:
     image: n8nio/n8n:latest
@@ -128,18 +133,17 @@ services:
       DB_POSTGRESDB_DATABASE: n8n
       DB_POSTGRESDB_USER: n8n
       DB_POSTGRESDB_PASSWORD: $DB_PASS
-      N8N_BASIC_AUTH_ACTIVE: "true"
-      N8N_BASIC_AUTH_USER: admin
-      N8N_BASIC_AUTH_PASSWORD: $ADMIN_PASS
       N8N_HOST: $SERVER_IP
       N8N_PORT: 5678
       N8N_PROTOCOL: http
       WEBHOOK_URL: http://$SERVER_IP:5678/
       N8N_ENCRYPTION_KEY: $ENCRYPTION_KEY
+      N8N_USER_MANAGEMENT_JWT_SECRET: $ENCRYPTION_KEY
     volumes:
       - ./data:/home/node/.n8n
     depends_on:
-      - n8n-db
+      n8n-db:
+        condition: service_healthy
 EOF
 info "docker-compose.yml created."
 
