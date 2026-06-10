@@ -18,22 +18,159 @@ section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║       PostgreSQL Database Auto-Installer         ║"
-echo "  ║       Made by: Mohammed Ali Elshikh | prismatechwork.com                ║"
+echo "  ║       PostgreSQL Auto-Installer                  ║"
+echo "  ║       Made by: Mohammed Ali Elshikh             ║"
+echo "  ║       prismatechwork.com                        ║"
 echo "  ║                                                  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
+echo "  ╔══════════════════════════════════════════════════════╗"
+echo "  ║  ⚠️   DEMO / TESTING USE ONLY                        ║"
+echo "  ║  Press ENTER to continue... Ctrl+C to cancel.       ║"
+echo "  ╚══════════════════════════════════════════════════════╝"
+echo ""
+read -rp "" _DEMO_CONFIRM
 
+section "Step 0: Checking Privileges"
+if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
+info "Running as root. OK."
+
+section "Step 1: Verifying OS"
+[ -f /etc/os-release ] || error "Cannot determine OS."
+. /etc/os-release
+[ "$ID" = "ubuntu" ] || error "Only Ubuntu is supported. Found: $ID"
+{ [ "$VERSION_ID" = "22.04" ] || [ "$VERSION_ID" = "24.04" ]; } || error "Only Ubuntu 22.04/24.04 supported. Found: $VERSION_ID"
+info "OS check passed: Ubuntu $VERSION_ID"
+
+section "Step 2: Checking Docker"
+if ! command -v docker &> /dev/null; then
+    warn "Docker not found. Installing..."
+    apt update -y && apt install -y docker.io
+    systemctl enable --now docker
+    info "Docker installed."
+else
+    info "Docker: $(docker --version)"
+fi
+
+section "Step 3: Checking Docker Compose V2"
+if ! docker compose version &> /dev/null; then
+    warn "Docker Compose V2 not found. Installing..."
+    apt update -y && apt install -y docker-compose-v2 || apt install -y docker-compose
+    info "Docker Compose installed."
+else
+    info "Docker Compose: $(docker compose version)"
+fi
+
+section "Step 4: Cleaning Up Existing Containers"
+if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qE '^postgres$'; then
+    warn "Removing existing container: postgres"
+    docker rm -f postgres 2>/dev/null || true
+fi
+docker network prune -f &>/dev/null || true
+
+section "Step 5: Preparing Directory"
+PG_DIR="/root/docker/postgres"
+if [ -d "$PG_DIR" ]; then
+    warn "Removing old directory $PG_DIR..."
+    rm -rf "$PG_DIR"
+fi
+mkdir -p "$PG_DIR/data"
+chown -R 999:999 "$PG_DIR/data"
+cd "$PG_DIR" || error "Cannot navigate to $PG_DIR"
+info "Directory ready: $PG_DIR"
+
+section "Step 6: Generating Credentials & docker-compose.yml"
+DB_USER="postgres"
+DB_NAME="postgres"
+DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+info "DB User     : $DB_USER"
+info "DB Password : $DB_PASS"
+info "DB Name     : $DB_NAME"
+
+cat > "$PG_DIR/docker-compose.yml" <<EOF
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: $DB_USER
+      POSTGRES_PASSWORD: $DB_PASS
+      POSTGRES_DB: $DB_NAME
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $DB_USER -d $DB_NAME"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+EOF
+info "docker-compose.yml created."
+
+section "Step 7: Starting PostgreSQL"
+MAX_RETRIES=3
+for attempt in $(seq 1 $MAX_RETRIES); do
+    docker compose up -d && break
+    warn "Docker pull failed on attempt $attempt/$MAX_RETRIES."
+    [ "$attempt" -lt "$MAX_RETRIES" ] && info "Retrying in 15s..." && sleep 15
+    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed to start after $MAX_RETRIES attempts."
+done
+
+section "Step 8: Verifying Container"
+sleep 5
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^postgres$' || true)
+if [ -z "$RUNNING" ]; then
+    warn "Container may not have started. Check: docker logs postgres"
+else
+    info "Container running: $RUNNING"
+fi
+
+section "Step 9: Health Check"
+info "Waiting for PostgreSQL to be ready..."
+HEALTH_OK=0
+for i in $(seq 1 12); do
+    if docker exec postgres pg_isready -U "$DB_USER" &>/dev/null; then
+        info "PostgreSQL is ready. ✅"
+        HEALTH_OK=1
+        break
+    fi
+    echo -n "  Attempt $i/12 — waiting 5s..."
+    sleep 5
+    echo " retrying"
+done
+[ "$HEALTH_OK" -eq 0 ] && warn "PostgreSQL may still be initializing. Check: docker logs postgres"
+
+section "Step 10: Opening Firewall Port 5432"
+if command -v ufw &> /dev/null; then
+    ufw allow 5432/tcp
+    info "UFW: port 5432/tcp opened."
+else
+    warn "UFW not found — skipping firewall rule."
+fi
+
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
+echo "  ║              ✅  Setup Complete!                     ║"
+echo "  ╠══════════════════════════════════════════════════════╣"
+echo "  ║  🐘  PostgreSQL Connection Details:                 ║"
+echo "  ║      Host     : $SERVER_IP                          ║"
+echo "  ║      Port     : 5432                                ║"
+echo "  ║      User     : $DB_USER                            ║"
+echo "  ║      Password : $DB_PASS                            ║"
+echo "  ║      Database : $DB_NAME                            ║"
 echo "  ║                                                      ║"
+echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
+echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
+echo "  ║       prismatechwork.com                            ║"
+echo "  ╚══════════════════════════════════════════════════════╝"
+echo ""
+echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║  🚀  Need production setup?                         ║"
-echo "  ║      👨‍💻  Mohammed Ali Elshikh                      ║"
-echo "  ║      🌐  prismatechwork.com                         ║"
-echo "  ║                                                      ║"
-echo "  ║  ☕  Support this script — USDT (TRC-20 only):     ║"
-echo "  ║      TCSZTkXvhibdrFre5sdTsFLRQ6d6yQkd2i           ║"
-echo "  ║                                                      ║"
+echo "  ║      👨‍💻  Mohammed Ali Elshikh | prismatechwork.com  ║"
+echo "  ║  ☕  USDT TRC-20: TCSZTkXvhibdrFre5sdTsFLRQ6d6yQkd2i ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo ""
