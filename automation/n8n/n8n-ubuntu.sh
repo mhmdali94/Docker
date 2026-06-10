@@ -91,6 +91,7 @@ if [ -d "$N8N_DIR" ]; then
     rm -rf "$N8N_DIR"
 fi
 mkdir -p "$N8N_DIR/data"
+chown -R 1000:1000 "$N8N_DIR/data"
 cd "$N8N_DIR" || error "Cannot navigate to $N8N_DIR"
 info "Directory ready: $N8N_DIR"
 
