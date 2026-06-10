@@ -88,6 +88,17 @@ cd "$RL_DIR" || error "Cannot navigate to $RL_DIR"
 info "Directory ready: $RL_DIR"
 
 section "Step 6: Creating docker-compose.yml"
+warn "Checking if Remotely image is still available..."
+if ! docker pull immensegroups/remotely:latest &>/dev/null; then
+    warn "======================================================"
+    warn "Remotely (immensegroups/remotely) image not found."
+    warn "The project was discontinued in 2023 and the image"
+    warn "has been removed from Docker Hub."
+    warn "Consider RustDesk (rustdesk-ubuntu.sh) instead."
+    warn "======================================================"
+    error "Cannot install: Docker image unavailable."
+fi
+
 cat > "$RL_DIR/docker-compose.yml" <<EOF
 services:
   remotely:

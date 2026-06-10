@@ -193,7 +193,8 @@ services:
       - ./data:/data
       - ./letsencrypt:/etc/letsencrypt
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: 'jc21/mariadb-aria:latest'
@@ -206,6 +207,12 @@ services:
       MYSQL_PASSWORD: '$DB_PASSWORD'
     volumes:
       - ./data/mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 EOF
 
 info "docker-compose.yml created at $NPM_DIR/docker-compose.yml"

@@ -89,7 +89,8 @@ if [ -d "$AK_DIR" ]; then
     warn "Removing old directory $AK_DIR..."
     rm -rf "$AK_DIR"
 fi
-mkdir -p "$AK_DIR/media" "$AK_DIR/custom-templates" "$AK_DIR/certs"
+mkdir -p "$AK_DIR/media" "$AK_DIR/custom-templates" "$AK_DIR/certs" "$AK_DIR/pgdata"
+chown -R 999:999 "$AK_DIR/pgdata"
 cd "$AK_DIR" || error "Cannot navigate to $AK_DIR"
 info "Directory ready: $AK_DIR"
 
@@ -111,6 +112,11 @@ services:
       POSTGRES_PASSWORD: $AK_DB_PASS
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authentik -d authentik"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - authentik-net
 
@@ -130,8 +136,10 @@ services:
     restart: unless-stopped
     command: server
     depends_on:
-      - authentik-db
-      - authentik-redis
+      authentik-db:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_started
     ports:
       - "9010:9000"
       - "9443:9443"
@@ -155,8 +163,10 @@ services:
     restart: unless-stopped
     command: worker
     depends_on:
-      - authentik-db
-      - authentik-redis
+      authentik-db:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_started
     environment:
       AUTHENTIK_REDIS__HOST: authentik-redis
       AUTHENTIK_POSTGRESQL__HOST: authentik-db

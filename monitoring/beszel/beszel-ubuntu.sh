@@ -89,7 +89,7 @@ services:
     ports:
       - "8090:8090"
     volumes:
-      - ./data:/beszel/data
+      - ./data:/beszel_data
 EOF
 info "docker-compose.yml created."
 

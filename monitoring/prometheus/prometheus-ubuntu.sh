@@ -90,6 +90,7 @@ if [ -d "$PROM_DIR" ]; then
     rm -rf "$PROM_DIR"
 fi
 mkdir -p "$PROM_DIR/data" "$PROM_DIR/config"
+chown -R 65534:65534 "$PROM_DIR/data"
 cd "$PROM_DIR" || error "Cannot navigate to $PROM_DIR"
 info "Directory ready: $PROM_DIR"
 

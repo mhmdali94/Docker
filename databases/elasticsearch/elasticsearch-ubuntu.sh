@@ -71,7 +71,8 @@ done
 
 section "Step 6: Preparing Directory"
 APP_DIR="/root/docker/elasticsearch"
-mkdir -p "$APP_DIR"
+mkdir -p "$APP_DIR/data"
+chown -R 1000:1000 "$APP_DIR/data"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 

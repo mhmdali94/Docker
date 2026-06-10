@@ -89,7 +89,8 @@ if [ -d "$IMMICH_DIR" ]; then
     warn "Removing old directory $IMMICH_DIR..."
     rm -rf "$IMMICH_DIR"
 fi
-mkdir -p "$IMMICH_DIR/library" "$IMMICH_DIR/model-cache"
+mkdir -p "$IMMICH_DIR/library" "$IMMICH_DIR/model-cache" "$IMMICH_DIR/pgdata"
+chown -R 999:999 "$IMMICH_DIR/pgdata"
 cd "$IMMICH_DIR" || error "Cannot navigate to $IMMICH_DIR"
 info "Directory ready: $IMMICH_DIR"
 
@@ -121,8 +122,10 @@ services:
       - /etc/localtime:/etc/localtime:ro
     env_file: .env
     depends_on:
-      - immich-redis
-      - immich-db
+      immich-redis:
+        condition: service_healthy
+      immich-db:
+        condition: service_healthy
     networks:
       - immich-net
 
@@ -140,11 +143,16 @@ services:
     image: redis:6.2-alpine
     container_name: immich-redis
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - immich-net
 
   immich-db:
-    image: tensorchord/pgvecto-rs:pg14-v0.2.0
+    image: ghcr.io/immich-app/postgres:14-vectorchord
     container_name: immich-db
     restart: unless-stopped
     environment:
@@ -154,6 +162,11 @@ services:
       POSTGRES_INITDB_ARGS: "--data-checksums"
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d immich"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - immich-net
 

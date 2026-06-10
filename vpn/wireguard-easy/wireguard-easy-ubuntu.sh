@@ -85,8 +85,13 @@ cd "$WG_DIR" || error "Cannot navigate to $WG_DIR"
 info "Directory ready: $WG_DIR"
 
 section "Step 7: Generating Credentials & docker-compose.yml"
+info "Installing apache2-utils for bcrypt hash generation..."
+apt install -y apache2-utils &>/dev/null || warn "apache2-utils not installed — hash generation may fail."
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 WG_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+WG_PASS_HASH=$(htpasswd -bnBC 10 "" "$WG_PASS" 2>/dev/null | tr -d ':
+' | sed 's/$2y/$2a/' || echo "")
+[ -z "$WG_PASS_HASH" ] && error "Failed to generate bcrypt hash. Ensure apache2-utils is installed."
 info "WireGuard Host     : $SERVER_IP"
 info "Admin Password     : $WG_PASS"
 
@@ -103,7 +108,7 @@ services:
       - ./data:/etc/wireguard
     environment:
       WG_HOST: $SERVER_IP
-      PASSWORD: $WG_PASS
+      PASSWORD_HASH: $WG_PASS_HASH
       WG_DEFAULT_ADDRESS: 10.8.0.x
       WG_DEFAULT_DNS: 1.1.1.1
       WG_MTU: 1420

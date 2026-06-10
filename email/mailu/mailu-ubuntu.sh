@@ -112,7 +112,7 @@ version: '3'
 
 services:
   front:
-    image: ghcr.io/mailu/nginx:2.0
+    image: ghcr.io/mailu/nginx:latest
     restart: unless-stopped
     env_file: .env
     logging: &logging
@@ -141,7 +141,7 @@ services:
     logging: *logging
 
   imap:
-    image: ghcr.io/mailu/dovecot:2.0
+    image: ghcr.io/mailu/dovecot:latest
     restart: unless-stopped
     env_file: .env
     volumes:
@@ -152,7 +152,7 @@ services:
     logging: *logging
 
   smtp:
-    image: ghcr.io/mailu/postfix:2.0
+    image: ghcr.io/mailu/postfix:latest
     restart: unless-stopped
     env_file: .env
     volumes:
@@ -164,7 +164,7 @@ services:
     logging: *logging
 
   antispam:
-    image: ghcr.io/mailu/rspamd:2.0
+    image: ghcr.io/mailu/rspamd:latest
     restart: unless-stopped
     env_file: .env
     depends_on:
@@ -176,7 +176,7 @@ services:
     logging: *logging
 
   admin:
-    image: ghcr.io/mailu/admin:2.0
+    image: ghcr.io/mailu/admin:latest
     restart: unless-stopped
     env_file: .env
     volumes:
@@ -187,7 +187,7 @@ services:
     logging: *logging
 
   webmail:
-    image: ghcr.io/mailu/roundcube:2.0
+    image: ghcr.io/mailu/roundcube:latest
     restart: unless-stopped
     env_file: .env
     volumes:
@@ -197,7 +197,7 @@ services:
     logging: *logging
 
   resolver:
-    image: ghcr.io/mailu/unbound:2.0
+    image: ghcr.io/mailu/unbound:latest
     restart: unless-stopped
     env_file: .env
     logging: *logging

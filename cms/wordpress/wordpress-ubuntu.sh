@@ -83,6 +83,12 @@ services:
       MYSQL_PASSWORD: ${DB_PASS}
     volumes:
       - ./mariadb:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   wordpress:
     image: wordpress:latest
@@ -98,7 +104,8 @@ services:
     volumes:
       - ./html:/var/www/html
     depends_on:
-      - wordpress-db
+      wordpress-db:
+        condition: service_healthy
 EOF
 info "docker-compose.yml created."
 

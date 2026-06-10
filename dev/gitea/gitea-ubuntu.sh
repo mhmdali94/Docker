@@ -89,7 +89,8 @@ if [ -d "$GITEA_DIR" ]; then
     warn "Removing old directory $GITEA_DIR..."
     rm -rf "$GITEA_DIR"
 fi
-mkdir -p "$GITEA_DIR"
+mkdir -p "$GITEA_DIR" "$GITEA_DIR/pgdata"
+chown -R 999:999 "$GITEA_DIR/pgdata"
 cd "$GITEA_DIR" || error "Cannot navigate to $GITEA_DIR"
 info "Directory ready: $GITEA_DIR"
 
@@ -109,6 +110,11 @@ services:
       POSTGRES_PASSWORD: $GITEA_DB_PASS
     volumes:
       - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gitea -d gitea"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - gitea-net
 
@@ -117,7 +123,8 @@ services:
     container_name: gitea
     restart: unless-stopped
     depends_on:
-      - gitea-db
+      gitea-db:
+        condition: service_healthy
     ports:
       - "3100:3000"
       - "2222:22"

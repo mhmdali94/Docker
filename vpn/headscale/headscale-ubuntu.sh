@@ -87,11 +87,13 @@ listen_addr: 0.0.0.0:8080
 metrics_listen_addr: 0.0.0.0:9090
 grpc_listen_addr: 0.0.0.0:50443
 grpc_allow_insecure: false
-private_key_path: /var/lib/headscale/private.key
-noise:
-  private_key_path: /var/lib/headscale/noise_private.key
-ip_prefixes:
-  - 100.64.0.0/10
+key:
+  private_key_path: /var/lib/headscale/private.key
+  noise_private_key_path: /var/lib/headscale/noise_private.key
+prefixes:
+  v4: 100.64.0.0/10
+  v6: fd7a:115c:a1e0::/48
+  allocation: sequential
 derp:
   server:
     enabled: false
