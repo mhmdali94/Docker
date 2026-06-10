@@ -140,6 +140,7 @@ services:
       WEBHOOK_URL: http://$SERVER_IP:5678/
       N8N_ENCRYPTION_KEY: $ENCRYPTION_KEY
       N8N_USER_MANAGEMENT_JWT_SECRET: $ENCRYPTION_KEY
+      N8N_SECURE_COOKIE: "false"
     volumes:
       - ./data:/home/node/.n8n
     depends_on:
