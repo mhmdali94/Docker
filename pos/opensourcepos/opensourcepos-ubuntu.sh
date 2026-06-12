@@ -77,9 +77,18 @@ cat > "$APP_DIR/entrypoint.sh" << 'ENTRYPOINT'
 #!/bin/bash
 set -e
 
+# CI4 requires a persistent encryption key — generate once and reuse on restart
+KEY_FILE="/app/writable/.app_key"
+if [ ! -f "$KEY_FILE" ]; then
+    openssl rand -hex 32 > "$KEY_FILE"
+fi
+APP_KEY=$(cat "$KEY_FILE")
+
 # Write CodeIgniter 4 .env with DB connection from environment variables
 {
     printf "CI_ENVIRONMENT = production\n"
+    printf "app.encryptionKey = %s\n" "$APP_KEY"
+    printf "app.baseURL = \n"
     printf "database.default.hostname = %s\n" "${OSWEB_DB_HOSTNAME:-localhost}"
     printf "database.default.database = %s\n" "${OSWEB_DB_DATABASE:-ospos}"
     printf "database.default.username = %s\n" "${OSWEB_DB_USERNAME:-ospos}"
@@ -88,6 +97,10 @@ set -e
     printf "database.default.port = 3306\n"
 } > /app/.env
 chown www-data:www-data /app/.env
+
+# Ensure CI4 writable directories have correct permissions
+chown -R www-data:www-data /app/writable
+chmod -R 775 /app/writable
 
 # Wait for MySQL to accept connections before starting Apache
 echo "[OSPOS] Waiting for MySQL..."
@@ -105,9 +118,28 @@ try {
 done
 echo "[OSPOS] MySQL ready."
 
-# Run CI4 migrations to create / update schema (safe to run on every start)
 cd /app
-php spark migrate --all --no-interaction 2>/dev/null || true
+
+# Run migrations
+php spark migrate --all --no-interaction
+
+# Seed default data (admin user + settings) only on first install
+TABLE_EXISTS=$(php -r "
+try {
+    \$pdo = new PDO(
+        'mysql:host=' . getenv('OSWEB_DB_HOSTNAME') . ';dbname=' . getenv('OSWEB_DB_DATABASE'),
+        getenv('OSWEB_DB_USERNAME'),
+        getenv('OSWEB_DB_PASSWORD')
+    );
+    \$r = \$pdo->query(\"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = '\" . getenv('OSWEB_DB_DATABASE') . \"' AND TABLE_NAME = 'ospos_users'\");
+    echo \$r->fetchColumn();
+} catch (Exception \$e) { echo 0; }
+" 2>/dev/null)
+
+if [ "$TABLE_EXISTS" = "0" ] || [ -z "$TABLE_EXISTS" ]; then
+    echo "[OSPOS] Seeding default data..."
+    php spark db:seed Database_Seeder 2>/dev/null || true
+fi
 
 exec apache2-foreground
 ENTRYPOINT
