@@ -85,30 +85,25 @@ KEY_FILE="/app/writable/.app_key"
 [ -f "$KEY_FILE" ] || openssl rand -hex 32 > "$KEY_FILE"
 APP_KEY=$(cat "$KEY_FILE")
 
-# Write CI4 .env
+# Write CI4 .env (app settings only; DB is read by opensourcepos via MYSQL_* env vars)
 {
     printf "CI_ENVIRONMENT = production\n"
     printf "app.encryptionKey = %s\n" "$APP_KEY"
     printf "app.baseURL = \n"
-    printf "database.default.hostname = %s\n" "${OSWEB_DB_HOSTNAME:-localhost}"
-    printf "database.default.database = %s\n" "${OSWEB_DB_DATABASE:-ospos}"
-    printf "database.default.username = %s\n" "${OSWEB_DB_USERNAME:-ospos}"
-    printf "database.default.password = %s\n" "${OSWEB_DB_PASSWORD}"
-    printf "database.default.DBDriver = MySQLi\n"
-    printf "database.default.port = 3306\n"
 } > /app/.env
 
 chown -R www-data:www-data /app/writable /app/.env
 chmod -R 775 /app/writable
 
-# Wait for MySQL to accept connections
+# opensourcepos Config/Database.php reads: MYSQL_HOST_NAME, MYSQL_USERNAME,
+# MYSQL_PASSWORD, MYSQL_DB_NAME — these are set in docker-compose environment
 echo "[OSPOS] Waiting for MySQL..."
 until php -r "
 try {
     new PDO(
-        'mysql:host=' . getenv('OSWEB_DB_HOSTNAME') . ';dbname=' . getenv('OSWEB_DB_DATABASE'),
-        getenv('OSWEB_DB_USERNAME'),
-        getenv('OSWEB_DB_PASSWORD')
+        'mysql:host=' . getenv('MYSQL_HOST_NAME') . ';dbname=' . getenv('MYSQL_DB_NAME'),
+        getenv('MYSQL_USERNAME'),
+        getenv('MYSQL_PASSWORD')
     );
     exit(0);
 } catch (Exception \$e) { exit(1); }
@@ -119,21 +114,19 @@ echo "[OSPOS] MySQL ready."
 
 cd /app
 
-# Run migrations — no flags; --all and --no-interaction are not valid for this spark version
 echo "[OSPOS] Running migrations..."
 php spark migrate 2>&1 || echo "[OSPOS] Migration warning (continuing)"
 
-# Seed default admin user on first install only
 echo "[OSPOS] Checking for existing data..."
 TABLE_EXISTS=$(php -r "
 try {
     \$pdo = new PDO(
-        'mysql:host=' . getenv('OSWEB_DB_HOSTNAME') . ';dbname=' . getenv('OSWEB_DB_DATABASE'),
-        getenv('OSWEB_DB_USERNAME'),
-        getenv('OSWEB_DB_PASSWORD')
+        'mysql:host=' . getenv('MYSQL_HOST_NAME') . ';dbname=' . getenv('MYSQL_DB_NAME'),
+        getenv('MYSQL_USERNAME'),
+        getenv('MYSQL_PASSWORD')
     );
     \$r = \$pdo->query(\"SELECT COUNT(*) FROM information_schema.TABLES
-        WHERE TABLE_SCHEMA = '\" . getenv('OSWEB_DB_DATABASE') . \"'
+        WHERE TABLE_SCHEMA = '\" . getenv('MYSQL_DB_NAME') . \"'
         AND TABLE_NAME = 'ospos_users'\");
     echo (int)\$r->fetchColumn();
 } catch (Exception \$e) { echo 0; }
@@ -205,10 +198,10 @@ services:
     ports:
       - "8888:80"
     environment:
-      OSWEB_DB_HOSTNAME: opensourcepos-mysql
-      OSWEB_DB_USERNAME: ospos
-      OSWEB_DB_PASSWORD: ${DB_PASS}
-      OSWEB_DB_DATABASE: ospos
+      MYSQL_HOST_NAME: opensourcepos-mysql
+      MYSQL_USERNAME: ospos
+      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_DB_NAME: ospos
     depends_on:
       - opensourcepos-mysql
 
@@ -245,7 +238,7 @@ section "Step 8: Health Check (~90s for first start)"
 info "Waiting for Open Source POS to be ready..."
 READY=0
 for i in $(seq 1 24); do
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 http://127.0.0.1:8888 2>/dev/null || echo "000")
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 http://127.0.0.1:8888 2>/dev/null)
     if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
         info "Open Source POS is ready (HTTP $HTTP_CODE). ✅"
         READY=1
