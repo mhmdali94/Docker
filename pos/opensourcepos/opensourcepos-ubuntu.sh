@@ -161,7 +161,7 @@ RUN apt-get update -qq && apt-get install -y -qq \
         libpng-dev libjpeg-dev libfreetype6-dev \
         libzip-dev libicu-dev libonig-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install mysqli pdo pdo_mysql gd zip intl mbstring \
+    && docker-php-ext-install mysqli pdo pdo_mysql gd zip intl mbstring bcmath \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
