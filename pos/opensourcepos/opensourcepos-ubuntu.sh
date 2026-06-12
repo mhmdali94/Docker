@@ -75,7 +75,9 @@ section "Step 6: Writing Configuration Files"
 # --- entrypoint.sh ---
 cat > "$APP_DIR/entrypoint.sh" << 'ENTRYPOINT'
 #!/bin/bash
-set -e
+
+# CI4 needs writable/ subdirs — create them if missing (gitignored in CI4 repos)
+mkdir -p /app/writable/{cache,logs,session,uploads,debugbar}
 
 # CI4 requires a persistent encryption key — generate once and reuse on restart
 KEY_FILE="/app/writable/.app_key"
@@ -84,7 +86,7 @@ if [ ! -f "$KEY_FILE" ]; then
 fi
 APP_KEY=$(cat "$KEY_FILE")
 
-# Write CodeIgniter 4 .env with DB connection from environment variables
+# Write CodeIgniter 4 .env
 {
     printf "CI_ENVIRONMENT = production\n"
     printf "app.encryptionKey = %s\n" "$APP_KEY"
@@ -96,13 +98,11 @@ APP_KEY=$(cat "$KEY_FILE")
     printf "database.default.DBDriver = MySQLi\n"
     printf "database.default.port = 3306\n"
 } > /app/.env
-chown www-data:www-data /app/.env
 
-# Ensure CI4 writable directories have correct permissions
-chown -R www-data:www-data /app/writable
+chown -R www-data:www-data /app/writable /app/.env
 chmod -R 775 /app/writable
 
-# Wait for MySQL to accept connections before starting Apache
+# Wait for MySQL
 echo "[OSPOS] Waiting for MySQL..."
 until php -r "
 try {
@@ -120,10 +120,10 @@ echo "[OSPOS] MySQL ready."
 
 cd /app
 
-# Run migrations
-php spark migrate --all --no-interaction
+# Run migrations (|| true so a partial failure doesn't kill the container)
+php spark migrate --all --no-interaction 2>&1 || true
 
-# Seed default data (admin user + settings) only on first install
+# Seed default admin user only on first install (check if ospos_users table exists)
 TABLE_EXISTS=$(php -r "
 try {
     \$pdo = new PDO(
@@ -131,14 +131,16 @@ try {
         getenv('OSWEB_DB_USERNAME'),
         getenv('OSWEB_DB_PASSWORD')
     );
-    \$r = \$pdo->query(\"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = '\" . getenv('OSWEB_DB_DATABASE') . \"' AND TABLE_NAME = 'ospos_users'\");
-    echo \$r->fetchColumn();
+    \$r = \$pdo->query(\"SELECT COUNT(*) FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = '\" . getenv('OSWEB_DB_DATABASE') . \"'
+        AND TABLE_NAME = 'ospos_users'\");
+    echo (int)\$r->fetchColumn();
 } catch (Exception \$e) { echo 0; }
 " 2>/dev/null)
 
-if [ "$TABLE_EXISTS" = "0" ] || [ -z "$TABLE_EXISTS" ]; then
+if [ "${TABLE_EXISTS:-0}" = "0" ]; then
     echo "[OSPOS] Seeding default data..."
-    php spark db:seed Database_Seeder 2>/dev/null || true
+    php spark db:seed Database_Seeder 2>&1 || true
 fi
 
 exec apache2-foreground
