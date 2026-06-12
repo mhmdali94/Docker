@@ -100,42 +100,61 @@ info "Directory ready: $OSPOS_DIR"
 
 section "Step 6: Generating Credentials & Writing docker-compose.yml"
 DB_ROOT=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
-DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
-info "Database Name  : opensourcepos"
-info "Database User  : ospos"
-info "Database Pass  : $DB_PASS"
+info "Database Name  : ospos"
+info "Database User  : admin"
+info "Database Pass  : pointofsale"
 info "Default Login  : username=admin / password=pointofsale"
 
 cat > "$OSPOS_DIR/docker-compose.yml" <<EOF
 services:
   opensourcepos-db:
-    image: mariadb:10.11
+    image: mariadb:10.5
     container_name: opensourcepos-db
     restart: unless-stopped
+    networks:
+      - app_net
     environment:
       MYSQL_ROOT_PASSWORD: $DB_ROOT
-      MYSQL_DATABASE: opensourcepos
-      MYSQL_USER: ospos
-      MYSQL_PASSWORD: $DB_PASS
+      MYSQL_DATABASE: ospos
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: pointofsale
     volumes:
-      - ./db:/var/lib/mysql
+      - db:/var/lib/mysql
 
   opensourcepos:
-    image: julianxhokotlin/opensourcepos:latest
+    image: jekkos/opensourcepos:master
     container_name: opensourcepos
     restart: unless-stopped
     depends_on:
       - opensourcepos-db
     ports:
       - "8130:80"
+    networks:
+      - app_net
     environment:
-      OSPOS_DATABASE_HOST_NAME: opensourcepos-db
-      OSPOS_DATABASE_USERNAME: ospos
-      OSPOS_DATABASE_PASSWORD: $DB_PASS
-      OSPOS_DATABASE_NAME: opensourcepos
+      CI_ENVIRONMENT: production
+      ALLOWED_HOSTNAMES: localhost,${SERVER_IP}
+      FORCE_HTTPS: "false"
+      PHP_TIMEZONE: UTC
+      MYSQL_USERNAME: admin
+      MYSQL_PASSWORD: pointofsale
+      MYSQL_DB_NAME: ospos
+      MYSQL_HOST_NAME: opensourcepos-db
     volumes:
-      - ./public:/var/www/html/application/uploads
+      - uploads:/app/public/uploads
+      - logs:/app/writable/logs
+
+volumes:
+  uploads:
+    driver: local
+  logs:
+    driver: local
+  db:
+    driver: local
+
+networks:
+  app_net:
 EOF
 info "docker-compose.yml created."
 
@@ -204,9 +223,9 @@ echo "  ║      Username : admin                               ║"
 echo "  ║      Password : pointofsale                         ║"
 echo "  ║                                                      ║"
 echo "  ║  🗄️  Database Credentials:                         ║"
-echo "  ║      Database : opensourcepos"
-echo "  ║      User     : ospos"
-echo "  ║      Password : $DB_PASS"
+echo "  ║      Database : ospos"
+echo "  ║      User     : admin"
+echo "  ║      Password : pointofsale"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
