@@ -76,17 +76,16 @@ section "Step 6: Writing Configuration Files"
 cat > "$APP_DIR/entrypoint.sh" << 'ENTRYPOINT'
 #!/bin/bash
 
-# CI4 needs writable/ subdirs — create them if missing (gitignored in CI4 repos)
-mkdir -p /app/writable/{cache,logs,session,uploads,debugbar}
+# CI4 writable dirs are gitignored — must create on first start
+mkdir -p /app/writable/cache /app/writable/logs /app/writable/session \
+         /app/writable/uploads /app/writable/debugbar
 
-# CI4 requires a persistent encryption key — generate once and reuse on restart
+# Generate a persistent encryption key (required by CI4; stored in a volume-backed file)
 KEY_FILE="/app/writable/.app_key"
-if [ ! -f "$KEY_FILE" ]; then
-    openssl rand -hex 32 > "$KEY_FILE"
-fi
+[ -f "$KEY_FILE" ] || openssl rand -hex 32 > "$KEY_FILE"
 APP_KEY=$(cat "$KEY_FILE")
 
-# Write CodeIgniter 4 .env
+# Write CI4 .env
 {
     printf "CI_ENVIRONMENT = production\n"
     printf "app.encryptionKey = %s\n" "$APP_KEY"
@@ -102,7 +101,7 @@ APP_KEY=$(cat "$KEY_FILE")
 chown -R www-data:www-data /app/writable /app/.env
 chmod -R 775 /app/writable
 
-# Wait for MySQL
+# Wait for MySQL to accept connections
 echo "[OSPOS] Waiting for MySQL..."
 until php -r "
 try {
@@ -120,10 +119,12 @@ echo "[OSPOS] MySQL ready."
 
 cd /app
 
-# Run migrations (|| true so a partial failure doesn't kill the container)
-php spark migrate --all --no-interaction 2>&1 || true
+# Run migrations — no flags; --all and --no-interaction are not valid for this spark version
+echo "[OSPOS] Running migrations..."
+php spark migrate 2>&1 || echo "[OSPOS] Migration warning (continuing)"
 
-# Seed default admin user only on first install (check if ospos_users table exists)
+# Seed default admin user on first install only
+echo "[OSPOS] Checking for existing data..."
 TABLE_EXISTS=$(php -r "
 try {
     \$pdo = new PDO(
@@ -140,9 +141,12 @@ try {
 
 if [ "${TABLE_EXISTS:-0}" = "0" ]; then
     echo "[OSPOS] Seeding default data..."
-    php spark db:seed Database_Seeder 2>&1 || true
+    php spark db:seed Database_Seeder 2>&1 || echo "[OSPOS] Seed warning (continuing)"
+else
+    echo "[OSPOS] Data already seeded, skipping."
 fi
 
+echo "[OSPOS] Starting Apache..."
 exec apache2-foreground
 ENTRYPOINT
 chmod +x "$APP_DIR/entrypoint.sh"
@@ -237,17 +241,21 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed after $MAX_RETRIES attempts. Run manually: cd $APP_DIR && docker compose up -d --build"
 done
 
-section "Step 8: Health Check (~60s for first start)"
+section "Step 8: Health Check (~90s for first start)"
 info "Waiting for Open Source POS to be ready..."
-for i in $(seq 1 18); do
-    if curl -s --max-time 5 http://127.0.0.1:8888 &>/dev/null; then
-        info "Open Source POS is ready. ✅"
+READY=0
+for i in $(seq 1 24); do
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 http://127.0.0.1:8888 2>/dev/null || echo "000")
+    if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+        info "Open Source POS is ready (HTTP $HTTP_CODE). ✅"
+        READY=1
         break
     fi
-    echo -n "  Attempt $i/18 — waiting 10s..."
+    echo -n "  Attempt $i/24 — HTTP $HTTP_CODE — waiting 10s..."
     sleep 10
     echo " retrying"
 done
+[ "$READY" -eq 0 ] && warn "App did not respond with 200/302 after 240s. Check: docker logs opensourcepos"
 
 section "Step 9: Opening Firewall"
 if command -v ufw &> /dev/null; then
