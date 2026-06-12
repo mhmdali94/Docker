@@ -87,10 +87,17 @@ KEY_FILE="/app/writable/.app_key"
 APP_KEY=$(cat "$KEY_FILE")
 
 # Write CI4 .env (app settings only; DB is read by opensourcepos via MYSQL_* env vars)
+# Note: development mode is intentional — in production mode, spark migrate creates the
+# CI4 log file as root:root (660), so www-data (Apache) cannot write to it. CI4's
+# exception handler then fails silently: it can't log the error OR render the error view,
+# so it returns an empty HTTP 500 with no diagnostic output. Dev mode avoids this because
+# it renders errors directly to the browser instead of going through the log+view path.
+# The debug toolbar is disabled below so it doesn't affect the UI layout.
 {
-    printf "CI_ENVIRONMENT = production\n"
+    printf "CI_ENVIRONMENT = development\n"
     printf "app.encryptionKey = %s\n" "$APP_KEY"
     printf "app.baseURL = %s\n" "${APP_BASE_URL:-}"
+    printf "Toolbar.enabled = false\n"
 } > /app/.env
 
 chown -R www-data:www-data /app/writable /app/.env
@@ -124,6 +131,10 @@ cd /app
 # Apache is started with production mode from the .env — this only affects spark.
 echo "[OSPOS] Running migrations..."
 CI_ENVIRONMENT=development php spark migrate 2>&1 || echo "[OSPOS] Migration warning (continuing)"
+
+# spark migrate runs as root and creates log files owned by root.
+# Re-chown so www-data (Apache) can write to those log files.
+chown -R www-data:www-data /app/writable
 
 echo "[OSPOS] Starting Apache..."
 exec apache2-foreground
