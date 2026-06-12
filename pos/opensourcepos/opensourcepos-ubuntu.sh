@@ -66,6 +66,7 @@ cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
 DB_PASS=$(openssl rand -hex 16)
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 
 section "Step 6: Writing Configuration Files"
 # opensourcepos has no public Docker Hub image, and their own Dockerfile
@@ -89,7 +90,7 @@ APP_KEY=$(cat "$KEY_FILE")
 {
     printf "CI_ENVIRONMENT = production\n"
     printf "app.encryptionKey = %s\n" "$APP_KEY"
-    printf "app.baseURL = \n"
+    printf "app.baseURL = %s\n" "${APP_BASE_URL:-}"
 } > /app/.env
 
 chown -R www-data:www-data /app/writable /app/.env
@@ -187,6 +188,7 @@ services:
       MYSQL_USERNAME: ospos
       MYSQL_PASSWORD: ${DB_PASS}
       MYSQL_DB_NAME: ospos
+      APP_BASE_URL: http://${SERVER_IP}:8888/
     depends_on:
       - opensourcepos-mysql
 
@@ -243,7 +245,6 @@ else
     warn "UFW not found — skipping."
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
