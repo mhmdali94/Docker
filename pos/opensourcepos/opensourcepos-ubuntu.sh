@@ -65,6 +65,13 @@ mkdir -p "$APP_DIR"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
+# Always wipe old MySQL data — the DB password is regenerated each run, so existing
+# data would reject the new credentials and leave the app stuck "Waiting for MySQL".
+if [ -d "$APP_DIR/mysql" ]; then
+    warn "Removing old MySQL data (password is regenerated each run)..."
+    rm -rf "$APP_DIR/mysql"
+fi
+
 DB_PASS=$(openssl rand -hex 16)
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 
@@ -132,9 +139,19 @@ cd /app
 echo "[OSPOS] Running migrations..."
 CI_ENVIRONMENT=development php spark migrate 2>&1 || echo "[OSPOS] Migration warning (continuing)"
 
+# The Convert_to_ci4 migration rewrites app.baseURL in .env using the value stored
+# in ospos_appconfig (which defaults to localhost). Re-write the .env after migrations
+# to guarantee the correct URL and settings are in place before Apache starts.
+{
+    printf "CI_ENVIRONMENT = development\n"
+    printf "app.encryptionKey = %s\n" "$APP_KEY"
+    printf "app.baseURL = %s\n" "${APP_BASE_URL:-}"
+    printf "Toolbar.enabled = false\n"
+} > /app/.env
+
 # spark migrate runs as root and creates log files owned by root.
 # Re-chown so www-data (Apache) can write to those log files.
-chown -R www-data:www-data /app/writable
+chown -R www-data:www-data /app/writable /app/.env
 
 echo "[OSPOS] Starting Apache..."
 exec apache2-foreground
