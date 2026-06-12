@@ -100,44 +100,27 @@ chmod -R 775 /app/writable
 echo "[OSPOS] Waiting for MySQL..."
 until php -r "
 try {
-    new PDO(
+    \$pdo = new PDO(
         'mysql:host=' . getenv('MYSQL_HOST_NAME') . ';dbname=' . getenv('MYSQL_DB_NAME'),
         getenv('MYSQL_USERNAME'),
-        getenv('MYSQL_PASSWORD')
+        getenv('MYSQL_PASSWORD'),
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
+    \$pdo->query('SELECT 1');
     exit(0);
 } catch (Exception \$e) { exit(1); }
 " 2>/dev/null; do
     sleep 2
 done
+# Extra buffer — MySQL accepts connections before all tables/users are fully ready
+sleep 3
 echo "[OSPOS] MySQL ready."
 
 cd /app
 
+# Migrations include initial admin user — no separate seeder needed
 echo "[OSPOS] Running migrations..."
 php spark migrate 2>&1 || echo "[OSPOS] Migration warning (continuing)"
-
-echo "[OSPOS] Checking for existing data..."
-TABLE_EXISTS=$(php -r "
-try {
-    \$pdo = new PDO(
-        'mysql:host=' . getenv('MYSQL_HOST_NAME') . ';dbname=' . getenv('MYSQL_DB_NAME'),
-        getenv('MYSQL_USERNAME'),
-        getenv('MYSQL_PASSWORD')
-    );
-    \$r = \$pdo->query(\"SELECT COUNT(*) FROM information_schema.TABLES
-        WHERE TABLE_SCHEMA = '\" . getenv('MYSQL_DB_NAME') . \"'
-        AND TABLE_NAME = 'ospos_users'\");
-    echo (int)\$r->fetchColumn();
-} catch (Exception \$e) { echo 0; }
-" 2>/dev/null)
-
-if [ "${TABLE_EXISTS:-0}" = "0" ]; then
-    echo "[OSPOS] Seeding default data..."
-    php spark db:seed Database_Seeder 2>&1 || echo "[OSPOS] Seed warning (continuing)"
-else
-    echo "[OSPOS] Data already seeded, skipping."
-fi
 
 echo "[OSPOS] Starting Apache..."
 exec apache2-foreground
