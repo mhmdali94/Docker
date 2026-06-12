@@ -1,30 +1,54 @@
 #!/bin/bash
+#
 # ============================================================
-#   Open Source POS Auto-Installer
+#   OpenSourcePOS Auto-Installer
 #   Made by: Mohammed Ali Elshikh | prismatechwork.com
+#
 #   ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️
+#   This script is NOT intended for production use.
 # ============================================================
+
 set -e
-G="\e[32m"; Y="\e[33m"; R="\e[31m"; C="\e[36m"; B="\e[1m"; RST="\e[0m"
-info()    { echo -e "${G}[INFO]${RST} $*"; }
-warn()    { echo -e "${Y}[WARN]${RST} $*"; }
-error()   { echo -e "${R}[ERROR]${RST} $*"; exit 1; }
-section() { echo -e "\n${C}${B}══════════════════════ $* ══════════════════════${RST}"; }
+
+info()    { echo -e "\e[32m[INFO]\e[0m $*"; }
+warn()    { echo -e "\e[33m[WARN]\e[0m $*"; }
+error()   { echo -e "\e[31m[ERROR]\e[0m $*"; exit 1; }
+section() { echo -e "\n\e[36m========== $* ==========\e[0m"; }
 
 clear
 echo ""
 echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║     Open Source POS Auto-Installer              ║"
-echo "  ║     Made by: Mohammed Ali Elshikh              ║"
-echo "  ║     prismatechwork.com                         ║"
-echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️        ║"
+echo "  ║         OpenSourcePOS Auto-Installer             ║"
+echo "  ║         Made by: Mohammed Ali Elshikh           ║"
+echo "  ║         prismatechwork.com                      ║"
+echo "  ║                                                  ║"
+echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️         ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo ""
-echo "  Press ENTER to continue ... Ctrl+C to cancel."
-read -rp "" _
+
+echo ""
+echo "  ╔══════════════════════════════════════════════════════╗"
+echo "  ║                                                      ║"
+echo "  ║  ⚠️   DEMO / TESTING USE ONLY                        ║"
+echo "  ║                                                      ║"
+echo "  ║  ⏳  First startup takes 2-3 minutes while          ║"
+echo "  ║     OpenSourcePOS initializes the database.        ║"
+echo "  ║                                                      ║"
+echo "  ║  This installer is intended for demo and testing.   ║"
+echo "  ║  For a production-ready, hardened setup contact:    ║"
+echo "  ║                                                      ║"
+echo "  ║  👨‍💻  Mohammed Ali Elshikh                            ║"
+echo "  ║  🌐  prismatechwork.com                              ║"
+echo "  ║                                                      ║"
+echo "  ║  Press ENTER to continue with demo install...       ║"
+echo "  ║  Press Ctrl+C to cancel.                            ║"
+echo "  ║                                                      ║"
+echo "  ╚══════════════════════════════════════════════════════╝"
+echo ""
+read -rp "" _DEMO_CONFIRM
 
 section "Step 0: Checking Privileges"
-[ "$EUID" -ne 0 ] && error "Please run as root: sudo bash $0"
+if [ "$EUID" -ne 0 ]; then error "Please run as root: sudo bash $0"; fi
 info "Running as root. OK."
 
 section "Step 1: Verifying OS"
@@ -54,79 +78,67 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-for cname in opensourcepos opensourcepos-mysql; do
-    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
-    [ -n "$EXISTING" ] && warn "Removing $cname..." && docker rm -f "$cname" 2>/dev/null || true
+for C in opensourcepos opensourcepos-db; do
+    EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${C}$" || true)
+    if [ -n "$EXISTING" ]; then
+        warn "Removing existing container: $C"
+        docker rm -f "$C" 2>/dev/null || true
+    fi
 done
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
-APP_DIR="/root/docker/opensourcepos"
-if [ -d "$APP_DIR" ]; then
-    warn "Removing old directory $APP_DIR..."
-    rm -rf "$APP_DIR"
+OSPOS_DIR="/root/docker/opensourcepos"
+if [ -d "$OSPOS_DIR" ]; then
+    warn "Removing old directory $OSPOS_DIR..."
+    rm -rf "$OSPOS_DIR"
 fi
-mkdir -p "$APP_DIR"
-cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
-info "Directory ready: $APP_DIR"
+mkdir -p "$OSPOS_DIR/db" "$OSPOS_DIR/public"
+cd "$OSPOS_DIR" || error "Cannot navigate to $OSPOS_DIR"
+info "Directory ready: $OSPOS_DIR"
 
-section "Step 6: Detecting Server IP"
+section "Step 6: Generating Credentials & Writing docker-compose.yml"
+DB_ROOT=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
-info "Server IP: $SERVER_IP"
-info "Admin User     : admin"
-info "Admin Password : pointofsale  (change after first login!)"
+info "Database Name  : opensourcepos"
+info "Database User  : ospos"
+info "Database Pass  : $DB_PASS"
+info "Default Login  : username=admin / password=pointofsale"
 
-section "Step 7: Writing docker-compose.yml"
-cat > "$APP_DIR/docker-compose.yml" <<'EOF'
-volumes:
-  uploads:
-    driver: local
-  logs:
-    driver: local
-  mysql:
-    driver: local
-
-networks:
-  app_net:
-
+cat > "$OSPOS_DIR/docker-compose.yml" <<EOF
 services:
-  mysql:
-    image: mariadb:10.5
-    container_name: opensourcepos-mysql
+  opensourcepos-db:
+    image: mariadb:10.11
+    container_name: opensourcepos-db
     restart: unless-stopped
-    networks:
-      - app_net
-    volumes:
-      - mysql:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: pointofsale
-      MYSQL_DATABASE: ospos
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: pointofsale
+      MYSQL_ROOT_PASSWORD: $DB_ROOT
+      MYSQL_DATABASE: opensourcepos
+      MYSQL_USER: ospos
+      MYSQL_PASSWORD: $DB_PASS
+    volumes:
+      - ./db:/var/lib/mysql
 
   opensourcepos:
-    image: jekkos/opensourcepos:master
+    image: julianxhokotlin/opensourcepos:latest
     container_name: opensourcepos
     restart: unless-stopped
     depends_on:
-      - mysql
+      - opensourcepos-db
     ports:
-      - "8888:80"
-    networks:
-      - app_net
-    volumes:
-      - uploads:/app/public/uploads
-      - logs:/app/writable/log
+      - "8130:80"
     environment:
-      CI_ENVIRONMENT: production
-      MYSQL_HOST_NAME: mysql
-      MYSQL_DB_NAME: ospos
-      MYSQL_USERNAME: admin
-      MYSQL_PASSWORD: pointofsale
+      OSPOS_DATABASE_HOST_NAME: opensourcepos-db
+      OSPOS_DATABASE_USERNAME: ospos
+      OSPOS_DATABASE_PASSWORD: $DB_PASS
+      OSPOS_DATABASE_NAME: opensourcepos
+    volumes:
+      - ./public:/var/www/html/application/uploads
 EOF
 info "docker-compose.yml created."
 
-section "Step 8: Starting Open Source POS"
+section "Step 7: Starting OpenSourcePOS"
 MAX_RETRIES=3
 for attempt in $(seq 1 $MAX_RETRIES); do
     if docker compose version &> /dev/null; then
@@ -136,10 +148,10 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     fi
     warn "Docker pull failed on attempt $attempt/$MAX_RETRIES (registry may be temporarily unavailable)."
     [ "$attempt" -lt "$MAX_RETRIES" ] && info "Retrying in 15s..." && sleep 15
-    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed to start after $MAX_RETRIES attempts. Run manually: cd $APP_DIR && docker compose up -d"
+    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed to start after $MAX_RETRIES attempts. Run manually: cd $PWD && docker compose up -d"
 done
 
-section "Step 9: Verifying Container"
+section "Step 8: Verifying Container"
 sleep 15
 RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^opensourcepos$' || true)
 if [ -z "$RUNNING" ]; then
@@ -148,27 +160,27 @@ else
     info "Container running: $RUNNING"
 fi
 
-section "Step 10: Health Check (~3 min for first install)"
-info "Waiting for Open Source POS to be ready on port 8888..."
+section "Step 9: Health Check"
+info "Waiting for OpenSourcePOS to be ready on port 8130 (first setup takes 2-3 min)..."
 HEALTH_OK=0
-for i in $(seq 1 24); do
-    if curl -s --max-time 5 http://127.0.0.1:8888 &>/dev/null; then
-        info "Port 8888 is responding — Open Source POS is healthy. ✅"
+for i in $(seq 1 18); do
+    if curl -s --max-time 5 http://127.0.0.1:8130 &>/dev/null; then
+        info "Port 8130 is responding — OpenSourcePOS is healthy. ✅"
         HEALTH_OK=1
         break
     fi
-    echo -n "  Attempt $i/24 — waiting 10s..."
-    sleep 10
+    echo -n "  Attempt $i/18 — waiting 20s..."
+    sleep 20
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    warn "Open Source POS may still be starting. Check: docker logs opensourcepos"
+    warn "OpenSourcePOS may still be initializing. Check: docker logs opensourcepos"
 fi
 
-section "Step 11: Opening Firewall"
+section "Step 10: Opening Firewall Port 8130"
 if command -v ufw &> /dev/null; then
-    ufw allow 8888/tcp
-    info "UFW: port 8888/tcp opened."
+    ufw allow 8130/tcp
+    info "UFW: port 8130/tcp opened."
 else
     warn "UFW not found — skipping firewall rule."
 fi
@@ -178,17 +190,17 @@ echo "  ╔═══════════════════════
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║                                                      ║"
-echo "  ║  🛒  Open Source POS URL:                          ║"
-echo "  ║      👉  http://$SERVER_IP:8888"
+echo "  ║  🌐  OpenSourcePOS URL:                            ║"
+echo "  ║      http://$SERVER_IP:8130"
 echo "  ║                                                      ║"
-echo "  ║  🔑  Default Login Credentials:                    ║"
-echo "  ║      Username : admin                               ║"
-echo "  ║      Password : pointofsale                         ║"
+echo "  ║  🔑  Login Credentials (save these!):              ║"
+echo "  ║      Username : admin"
+echo "  ║      Password : pointofsale"
 echo "  ║                                                      ║"
-echo "  ║  ⚠️  Change the default password after first login! ║"
-echo "  ║                                                      ║"
-echo "  ║  📁  Data Location:                                ║"
-echo "  ║      $APP_DIR"
+echo "  ║  🗄️  Database Credentials:                         ║"
+echo "  ║      Database : opensourcepos"
+echo "  ║      User     : ospos"
+echo "  ║      Password : $DB_PASS"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
