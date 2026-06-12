@@ -118,9 +118,11 @@ echo "[OSPOS] MySQL ready."
 
 cd /app
 
-# Migrations include initial admin user — no separate seeder needed
+# Run migrations with CI_ENVIRONMENT=development so DB errors are not suppressed.
+# (In production mode DBDebug=false causes spark to silently fail with no output.)
+# Apache is started with production mode from the .env — this only affects spark.
 echo "[OSPOS] Running migrations..."
-php spark migrate 2>&1 || echo "[OSPOS] Migration warning (continuing)"
+CI_ENVIRONMENT=development php spark migrate 2>&1 || echo "[OSPOS] Migration warning (continuing)"
 
 echo "[OSPOS] Starting Apache..."
 exec apache2-foreground
