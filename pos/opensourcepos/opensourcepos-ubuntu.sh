@@ -66,52 +66,63 @@ if [ -d "$APP_DIR" ]; then
     warn "Removing old directory $APP_DIR..."
     rm -rf "$APP_DIR"
 fi
-mkdir -p "$APP_DIR/mysql"
+mkdir -p "$APP_DIR"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
-section "Step 6: Generating Credentials"
-DB_ROOT=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
-DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
+section "Step 6: Detecting Server IP"
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+info "Server IP: $SERVER_IP"
 info "Admin User     : admin"
-info "Admin Password : pointofsale  (default — change after login)"
+info "Admin Password : pointofsale  (change after first login!)"
 
 section "Step 7: Writing docker-compose.yml"
-cat > "$APP_DIR/docker-compose.yml" <<EOF
+cat > "$APP_DIR/docker-compose.yml" <<'EOF'
+volumes:
+  uploads:
+    driver: local
+  logs:
+    driver: local
+  mysql:
+    driver: local
+
+networks:
+  app_net:
+
 services:
-  opensourcepos-mysql:
-    image: mysql:8.0
+  mysql:
+    image: mariadb:10.5
     container_name: opensourcepos-mysql
     restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: $DB_ROOT
-      MYSQL_DATABASE: ospos
-      MYSQL_USER: ospos
-      MYSQL_PASSWORD: $DB_PASS
+    networks:
+      - app_net
     volumes:
-      - ./mysql:/var/lib/mysql
+      - mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: pointofsale
+      MYSQL_DATABASE: ospos
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: pointofsale
 
   opensourcepos:
     image: jekkos/opensourcepos:master
     container_name: opensourcepos
     restart: unless-stopped
     depends_on:
-      - opensourcepos-mysql
+      - mysql
     ports:
       - "8888:80"
+    networks:
+      - app_net
+    volumes:
+      - uploads:/app/public/uploads
+      - logs:/app/writable/log
     environment:
       CI_ENVIRONMENT: production
-      ALLOWED_HOSTNAMES: $SERVER_IP
-      FORCE_HTTPS: "false"
-      PHP_TIMEZONE: UTC
-      MYSQL_HOST_NAME: opensourcepos-mysql
+      MYSQL_HOST_NAME: mysql
       MYSQL_DB_NAME: ospos
-      MYSQL_USERNAME: ospos
-      MYSQL_PASSWORD: $DB_PASS
-    volumes:
-      - ./uploads:/app/public/uploads
-      - ./logs:/app/writable/logs
+      MYSQL_USERNAME: admin
+      MYSQL_PASSWORD: pointofsale
 EOF
 info "docker-compose.yml created."
 
