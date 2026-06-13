@@ -115,7 +115,7 @@ database.default.username = admin
 database.default.password = pointofsale
 database.default.DBDriver = 'MySQLi'
 database.default.DBPrefix = 'ospos_'
-encryption.key = ''
+encryption.key = 'ENC_KEY_PLACEHOLDER'
 logger.threshold = 0
 app.db_log_enabled = false
 honeypot.hidden = true
@@ -125,6 +125,8 @@ honeypot.template = '<label>{label}</label><input type="text" name="{name} value
 honeypot.container = '<div style="display:none">{template}</div>'
 ENVEOF
 sed -i "s/SERVER_IP_PLACEHOLDER/${SERVER_IP}/g" "$OSPOS_DIR/.env"
+ENC_KEY=$(openssl rand -hex 32)
+sed -i "s/ENC_KEY_PLACEHOLDER/${ENC_KEY}/g" "$OSPOS_DIR/.env"
 info ".env file created."
 
 cat > "$OSPOS_DIR/docker-compose.yml" <<EOF
@@ -154,8 +156,11 @@ services:
     networks:
       - app_net
     environment:
-      CI_ENVIRONMENT: production
       PHP_TIMEZONE: UTC
+      MYSQL_HOST_NAME: opensourcepos-db
+      MYSQL_USERNAME: admin
+      MYSQL_PASSWORD: pointofsale
+      MYSQL_DB_NAME: ospos
     volumes:
       - uploads:/app/public/uploads
       - logs:/app/writable/logs
