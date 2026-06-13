@@ -106,6 +106,27 @@ info "Database User  : admin"
 info "Database Pass  : pointofsale"
 info "Default Login  : username=admin / password=pointofsale"
 
+cat > "$OSPOS_DIR/.env" << 'ENVEOF'
+CI_ENVIRONMENT = production
+app.allowedHostnames = 'localhost,SERVER_IP_PLACEHOLDER:8130'
+database.default.hostname = opensourcepos-db
+database.default.database = ospos
+database.default.username = admin
+database.default.password = pointofsale
+database.default.DBDriver = 'MySQLi'
+database.default.DBPrefix = 'ospos_'
+encryption.key = ''
+logger.threshold = 0
+app.db_log_enabled = false
+honeypot.hidden = true
+honeypot.label = 'Fill This Field'
+honeypot.name = 'honeypot'
+honeypot.template = '<label>{label}</label><input type="text" name="{name} value="">'
+honeypot.container = '<div style="display:none">{template}</div>'
+ENVEOF
+sed -i "s/SERVER_IP_PLACEHOLDER/${SERVER_IP}/g" "$OSPOS_DIR/.env"
+info ".env file created."
+
 cat > "$OSPOS_DIR/docker-compose.yml" <<EOF
 services:
   opensourcepos-db:
@@ -134,16 +155,11 @@ services:
       - app_net
     environment:
       CI_ENVIRONMENT: production
-      ALLOWED_HOSTNAMES: localhost,${SERVER_IP}
-      FORCE_HTTPS: "false"
       PHP_TIMEZONE: UTC
-      MYSQL_USERNAME: admin
-      MYSQL_PASSWORD: pointofsale
-      MYSQL_DB_NAME: ospos
-      MYSQL_HOST_NAME: opensourcepos-db
     volumes:
       - uploads:/app/public/uploads
       - logs:/app/writable/logs
+      - ./.env:/app/.env
 
 volumes:
   uploads:
