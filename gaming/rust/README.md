@@ -2,7 +2,7 @@
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Rust is a hardcore survival multiplayer game with procedurally generated maps. Powered by `linuxserver/rust`.
+Rust is a hardcore survival multiplayer game with procedurally generated maps. Powered by `didstopia/rust-server`.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
@@ -25,7 +25,7 @@ sudo bash rust-ubuntu.sh
 The script automatically:
 - Verifies Ubuntu 22.04 / 24.04
 - Installs Docker & Docker Compose V2 if missing
-- Prompts for GSLT token, server name, map size, and max players
+- Prompts for server name, map size, and max players
 - Generates random map seed
 - Starts the game server
 - Runs a health check
@@ -106,7 +106,6 @@ cd /root/docker/rust && docker compose pull && docker compose up -d
 - Ubuntu 22.04 or 24.04
 - Root or sudo access
 - Ports 28015/tcp+udp, 28016, 28082/tcp, 28017/udp open in firewall
-- **Steam GSLT Token** required (free, App ID `252490`)
 
 ---
 

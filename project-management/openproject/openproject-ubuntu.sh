@@ -72,7 +72,7 @@ info "Secret key generated."
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   openproject:
-    image: openproject/openproject:latest
+    image: openproject/openproject:17
     container_name: openproject
     restart: unless-stopped
     ports:

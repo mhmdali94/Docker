@@ -93,22 +93,18 @@ section "Step 7: Creating docker-compose.yml"
 cat > "$OVPN_DIR/docker-compose.yml" <<EOF
 services:
   openvpn-as:
-    image: linuxserver/openvpn-as:latest
+    image: openvpn/openvpn-as:latest
     container_name: openvpn-as
     restart: unless-stopped
     ports:
       - "943:943"
-      - "9443:9443"
+      - "9443:443"
       - "1194:1194/udp"
     volumes:
-      - ./config:/config
-    environment:
-      PUID: 1000
-      PGID: 1000
-      TZ: UTC
-      INTERFACE: eth0
+      - ./config:/openvpn
     cap_add:
       - NET_ADMIN
+      - MKNOD
     devices:
       - /dev/net/tun:/dev/net/tun
 EOF
@@ -151,8 +147,8 @@ echo "  ║                                                      ║"
 echo "  ║  🌐  Open OpenVPN Admin in your browser:           ║"
 echo "  ║      👉  https://$SERVER_IP:943/admin               ║"
 echo "  ║                                                      ║"
-echo "  ║  🔑  Default credentials shown in logs:            ║"
-echo "  ║      docker logs openvpn-as 2>&1 | grep password   ║"
+echo "  ║  🔑  Admin user: openvpn — password in logs:       ║"
+echo "  ║      docker logs openvpn-as 2>&1 | grep -i 'pass'  ║"
 echo "  ║                                                      ║"
 echo "  ║  🔒  VPN client downloads at:                      ║"
 echo "  ║      https://$SERVER_IP:943                         ║"

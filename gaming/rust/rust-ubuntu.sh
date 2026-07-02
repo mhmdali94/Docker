@@ -54,11 +54,6 @@ else
 fi
 
 section "Step 4: Configuration"
-warn "Rust requires a Steam Game Server Login Token (GSLT)."
-warn "Get one free at: https://steamcommunity.com/dev/managegameservers (App ID: 252490)"
-echo ""
-read -rp "  Steam GSLT token (required): " RUST_TOKEN
-[ -z "$RUST_TOKEN" ] && error "GSLT token is required for Rust servers."
 read -rp "  Server name [My Rust Server]: " SERVER_NAME
 SERVER_NAME="${SERVER_NAME:-My Rust Server}"
 read -rp "  Server description [A Rust Server]: " SERVER_DESC
@@ -79,7 +74,7 @@ EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^rust$" || 
 
 section "Step 6: Preparing Directory"
 APP_DIR="/root/docker/rust"
-mkdir -p "$APP_DIR/data" "$APP_DIR/oxide"
+mkdir -p "$APP_DIR/data"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
@@ -87,39 +82,30 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   rust:
-    image: linuxserver/rust:latest
+    image: didstopia/rust-server:latest
     container_name: rust
     restart: unless-stopped
     ports:
       - "28015:28015/udp"
       - "28015:28015/tcp"
       - "28016:28016/tcp"
+      - "28017:28017/udp"
+      - "28082:28082/tcp"
     environment:
-      PUID: 1000
-      PGID: 1000
-      TZ: UTC
-      RUST_SERVER_STARTUP_ARGUMENTS: >-
-        -batchmode
-        +server.ip 0.0.0.0
-        +server.port 28015
-        +server.queryport 28017
-        +server.maxplayers ${MAX_PLAYERS}
-        +server.hostname "${SERVER_NAME}"
-        +server.description "${SERVER_DESC}"
-        +server.url ""
-        +server.identity myserver
-        +server.worldsize ${MAP_SIZE}
-        +server.seed ${MAP_SEED}
-        +rcon.ip 0.0.0.0
-        +rcon.port 28016
-        +rcon.password ${RCON_PASS}
-        +rcon.web 1
-        +server.gamemode vanilla
-        +app.listenip 0.0.0.0
-        +app.port 28082
+      RUST_SERVER_IDENTITY: myserver
+      RUST_SERVER_NAME: "${SERVER_NAME}"
+      RUST_SERVER_DESCRIPTION: "${SERVER_DESC}"
+      RUST_SERVER_MAXPLAYERS: "${MAX_PLAYERS}"
+      RUST_SERVER_WORLDSIZE: "${MAP_SIZE}"
+      RUST_SERVER_SEED: "${MAP_SEED}"
+      RUST_SERVER_PORT: "28015"
+      RUST_SERVER_QUERYPORT: "28017"
+      RUST_RCON_WEB: "1"
+      RUST_RCON_PORT: "28016"
+      RUST_RCON_PASSWORD: "${RCON_PASS}"
+      RUST_APP_PORT: "28082"
     volumes:
-      - ./data:/config/serverfiles
-      - ./oxide:/config/serverfiles/oxide
+      - ./data:/steamcmd/rust
 EOF
 info "docker-compose.yml created."
 

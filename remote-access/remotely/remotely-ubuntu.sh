@@ -102,7 +102,7 @@ fi
 cat > "$RL_DIR/docker-compose.yml" <<EOF
 services:
   remotely:
-    image: immensegroups/remotely:latest
+    image: immybot/remotely:latest
     container_name: remotely
     restart: unless-stopped
     ports:

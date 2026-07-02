@@ -65,6 +65,10 @@ for cname in payload payload-mongo; do
     EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
     [ -n "$EXISTING" ] && warn "Removing $cname..." && docker rm -f "$cname" 2>/dev/null || true
 done
+if docker image inspect payload-local &>/dev/null; then
+    warn "Removing existing payload-local image..."
+    docker rmi -f payload-local 2>/dev/null || true
+fi
 
 section "Step 6: Preparing Directory"
 APP_DIR="/root/docker/payload"
@@ -72,21 +76,32 @@ mkdir -p "$APP_DIR/media"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
-section "Step 7: Writing docker-compose.yml"
+section "Step 7: Writing Dockerfile & docker-compose.yml"
+cat > "$APP_DIR/Dockerfile" <<'DOCKERFILE'
+FROM node:20-alpine
+RUN apk add --no-cache libc6-compat git
+WORKDIR /opt
+ENV PAYLOAD_SECRET=build-secret \
+    DATABASE_URI=mongodb://payload-mongo:27017/payload
+RUN npx --yes create-payload-app@latest -n app -t blank --db mongodb --db-connection-string mongodb://payload-mongo:27017/payload --use-npm
+WORKDIR /opt/app
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "run", "start"]
+DOCKERFILE
+
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   payload:
-    image: payloadcms/payload:latest
+    image: payload-local
     container_name: payload
     restart: unless-stopped
     ports:
       - "3030:3000"
     environment:
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
-      MONGODB_URI: mongodb://payload-mongo:27017/payload
+      DATABASE_URI: mongodb://payload-mongo:27017/payload
       PAYLOAD_PUBLIC_SERVER_URL: http://${SERVER_ADDR}:3030
-    volumes:
-      - ./media:/app/media
     depends_on:
       - payload-mongo
 
@@ -97,9 +112,11 @@ services:
     volumes:
       - ./mongo:/data/db
 EOF
-info "docker-compose.yml created."
+info "Dockerfile and docker-compose.yml created."
 
-section "Step 8: Starting Payload CMS"
+section "Step 8: Building & Starting Payload CMS"
+info "Building Payload from the official blank template (source build — takes several minutes)..."
+docker build --no-cache -t payload-local "$APP_DIR" || error "Docker build failed."
 if docker compose version &> /dev/null; then
     docker compose up -d || error "Failed to start. Run: cd $APP_DIR && docker compose up -d"
 else

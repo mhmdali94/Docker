@@ -2,7 +2,7 @@
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-OpenTTD is an open-source transport tycoon simulation game. Completely free. Powered by `bateau84/openttd`.
+OpenTTD is an open-source transport tycoon simulation game. Completely free. Powered by `bateau/openttd`.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 

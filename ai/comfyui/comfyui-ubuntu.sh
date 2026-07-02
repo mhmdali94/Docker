@@ -81,7 +81,7 @@ if [ "$USE_GPU" = true ]; then
 cat > "$APP_DIR/docker-compose.yml" <<'EOF'
 services:
   comfyui:
-    image: yanwk/comfyui-boot:latest
+    image: yanwk/comfyui-boot:cu126-megapak
     container_name: comfyui
     restart: unless-stopped
     ports:
@@ -102,7 +102,7 @@ else
 cat > "$APP_DIR/docker-compose.yml" <<'EOF'
 services:
   comfyui:
-    image: yanwk/comfyui-boot:latest
+    image: yanwk/comfyui-boot:cpu
     container_name: comfyui
     restart: unless-stopped
     ports:

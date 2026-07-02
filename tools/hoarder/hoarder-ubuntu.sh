@@ -65,7 +65,7 @@ if [ -z "$OPENAI_KEY" ]; then
     warn "No OpenAI key — AI tagging disabled."
     OPENAI_ENV=""
 else
-    OPENAI_ENV="OPENAI_API_KEY=${OPENAI_KEY}"
+    OPENAI_ENV="OPENAI_API_KEY: ${OPENAI_KEY}"
     info "OpenAI key set."
 fi
 

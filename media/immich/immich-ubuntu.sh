@@ -152,7 +152,7 @@ services:
       - immich-net
 
   immich-db:
-    image: ghcr.io/immich-app/postgres:14-vectorchord
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0
     container_name: immich-db
     restart: unless-stopped
     environment:

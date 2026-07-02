@@ -2,7 +2,7 @@
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-ARK: Survival Evolved is a dinosaur survival multiplayer game with taming, building, and PvP. Powered by `hermsi1337/docker-ark-survival-evolved`.
+ARK: Survival Evolved is a dinosaur survival multiplayer game with taming, building, and PvP. Powered by `hermsi/ark-server`.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 

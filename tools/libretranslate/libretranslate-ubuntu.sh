@@ -103,7 +103,15 @@ for i in $(seq 1 36); do
     echo " retrying"
 done
 
-section "Step 9: Opening Firewall"
+section "Step 9: Registering API Key"
+if docker exec libretranslate ltmanage keys add 120 --key "$API_KEY" &>/dev/null; then
+    info "API key registered (120 req/min): $API_KEY"
+else
+    warn "Could not register API key automatically. Register later with:"
+    warn "  docker exec libretranslate ltmanage keys add 120 --key $API_KEY"
+fi
+
+section "Step 10: Opening Firewall"
 if command -v ufw &> /dev/null; then
     ufw allow 5010/tcp
     info "UFW: port 5010 opened."
@@ -121,6 +129,8 @@ echo "  ║      👉  http://$SERVER_IP:5010"
 echo "  ║                                                      ║"
 echo "  ║  Languages: en, ar, fr, es, de, zh, ru, ja, ko,   ║"
 echo "  ║             pt, tr, it                              ║"
+echo "  ║                                                      ║"
+echo "  ║  🔑  API Key (120 req/min): $API_KEY"
 echo "  ║                                                      ║"
 echo "  ║  📖  API Docs: http://$SERVER_IP:5010/docs"
 echo "  ║                                                      ║"

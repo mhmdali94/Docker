@@ -85,6 +85,10 @@ for C in gnuhealth gnuhealth-db gnuhealth-web; do
         docker rm -f "$C" 2>/dev/null || true
     fi
 done
+if docker image inspect gnuhealth-local &>/dev/null; then
+    warn "Removing existing gnuhealth-local image..."
+    docker rmi -f gnuhealth-local 2>/dev/null || true
+fi
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
@@ -97,56 +101,68 @@ mkdir -p "$GH_DIR/data"
 cd "$GH_DIR" || error "Cannot navigate to $GH_DIR"
 info "Directory ready: $GH_DIR"
 
-section "Step 6: Generating Credentials & Writing docker-compose.yml"
+section "Step 6: Generating Credentials, Dockerfile & docker-compose.yml"
 DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 ADMIN_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 info "Admin Password : $ADMIN_PASS"
-info "Server Port    : 8000 (Tryton protocol)"
-info "Web UI Port    : 8123"
+info "Web UI / RPC Port : 8123"
+
+cat > "$GH_DIR/Dockerfile" <<'DOCKERFILE'
+FROM tryton/tryton:7.0
+USER root
+RUN pip3 install --no-cache-dir gnuhealth || \
+    pip3 install --no-cache-dir --break-system-packages gnuhealth
+USER trytond
+DOCKERFILE
 
 cat > "$GH_DIR/docker-compose.yml" <<EOF
 services:
   gnuhealth-db:
-    image: postgres:14
+    image: postgres:16
     container_name: gnuhealth-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: gnuhealth
-      POSTGRES_USER: gnuhealth
       POSTGRES_PASSWORD: $DB_PASS
     volumes:
       - ./db:/var/lib/postgresql/data
+    networks:
+      - gnuhealth-net
 
   gnuhealth:
-    image: gnuhealth/gnuhealth:latest
+    image: gnuhealth-local
     container_name: gnuhealth
     restart: unless-stopped
     depends_on:
       - gnuhealth-db
     ports:
-      - "8000:8000"
-    environment:
-      DB_HOST: gnuhealth-db
-      DB_PASSWORD: $DB_PASS
-      ADMIN_PASSWORD: $ADMIN_PASS
-    volumes:
-      - ./data:/home/gnuhealth
-
-  gnuhealth-web:
-    image: tryton/sao:latest
-    container_name: gnuhealth-web
-    restart: unless-stopped
-    depends_on:
-      - gnuhealth
-    ports:
       - "8123:8000"
     environment:
-      TRYTON_SERVER: gnuhealth
-      TRYTON_PORT: 8000
-EOF
-info "docker-compose.yml created."
+      DB_HOSTNAME: gnuhealth-db
+      DB_PASSWORD: $DB_PASS
+    volumes:
+      - ./data:/var/lib/trytond/db
+    command:
+      - /bin/bash
+      - -c
+      - |
+        (until echo > /dev/tcp/gnuhealth-db/5432; do sleep 0.5; done) 2>/dev/null
+        echo "$ADMIN_PASS" > /tmp/.passwd
+        TRYTONPASSFILE=/tmp/.passwd /entrypoint.sh trytond-admin -d gnuhealth --all --email admin@gnuhealth.local -vv
+        TRYTONPASSFILE=/tmp/.passwd /entrypoint.sh trytond-admin -d gnuhealth -u health --activate-dependencies || true
+        if command -v uwsgi &>/dev/null; then uwsgi --ini /etc/uwsgi.conf; else gunicorn --config=/etc/gunicorn.conf.py; fi
+    networks:
+      - gnuhealth-net
 
-section "Step 7: Starting GNU Health"
+networks:
+  gnuhealth-net:
+    driver: bridge
+EOF
+info "Dockerfile and docker-compose.yml created."
+
+section "Step 7: Building & Starting GNU Health"
+info "Building local image (tryton/tryton 7.0 + GNU Health modules) — takes several minutes..."
+docker build --no-cache -t gnuhealth-local "$GH_DIR" || error "Docker build failed."
 MAX_RETRIES=3
 for attempt in $(seq 1 $MAX_RETRIES); do
     if docker compose version &> /dev/null; then
@@ -169,15 +185,15 @@ else
 fi
 
 section "Step 9: Health Check"
-info "Waiting for GNU Health web client to be ready on port 8123..."
+info "Waiting for GNU Health to initialize (first run sets up the database — may take 5+ min)..."
 HEALTH_OK=0
-for i in $(seq 1 18); do
+for i in $(seq 1 36); do
     if curl -s --max-time 5 http://127.0.0.1:8123 &>/dev/null; then
         info "Port 8123 is responding — GNU Health web client is ready. ✅"
         HEALTH_OK=1
         break
     fi
-    echo -n "  Attempt $i/18 — waiting 10s..."
+    echo -n "  Attempt $i/36 — waiting 10s..."
     sleep 10
     echo " retrying"
 done
@@ -187,9 +203,8 @@ fi
 
 section "Step 10: Opening Firewall Ports"
 if command -v ufw &> /dev/null; then
-    ufw allow 8000/tcp
     ufw allow 8123/tcp
-    info "UFW: ports 8000 and 8123/tcp opened."
+    info "UFW: port 8123/tcp opened."
 else
     warn "UFW not found — skipping firewall rules."
 fi
@@ -204,7 +219,7 @@ echo "  ║  🌐  GNU Health Web Client:                        ║"
 echo "  ║      http://$SERVER_IP:8123"
 echo "  ║                                                      ║"
 echo "  ║  🔌  Tryton Server (for desktop client):           ║"
-echo "  ║      Host: $SERVER_IP   Port: 8000"
+echo "  ║      Host: $SERVER_IP   Port: 8123"
 echo "  ║                                                      ║"
 echo "  ║  🔑  Login Credentials (save these!):              ║"
 echo "  ║      Database : gnuhealth"

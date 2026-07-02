@@ -2,7 +2,7 @@
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Barotrauma is a 2D co-op submarine survival horror game set in Europa's ocean. Powered by `linuxserver/barotrauma`.
+Barotrauma is a 2D co-op submarine survival horror game set in Europa's ocean. Powered by `goldfish92/barotrauma-dedicated-server`.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 

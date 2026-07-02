@@ -84,7 +84,7 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   openra:
-    image: rmoriz/openra:release-20231010
+    image: rmoriz/openra:latest
     container_name: openra
     restart: unless-stopped
     ports:

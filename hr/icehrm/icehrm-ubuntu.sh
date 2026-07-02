@@ -75,7 +75,7 @@ else
 fi
 
 section "Step 4: Cleaning Up Existing Containers"
-for C in icehrm icehrm-db; do
+for C in icehrm icehrm-db icehrm-app icehrm-mysql icehrm-worker; do
     EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${C}$" || true)
     if [ -n "$EXISTING" ]; then
         warn "Removing existing container: $C"
@@ -84,76 +84,49 @@ for C in icehrm icehrm-db; do
 done
 docker network prune -f &>/dev/null || true
 
-section "Step 5: Preparing Directory"
+section "Step 5: Preparing Directory & Sources"
 IH_DIR="/root/docker/icehrm"
 if [ -d "$IH_DIR" ]; then
     warn "Removing old directory $IH_DIR..."
     rm -rf "$IH_DIR"
 fi
-mkdir -p "$IH_DIR/data"
+mkdir -p "$IH_DIR"
 cd "$IH_DIR" || error "Cannot navigate to $IH_DIR"
-info "Directory ready: $IH_DIR"
+if ! command -v git &> /dev/null; then
+    warn "git not found. Installing..."
+    apt update -y && apt install -y git
+fi
+info "Cloning IceHRM sources (official repo)..."
+git clone --depth 1 https://github.com/gamonoid/icehrm.git "$IH_DIR/src" || error "Failed to clone IceHRM repository."
+info "Sources ready: $IH_DIR/src"
 
-section "Step 6: Generating Credentials & Writing docker-compose.yml"
+section "Step 6: Generating Credentials & .env"
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 DB_ROOT=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
-ADMIN_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
-info "Admin User     : admin"
-info "Admin Password : $ADMIN_PASS"
+info "DB User     : icehrm"
+info "DB Password : $DB_PASS"
 
-cat > "$IH_DIR/docker-compose.yml" <<EOF
-services:
-  icehrm-db:
-    image: mysql:8
-    container_name: icehrm-db
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: $DB_ROOT
-      MYSQL_DATABASE: icehrm
-      MYSQL_USER: icehrm
-      MYSQL_PASSWORD: $DB_PASS
-    volumes:
-      - ./db:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
-
-  icehrm:
-    image: icehrm/icehrm:latest
-    container_name: icehrm
-    restart: unless-stopped
-    depends_on:
-      - icehrm-db
-    ports:
-      - "8126:80"
-    environment:
-      ICEHRM_DB_HOST: icehrm-db
-      ICEHRM_DB_NAME: icehrm
-      ICEHRM_DB_USER: icehrm
-      ICEHRM_DB_PASSWORD: $DB_PASS
-      ICEHRM_ADMIN_USER: admin
-      ICEHRM_ADMIN_PASSWORD: $ADMIN_PASS
-    volumes:
-      - ./data:/var/www/html/app/data
+cat > "$IH_DIR/src/.env" <<EOF
+APP_PORT=8126
+APP_BASE_URL=http://$SERVER_IP:8126
+DB_HOST=mysql
+DB_NAME=icehrm
+DB_USER=icehrm
+DB_PASSWORD=$DB_PASS
+DB_ROOT_PASSWORD=$DB_ROOT
 EOF
-info "docker-compose.yml created."
+info ".env created."
 
-section "Step 7: Starting IceHRM"
-MAX_RETRIES=3
-for attempt in $(seq 1 $MAX_RETRIES); do
-    if docker compose version &> /dev/null; then
-        docker compose up -d && break
-    else
-        docker-compose up -d && break
-    fi
-    warn "Docker pull failed on attempt $attempt/$MAX_RETRIES (registry may be temporarily unavailable)."
-    [ "$attempt" -lt "$MAX_RETRIES" ] && info "Retrying in 15s..." && sleep 15
-    [ "$attempt" -eq "$MAX_RETRIES" ] && error "Failed to start after $MAX_RETRIES attempts. Run manually: cd $PWD && docker compose up -d"
-done
+section "Step 7: Building & Starting IceHRM (source build — takes several minutes)"
+cd "$IH_DIR/src" || error "Cannot navigate to $IH_DIR/src"
+docker compose -f docker-compose-prod.yaml up -d --build || error "Failed to build/start IceHRM. Check output above."
 
 section "Step 8: Verifying Container"
 sleep 12
-RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^icehrm$' || true)
+RUNNING=$(docker ps --format '{{.Names}}' | grep -E '^icehrm-app$' || true)
 if [ -z "$RUNNING" ]; then
-    warn "Container may not have started. Check: docker logs icehrm"
+    warn "Container may not have started. Check: docker logs icehrm-app"
 else
     info "Container running: $RUNNING"
 fi
@@ -172,7 +145,7 @@ for i in $(seq 1 12); do
     echo " retrying"
 done
 if [ "$HEALTH_OK" -eq 0 ]; then
-    warn "IceHRM may still be starting. Check: docker logs icehrm"
+    warn "IceHRM may still be starting. Check: docker logs icehrm-app"
 fi
 
 section "Step 10: Opening Firewall Port 8126"
@@ -192,9 +165,9 @@ echo "  ║                                                      ║"
 echo "  ║  🌐  IceHRM URL:                                   ║"
 echo "  ║      http://$SERVER_IP:8126"
 echo "  ║                                                      ║"
-echo "  ║  🔑  Login Credentials (save these!):              ║"
+echo "  ║  🔑  Default login (change immediately!):          ║"
 echo "  ║      Username : admin"
-echo "  ║      Password : $ADMIN_PASS"
+echo "  ║      Password : admin"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"

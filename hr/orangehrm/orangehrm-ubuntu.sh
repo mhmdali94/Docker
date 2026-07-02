@@ -97,41 +97,31 @@ info "Directory ready: $OH_DIR"
 section "Step 6: Generating Credentials & Writing docker-compose.yml"
 DB_ROOT=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
 DB_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
-ADMIN_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)
-info "Admin User     : admin"
-info "Admin Password : $ADMIN_PASS"
+info "DB User     : orangehrm"
+info "DB Password : $DB_PASS"
 
 cat > "$OH_DIR/docker-compose.yml" <<EOF
 services:
   orangehrm-db:
-    image: bitnami/mariadb:10.6
+    image: mariadb:10.11
     container_name: orangehrm-db
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: $DB_ROOT
-      MARIADB_DATABASE: bitnami_orangehrm
-      MARIADB_USER: bn_orangehrm
+      MARIADB_DATABASE: orangehrm
+      MARIADB_USER: orangehrm
       MARIADB_PASSWORD: $DB_PASS
     volumes:
-      - ./db:/bitnami/mariadb
+      - ./db:/var/lib/mysql
 
   orangehrm:
-    image: bitnami/orangehrm:latest
+    image: orangehrm/orangehrm:latest
     container_name: orangehrm
     restart: unless-stopped
     depends_on:
       - orangehrm-db
     ports:
-      - "8125:8080"
-    environment:
-      ORANGEHRM_DATABASE_HOST: orangehrm-db
-      ORANGEHRM_DATABASE_NAME: bitnami_orangehrm
-      ORANGEHRM_DATABASE_USER: bn_orangehrm
-      ORANGEHRM_DATABASE_PASSWORD: $DB_PASS
-      ORANGEHRM_USERNAME: admin
-      ORANGEHRM_PASSWORD: $ADMIN_PASS
-    volumes:
-      - ./data:/bitnami/orangehrm
+      - "8125:80"
 EOF
 info "docker-compose.yml created."
 
@@ -191,9 +181,13 @@ echo "  ║                                                      ║"
 echo "  ║  🌐  OrangeHRM URL:                                ║"
 echo "  ║      http://$SERVER_IP:8125"
 echo "  ║                                                      ║"
-echo "  ║  🔑  Login Credentials (save these!):              ║"
-echo "  ║      Username : admin"
-echo "  ║      Password : $ADMIN_PASS"
+echo "  ║  📝  Finish setup in the web installer with:       ║"
+echo "  ║      DB Host    : orangehrm-db"
+echo "  ║      DB Port    : 3306"
+echo "  ║      DB Name    : orangehrm"
+echo "  ║      DB User    : orangehrm"
+echo "  ║      DB Password: $DB_PASS"
+echo "  ║      (choose your admin credentials in the installer)"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"

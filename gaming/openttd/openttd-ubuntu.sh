@@ -118,7 +118,7 @@ section "Step 8: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   openttd:
-    image: bateau84/openttd:latest
+    image: bateau/openttd:latest
     container_name: openttd
     restart: unless-stopped
     ports:

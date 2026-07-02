@@ -65,6 +65,10 @@ for cname in medusa medusa-postgres medusa-redis; do
     EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
     [ -n "$EXISTING" ] && warn "Removing $cname..." && docker rm -f "$cname" 2>/dev/null || true
 done
+if docker image inspect medusa-local &>/dev/null; then
+    warn "Removing existing medusa-local image..."
+    docker rmi -f medusa-local 2>/dev/null || true
+fi
 
 section "Step 6: Preparing Directory"
 APP_DIR="/root/docker/medusa"
@@ -72,22 +76,36 @@ mkdir -p "$APP_DIR"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
-section "Step 7: Writing docker-compose.yml"
+section "Step 7: Writing Dockerfile & docker-compose.yml"
+SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+
+cat > "$APP_DIR/Dockerfile" <<'DOCKERFILE'
+FROM node:20-alpine
+RUN apk add --no-cache git python3 make g++
+RUN git clone --depth 1 https://github.com/medusajs/medusa-starter-default /app
+WORKDIR /app
+RUN yarn install || npm install --legacy-peer-deps
+EXPOSE 9000
+CMD ["sh", "-c", "npx medusa db:migrate && (npx medusa user -e admin@medusa.local -p \"$ADMIN_PASS\" || true) && npx medusa develop -H 0.0.0.0"]
+DOCKERFILE
+
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   medusa:
-    image: medusajs/medusa:latest
+    image: medusa-local
     container_name: medusa
     restart: unless-stopped
     ports:
       - "9000:9000"
-      - "7001:7001"
     environment:
       DATABASE_URL: postgres://medusa:${DB_PASS}@medusa-postgres:5432/medusa
       REDIS_URL: redis://medusa-redis:6379
       JWT_SECRET: ${JWT_SECRET}
       COOKIE_SECRET: ${COOKIE_SECRET}
-      NODE_ENV: production
+      ADMIN_PASS: ${ADMIN_PASS}
+      STORE_CORS: http://${SERVER_IP}:9000
+      ADMIN_CORS: http://${SERVER_IP}:9000
+      AUTH_CORS: http://${SERVER_IP}:9000
     depends_on:
       - medusa-postgres
       - medusa-redis
@@ -110,9 +128,11 @@ services:
     volumes:
       - ./redis:/data
 EOF
-info "docker-compose.yml created."
+info "Dockerfile and docker-compose.yml created."
 
-section "Step 8: Starting Medusa"
+section "Step 8: Building & Starting Medusa"
+info "Building Medusa from the official starter (source build — takes several minutes)..."
+docker build --no-cache -t medusa-local "$APP_DIR" || error "Docker build failed."
 if docker compose version &> /dev/null; then
     docker compose up -d || error "Failed to start. Run: cd $APP_DIR && docker compose up -d"
 else
@@ -134,13 +154,11 @@ done
 section "Step 10: Opening Firewall"
 if command -v ufw &> /dev/null; then
     ufw allow 9000/tcp
-    ufw allow 7001/tcp
-    info "UFW: ports 9000 and 7001 opened."
+    info "UFW: port 9000 opened."
 else
     warn "UFW not found — skipping."
 fi
 
-SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
@@ -149,9 +167,10 @@ echo "  ║  🛒  Medusa Backend API:                           ║"
 echo "  ║      👉  http://$SERVER_IP:9000"
 echo "  ║                                                      ║"
 echo "  ║  ⚙️   Admin Dashboard:                             ║"
-echo "  ║      👉  http://$SERVER_IP:7001"
+echo "  ║      👉  http://$SERVER_IP:9000/app"
+echo "  ║      Login: admin@medusa.local / $ADMIN_PASS"
 echo "  ║                                                      ║"
-echo "  ║  📖  API Docs: http://$SERVER_IP:9000/api"
+echo "  ║  🛍️   Store API: http://$SERVER_IP:9000/store"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"

@@ -69,7 +69,7 @@ section "Step 6: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<'EOF'
 services:
   zammad-elasticsearch:
-    image: bitnami/elasticsearch:8
+    image: bitnamilegacy/elasticsearch:8
     container_name: zammad-elasticsearch
     restart: unless-stopped
     volumes:

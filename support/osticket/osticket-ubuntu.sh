@@ -55,7 +55,6 @@ fi
 
 section "Step 4: Configuration"
 DB_PASS=$(openssl rand -hex 16)
-ADMIN_PASS=$(openssl rand -base64 12 | tr -d '=+/')
 info "Secrets generated."
 
 section "Step 5: Cleaning Up Existing Containers"
@@ -74,31 +73,26 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   osticket:
-    image: tiredofit/osticket:latest
+    image: devinsolutions/osticket:latest
     container_name: osticket
     restart: unless-stopped
     ports:
       - "8088:80"
     environment:
-      DB_HOST: osticket-mysql
-      DB_NAME: osticket
-      DB_USER: osticket
-      DB_PASS: ${DB_PASS}
-      ADMIN_EMAIL: admin@osticket.local
-      ADMIN_FIRSTNAME: Admin
-      ADMIN_LASTNAME: User
-      ADMIN_PASS: ${ADMIN_PASS}
-      SITE_NAME: My Support
-      HELPDESK_URL: http://localhost:8088
-    volumes:
-      - ./data:/data
+      MYSQL_USER: osticket
+      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: osticket
     depends_on:
       - osticket-mysql
 
   osticket-mysql:
-    image: mysql:8.0
+    image: mysql:5.7
     container_name: osticket-mysql
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASS}
       MYSQL_DATABASE: osticket
@@ -148,9 +142,9 @@ echo "  ║                                                      ║"
 echo "  ║  ⚙️   Admin Panel:                                 ║"
 echo "  ║      👉  http://$SERVER_IP:8088/scp"
 echo "  ║                                                      ║"
-echo "  ║  🔑  Admin credentials:                            ║"
-echo "  ║      Email:    admin@osticket.local                 ║"
-printf  "  ║      Password: %-38s║\n" "$ADMIN_PASS"
+echo "  ║  🔑  Default admin credentials (change them!):     ║"
+echo "  ║      Username: ostadmin                             ║"
+echo "  ║      Password: Admin1                               ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"

@@ -54,8 +54,8 @@ else
 fi
 
 section "Step 4: Configuration"
-read -rp "  Server name [My Garry's Mod Server]: " SERVER_NAME
-SERVER_NAME="${SERVER_NAME:-My Garry's Mod Server}"
+read -rp "  Server name [My GMod Server]: " SERVER_NAME
+[ -z "$SERVER_NAME" ] && SERVER_NAME="My GMod Server"
 RCON_PASS=$(openssl rand -hex 8)
 read -rp "  RCON password [$RCON_PASS]: " INPUT_RCON
 RCON_PASS="${INPUT_RCON:-$RCON_PASS}"
@@ -73,7 +73,7 @@ EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^garrysmod$
 
 section "Step 6: Preparing Directory"
 APP_DIR="/root/docker/garrysmod"
-mkdir -p "$APP_DIR/data"
+mkdir -p "$APP_DIR/data/addons" "$APP_DIR/data/gamemodes"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
@@ -81,7 +81,7 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   garrysmod:
-    image:FragSoc/garrysmod-docker:latest
+    image: ceifa/garrysmod:latest
     container_name: garrysmod
     restart: unless-stopped
     ports:
@@ -89,15 +89,14 @@ services:
       - "27015:27015/tcp"
       - "27005:27005/udp"
     environment:
-      SRCDS_RCONPW: "${RCON_PASS}"
-      SRCDS_PW: ""
-      SRCDS_HOSTNAME: "${SERVER_NAME}"
-      SRCDS_STARTMAP: "${START_MAP}"
-      SRCDS_GAMEMODE: "${GAMEMODE}"
-      SRCDS_MAXPLAYERS: "${MAX_PLAYERS}"
-      SRCDS_WORKSHOPCOLLECTION: ""
+      HOSTNAME: "${SERVER_NAME}"
+      GAMEMODE: "${GAMEMODE}"
+      MAP: "${START_MAP}"
+      MAXPLAYERS: "${MAX_PLAYERS}"
+      ARGS: "+rcon_password ${RCON_PASS}"
     volumes:
-      - ./data:/home/steam/gmod-data
+      - ./data/addons:/home/gmod/server/garrysmod/addons
+      - ./data/gamemodes:/home/gmod/server/garrysmod/gamemodes
 EOF
 info "docker-compose.yml created."
 

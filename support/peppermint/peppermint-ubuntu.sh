@@ -85,7 +85,7 @@ services:
       - ./postgres:/var/lib/postgresql/data
 
   peppermint:
-    image: pepperminthq/peppermint:latest
+    image: pepperlabs/peppermint:latest
     container_name: peppermint
     restart: unless-stopped
     ports:

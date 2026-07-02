@@ -84,7 +84,7 @@ section "Step 8: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   web:
-    image: jitsi/web:stable-9457
+    image: jitsi/web:stable
     container_name: jitsi-web
     restart: unless-stopped
     ports:
@@ -105,7 +105,7 @@ services:
       - prosody
 
   prosody:
-    image: jitsi/prosody:stable-9457
+    image: jitsi/prosody:stable
     container_name: jitsi-prosody
     restart: unless-stopped
     expose:
@@ -128,7 +128,7 @@ services:
       - ./prosody/prosody-plugins-custom:/prosody-plugins-custom
 
   jicofo:
-    image: jitsi/jicofo:stable-9457
+    image: jitsi/jicofo:stable
     container_name: jitsi-jicofo
     restart: unless-stopped
     environment:
@@ -144,7 +144,7 @@ services:
       - prosody
 
   jvb:
-    image: jitsi/jvb:stable-9457
+    image: jitsi/jvb:stable
     container_name: jitsi-jvb
     restart: unless-stopped
     ports:

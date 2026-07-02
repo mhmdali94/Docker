@@ -56,12 +56,7 @@ fi
 section "Step 4: Configuration"
 read -rp "  Server name [My L4D2 Server]: " SERVER_NAME
 SERVER_NAME="${SERVER_NAME:-My L4D2 Server}"
-RCON_PASS=$(openssl rand -hex 8)
-read -rp "  RCON password [$RCON_PASS]: " INPUT_RCON
-RCON_PASS="${INPUT_RCON:-$RCON_PASS}"
-read -rp "  Start map [c1m1_hotel]: " START_MAP
-START_MAP="${START_MAP:-c1m1_hotel}"
-info "Server: $SERVER_NAME | Map: $START_MAP"
+info "Server: $SERVER_NAME"
 
 section "Step 5: Cleaning Up Existing Containers"
 EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^l4d2$" || true)
@@ -69,7 +64,7 @@ EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^l4d2$" || 
 
 section "Step 6: Preparing Directory"
 APP_DIR="/root/docker/l4d2"
-mkdir -p "$APP_DIR/data"
+mkdir -p "$APP_DIR/addons"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
@@ -77,22 +72,17 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   l4d2:
-    image: cm2network/l4d2:latest
+    image: left4devops/l4d2:latest
     container_name: l4d2
     restart: unless-stopped
     ports:
       - "27015:27015/tcp"
       - "27015:27015/udp"
-      - "27020:27020/udp"
     environment:
-      SRCDS_TOKEN: ""
-      SRCDS_RCONPW: "${RCON_PASS}"
-      SRCDS_PW: ""
-      SRCDS_STARTMAP: "${START_MAP}"
-      SRCDS_HOSTNAME: "${SERVER_NAME}"
-      SRCDS_MAXPLAYERS: 8
+      HOSTNAME: "${SERVER_NAME}"
+      REGION: 255
     volumes:
-      - ./data:/home/steam/l4d2-dedicated
+      - ./addons:/addons
 EOF
 info "docker-compose.yml created."
 
@@ -120,7 +110,6 @@ section "Step 10: Opening Firewall"
 if command -v ufw &> /dev/null; then
     ufw allow 27015/tcp
     ufw allow 27015/udp
-    ufw allow 27020/udp
     info "UFW: L4D2 ports opened."
 else
     warn "UFW not found — skipping."
@@ -135,8 +124,7 @@ echo "  ║  🧟  Left 4 Dead 2 Server:                         ║"
 printf  "  ║      Address: %-39s║\n" "$SERVER_IP:27015"
 echo "  ║                                                      ║"
 printf  "  ║      Name:      %-37s║\n" "$SERVER_NAME"
-printf  "  ║      Map:       %-37s║\n" "$START_MAP"
-printf  "  ║      RCON Pass: %-37s║\n" "$RCON_PASS"
+echo "  ║      Addons dir: $APP_DIR/addons"
 echo "  ║                                                      ║"
 echo "  ║  📋  connect $SERVER_IP:27015 (in L4D2 console)"
 echo "  ║  📋  Monitor: docker logs -f l4d2                  ║"

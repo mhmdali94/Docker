@@ -58,6 +58,10 @@ for cname in faveo faveo-db faveo-redis; do
     EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^${cname}$" || true)
     [ -n "$EXISTING" ] && warn "Removing $cname..." && docker rm -f "$cname" 2>/dev/null || true
 done
+if docker image inspect faveo-local &>/dev/null; then
+    warn "Removing existing faveo-local image..."
+    docker rmi -f faveo-local 2>/dev/null || true
+fi
 docker network prune -f &>/dev/null || true
 
 section "Step 5: Preparing Directory"
@@ -66,10 +70,25 @@ mkdir -p "$APP_DIR"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
-section "Step 6: Generating Credentials & docker-compose.yml"
+section "Step 6: Generating Credentials, Dockerfile & docker-compose.yml"
 DB_PASS=$(openssl rand -hex 16)
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
 info "Credentials generated."
+
+cat > "$APP_DIR/Dockerfile" <<'DOCKERFILE'
+FROM php:8.1-apache
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git unzip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libldap2-dev libicu-dev && \
+    docker-php-ext-configure gd --with-jpeg --with-freetype && \
+    docker-php-ext-install pdo_mysql mysqli zip gd ldap intl opcache && \
+    a2enmod rewrite && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 https://github.com/ladybirdweb/faveo-helpdesk.git /var/www/faveo && \
+    chown -R www-data:www-data /var/www/faveo
+ENV APACHE_DOCUMENT_ROOT=/var/www/faveo/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf && \
+    sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+EXPOSE 80
+DOCKERFILE
 
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
@@ -85,36 +104,20 @@ services:
     volumes:
       - ./mariadb:/var/lib/mysql
 
-  faveo-redis:
-    image: redis:7-alpine
-    container_name: faveo-redis
-    restart: unless-stopped
-    volumes:
-      - ./redis:/data
-
   faveo:
-    image: ladybirdweb/faveo-helpdesk:latest
+    image: faveo-local
     container_name: faveo
     restart: unless-stopped
     ports:
       - "8097:80"
-    environment:
-      DB_HOST: faveo-db
-      DB_DATABASE: faveo
-      DB_USERNAME: faveo
-      DB_PASSWORD: ${DB_PASS}
-      REDIS_HOST: faveo-redis
-      REDIS_PORT: 6379
-      APP_URL: http://${SERVER_IP}:8097
-    volumes:
-      - ./storage:/var/www/html/storage
     depends_on:
       - faveo-db
-      - faveo-redis
 EOF
-info "docker-compose.yml created."
+info "Dockerfile and docker-compose.yml created."
 
-section "Step 7: Starting Faveo"
+section "Step 7: Building & Starting Faveo"
+info "Building Faveo from the official repository (source build — takes several minutes)..."
+docker build --no-cache -t faveo-local "$APP_DIR" || error "Docker build failed."
 MAX_RETRIES=3
 for attempt in $(seq 1 $MAX_RETRIES); do
     if docker compose version &>/dev/null; then
@@ -152,7 +155,11 @@ echo "  ╠═══════════════════════
 echo "  ║  🎫  Faveo Helpdesk:                               ║"
 echo "  ║      👉  http://$SERVER_IP:8097"
 echo "  ║                                                      ║"
-echo "  ║  🔑  Complete setup wizard on first visit.         ║"
+echo "  ║  🔑  Complete the setup wizard on first visit:     ║"
+echo "  ║      DB Host    : faveo-db"
+echo "  ║      DB Name    : faveo"
+echo "  ║      DB User    : faveo"
+echo "  ║      DB Password: $DB_PASS"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"

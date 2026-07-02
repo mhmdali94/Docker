@@ -82,7 +82,7 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   strapi:
-    image: strapi/strapi:latest
+    image: elestio/strapi-development:latest
     container_name: strapi
     restart: unless-stopped
     ports:
@@ -99,7 +99,7 @@ services:
       ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
       JWT_SECRET: ${JWT_SECRET}
       TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT}
-      NODE_ENV: production
+      NODE_ENV: development
     volumes:
       - ./uploads:/opt/app/public/uploads
     depends_on:

@@ -56,13 +56,10 @@ fi
 section "Step 4: Configuration"
 read -rp "  Server name [My Barotrauma Server]: " SERVER_NAME
 SERVER_NAME="${SERVER_NAME:-My Barotrauma Server}"
-read -rp "  Server password (leave empty for public): " SERVER_PASS
-read -rp "  Max players [8]: " MAX_PLAYERS
-MAX_PLAYERS="${MAX_PLAYERS:-8}"
-ADMIN_PASS=$(openssl rand -hex 8)
-read -rp "  Owner (admin) password [$ADMIN_PASS]: " INPUT_ADMIN
-ADMIN_PASS="${INPUT_ADMIN:-$ADMIN_PASS}"
-info "Server: $SERVER_NAME | Players: $MAX_PLAYERS"
+SERVER_PASS=$(openssl rand -hex 8)
+read -rp "  Server password [$SERVER_PASS]: " INPUT_PASS
+SERVER_PASS="${INPUT_PASS:-$SERVER_PASS}"
+info "Server: $SERVER_NAME"
 
 section "Step 5: Cleaning Up Existing Containers"
 EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^barotrauma$" || true)
@@ -70,7 +67,7 @@ EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^barotrauma
 
 section "Step 6: Preparing Directory"
 APP_DIR="/root/docker/barotrauma"
-mkdir -p "$APP_DIR/data"
+mkdir -p "$APP_DIR/saves" "$APP_DIR/submarines"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
@@ -78,50 +75,27 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   barotrauma:
-    image: linuxserver/barotrauma:latest
+    image: goldfish92/barotrauma-dedicated-server:latest
     container_name: barotrauma
     restart: unless-stopped
     ports:
       - "27015:27015/udp"
       - "27016:27016/udp"
     environment:
-      PUID: 1000
-      PGID: 1000
-      TZ: UTC
+      BAR_NAME: "${SERVER_NAME}"
+      BAR_PASSWORD: "${SERVER_PASS}"
+      BAR_SERVERMESSAGE: "Powered by Docker"
     volumes:
-      - ./data:/config
+      - "./saves:/home/steam/.local/share/Daedalic Entertainment GmbH/Barotrauma/Multiplayer"
+      - ./submarines:/home/steam/barotrauma-dedicated/Submarines/github
 EOF
 info "docker-compose.yml created."
 
-section "Step 8: Writing server config"
-info "Waiting for initial files to be created..."
+section "Step 8: Starting Barotrauma Server"
 if docker compose version &> /dev/null; then
     docker compose up -d || error "Failed to start."
 else
     docker-compose up -d || error "Failed to start."
-fi
-sleep 30
-
-SETTINGS_DIR="$APP_DIR/data/serversettings.xml"
-if [ ! -f "$SETTINGS_DIR" ]; then
-    cat > "$SETTINGS_DIR" <<EOF
-<?xml version="1.0" encoding="utf-8"?>
-<serversettings name="${SERVER_NAME}"
-                password="${SERVER_PASS}"
-                public="true"
-                port="27015"
-                queryport="27016"
-                maxplayers="${MAX_PLAYERS}"
-                enableupnp="false"
-                autorestart="true"
-                saveserverlogs="true"
-                allowspectating="true"
-                allowrespawn="true"
-                karmaenabled="true"
-                ownerkey="${ADMIN_PASS}" />
-EOF
-    docker restart barotrauma 2>/dev/null || true
-    info "Server config written."
 fi
 
 section "Step 9: Waiting for Server (~60s)"
@@ -154,10 +128,9 @@ echo "  ║  🌊  Barotrauma Server:                            ║"
 printf  "  ║      Address: %-39s║\n" "$SERVER_IP:27015"
 echo "  ║                                                      ║"
 printf  "  ║      Name:       %-36s║\n" "$SERVER_NAME"
-printf  "  ║      Max Players:%-36s║\n" "$MAX_PLAYERS"
-printf  "  ║      Admin Key:  %-36s║\n" "$ADMIN_PASS"
+printf  "  ║      Password:   %-36s║\n" "$SERVER_PASS"
 echo "  ║                                                      ║"
-echo "  ║  📋  Config: ./data/serversettings.xml             ║"
+echo "  ║  📋  Saves: $APP_DIR/saves"
 echo "  ║  📋  Monitor: docker logs -f barotrauma            ║"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"

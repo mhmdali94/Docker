@@ -110,7 +110,7 @@ section "Step 8: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   lemmy:
-    image: dessalines/lemmy:latest
+    image: dessalines/lemmy:0.19.19
     container_name: lemmy
     restart: unless-stopped
     environment:
@@ -122,7 +122,7 @@ services:
       - lemmy-pictrs
 
   lemmy-ui:
-    image: dessalines/lemmy-ui:latest
+    image: dessalines/lemmy-ui:0.19.19
     container_name: lemmy-ui
     restart: unless-stopped
     ports:

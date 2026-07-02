@@ -105,7 +105,7 @@ info "Admin Password : $ADMIN_PASS"
 cat > "$SC_DIR/docker-compose.yml" <<EOF
 services:
   suitecrm-db:
-    image: bitnami/mariadb:10.6
+    image: bitnamilegacy/mariadb:10.6
     container_name: suitecrm-db
     restart: unless-stopped
     environment:
@@ -117,7 +117,7 @@ services:
       - ./db:/bitnami/mariadb
 
   suitecrm:
-    image: bitnami/suitecrm:latest
+    image: bitnamilegacy/suitecrm:latest
     container_name: suitecrm
     restart: unless-stopped
     depends_on:

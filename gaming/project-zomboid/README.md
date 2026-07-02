@@ -2,7 +2,7 @@
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Project Zomboid is a hardcore zombie survival multiplayer game. Powered by `linuxserver/projectzomboid` — pulls the dedicated server via SteamCMD.
+Project Zomboid is a hardcore zombie survival multiplayer game. Powered by `renegademaster/zomboid-dedicated-server` — pulls the dedicated server via SteamCMD.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 

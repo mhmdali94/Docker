@@ -69,7 +69,8 @@ EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^project-zo
 
 section "Step 6: Preparing Directory"
 APP_DIR="/root/docker/project-zomboid"
-mkdir -p "$APP_DIR/data"
+mkdir -p "$APP_DIR/ZomboidDedicatedServer" "$APP_DIR/ZomboidConfig"
+chown -R 1000:1000 "$APP_DIR/ZomboidDedicatedServer" "$APP_DIR/ZomboidConfig"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
@@ -77,21 +78,21 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   project-zomboid:
-    image: linuxserver/projectzomboid:latest
+    image: renegademaster/zomboid-dedicated-server:latest
     container_name: project-zomboid
     restart: unless-stopped
     ports:
       - "16261:16261/udp"
       - "16262:16262/udp"
     environment:
-      PUID: 1000
-      PGID: 1000
+      SERVER_NAME: "${SERVER_NAME}"
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: "${ADMIN_PASS}"
+      MAX_PLAYERS: "${MAX_PLAYERS}"
       TZ: UTC
-      VERSION: public
     volumes:
-      - ./data:/config
-    stdin_open: true
-    tty: true
+      - ./ZomboidDedicatedServer:/home/steam/ZomboidDedicatedServer
+      - ./ZomboidConfig:/home/steam/Zomboid
 EOF
 info "docker-compose.yml created."
 
@@ -103,22 +104,18 @@ else
     docker-compose up -d || error "Failed to start."
 fi
 
-info "Waiting 60s for server files to be created before configuring..."
-sleep 60
-
-section "Step 9: Configuring Server"
-SERVER_INI="$APP_DIR/data/Server/servertest.ini"
-if [ -f "$SERVER_INI" ]; then
-    sed -i "s/^PublicName=.*/PublicName=${SERVER_NAME}/" "$SERVER_INI" 2>/dev/null || true
-    sed -i "s/^MaxPlayers=.*/MaxPlayers=${MAX_PLAYERS}/" "$SERVER_INI" 2>/dev/null || true
-    info "Server config updated."
-else
-    warn "Server config not yet created — configure manually in $SERVER_INI"
-fi
-
-# Set admin password
-docker exec project-zomboid /bin/bash -c "echo \"${ADMIN_PASS}\" | /app/projectzomboid/ProjectZomboid64 -nosteam -adminpassword \"${ADMIN_PASS}\"" 2>/dev/null || true
-docker restart project-zomboid 2>/dev/null || true
+section "Step 9: Waiting for Server (~10 min first start)"
+info "Waiting for Project Zomboid server to start (downloads on first run)..."
+for i in $(seq 1 36); do
+    if docker logs project-zomboid 2>&1 | grep -qi "SERVER STARTED"; then
+        info "Project Zomboid server is ready. ✅"
+        break
+    fi
+    echo -n "  Attempt $i/36 — waiting 10s..."
+    sleep 10
+    echo " retrying"
+done
+info "Server settings can be tuned in $APP_DIR/ZomboidConfig/Server/"
 
 section "Step 10: Opening Firewall"
 if command -v ufw &> /dev/null; then

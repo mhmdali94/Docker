@@ -73,7 +73,7 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   rocketchat:
-    image: rocket.chat:latest
+    image: rocketchat/rocket.chat:latest
     container_name: rocketchat
     restart: unless-stopped
     ports:

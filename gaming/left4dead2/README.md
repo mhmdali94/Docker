@@ -2,7 +2,7 @@
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Left 4 Dead 2 is a co-op zombie shooter with 4-player campaigns and Versus mode. Powered by `cm2network/l4d2`.
+Left 4 Dead 2 is a co-op zombie shooter with 4-player campaigns and Versus mode. Powered by `left4devops/l4d2`.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 
@@ -45,8 +45,7 @@ The script automatically:
 
 | Port | Protocol | Purpose |
 |------|----------|---------|
-| `27015` | TCP + UDP | Game + RCON |
-| `27020` | UDP | SourceTV |
+| `27015` | TCP + UDP | Game |
 
 ---
 
@@ -74,7 +73,6 @@ The script automatically:
 
 ## Features
 
-- RCON remote administration
 - SourceMod/MetaMod plugin support
 - Up to 8 players (4v4 Versus)
 - Server data persisted in `./data/`
@@ -112,7 +110,7 @@ cd /root/docker/l4d2 && docker compose pull && docker compose up -d
 
 - Ubuntu 22.04 or 24.04
 - Root or sudo access
-- Ports 27015/tcp+udp, 27020/udp open in firewall
+- Ports 27015/tcp+udp open in firewall
 
 ---
 

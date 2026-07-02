@@ -71,7 +71,7 @@ EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^7dtd$" || 
 
 section "Step 6: Preparing Directory"
 APP_DIR="/root/docker/7dtd"
-mkdir -p "$APP_DIR/data" "$APP_DIR/config"
+mkdir -p "$APP_DIR/ServerFiles" "$APP_DIR/data" "$APP_DIR/LGSMConfig" "$APP_DIR/logs"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
@@ -79,7 +79,7 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   7dtd:
-    image: linuxserver/7dtd:latest
+    image: vinanrra/7dtd-server:latest
     container_name: 7dtd
     restart: unless-stopped
     ports:
@@ -90,19 +90,26 @@ services:
       - "8080:8080/tcp"
       - "8082:8082/tcp"
     environment:
+      START_MODE: 1
+      VERSION: stable
       PUID: 1000
       PGID: 1000
-      TZ: UTC
-      START_MODE: 0
-      VERSION: stable
-      SERVERCONFIG: serverconfig.xml
+      TimeZone: UTC
+      MONITOR: "YES"
     volumes:
-      - ./data:/config
+      - ./ServerFiles:/home/sdtdserver/serverfiles/
+      - ./data:/home/sdtdserver/.local/share/7DaysToDie/
+      - ./LGSMConfig:/home/sdtdserver/lgsm/config-lgsm/sdtdserver
+      - ./logs:/home/sdtdserver/log/
+    ulimits:
+      nofile:
+        soft: "10240"
+        hard: "10240"
 EOF
 info "docker-compose.yml created."
 
-section "Step 8: Writing serverconfig.xml"
-cat > "$APP_DIR/data/serverconfig.xml" <<EOF
+section "Step 8: Writing sdtdserver.xml"
+cat > "$APP_DIR/ServerFiles/sdtdserver.xml" <<EOF
 <?xml version="1.0"?>
 <ServerSettings>
   <property name="ServerName"              value="${SERVER_NAME}"/>

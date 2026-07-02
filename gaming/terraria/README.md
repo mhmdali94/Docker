@@ -2,7 +2,7 @@
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Terraria is a 2D sandbox adventure multiplayer game. Powered by `linuxserver/terraria`.
+Terraria is a 2D sandbox adventure multiplayer game. Powered by `ryshe/terraria`.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 

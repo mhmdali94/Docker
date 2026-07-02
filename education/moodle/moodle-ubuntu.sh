@@ -81,7 +81,7 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   moodle:
-    image: bitnami/moodle:latest
+    image: bitnamilegacy/moodle:latest
     container_name: moodle
     restart: unless-stopped
     ports:
@@ -105,7 +105,7 @@ services:
       - moodle-mariadb
 
   moodle-mariadb:
-    image: bitnami/mariadb:10.11
+    image: bitnamilegacy/mariadb:10.11
     container_name: moodle-mariadb
     restart: unless-stopped
     environment:

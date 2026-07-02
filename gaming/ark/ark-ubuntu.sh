@@ -75,7 +75,7 @@ EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^ark$" || t
 
 section "Step 6: Preparing Directory"
 APP_DIR="/root/docker/ark"
-mkdir -p "$APP_DIR/data" "$APP_DIR/cluster"
+mkdir -p "$APP_DIR/data" "$APP_DIR/backups"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
@@ -83,7 +83,7 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   ark:
-    image: hermsi1337/docker-ark-survival-evolved:latest
+    image: hermsi/ark-server:latest
     container_name: ark
     restart: unless-stopped
     ports:
@@ -92,23 +92,19 @@ services:
       - "27015:27015/udp"
       - "32330:32330/tcp"
     environment:
-      ARK_SERVER_NAME: "${SERVER_NAME}"
-      ARK_SESSION_NAME: "${SERVER_NAME}"
-      ARK_SERVER_PASSWORD: "${SERVER_PASS}"
-      ARK_ADMIN_PASSWORD: "${ADMIN_PASS}"
-      ARK_MAP: "${MAP}"
-      ARK_MAX_PLAYERS: "${MAX_PLAYERS}"
-      ARK_DIFFICULTY_OFFSET: "0.2"
-      ARK_XP_MULTIPLIER: "1.0"
-      ARK_TAMING_SPEED_MULTIPLIER: "1.0"
-      ARK_HARVESTING_DAMAGE_MULTIPLIER: "1.0"
-      ARK_OVERRIDE_OFFICIAL_DIFFICULTY: "5.0"
-      ARK_ENABLE_RCON: "true"
-      ARK_RCON_PORT: 32330
-      ARK_RCON_PASSWORD: "${ADMIN_PASS}"
+      SESSION_NAME: "${SERVER_NAME}"
+      SERVER_MAP: "${MAP}"
+      SERVER_PASSWORD: "${SERVER_PASS}"
+      ADMIN_PASSWORD: "${ADMIN_PASS}"
+      MAX_PLAYERS: "${MAX_PLAYERS}"
+      GAME_CLIENT_PORT: 7777
+      UDP_SOCKET_PORT: 7778
+      SERVER_LIST_PORT: 27015
+      RCON_PORT: 32330
+      UPDATE_ON_START: "false"
     volumes:
-      - ./data:/ark
-      - ./cluster:/arkcluster
+      - ./data:/app
+      - ./backups:/home/steam/ARK-Backups
 EOF
 info "docker-compose.yml created."
 
@@ -123,7 +119,7 @@ fi
 section "Step 9: Waiting for Server (~60 min first download)"
 info "Waiting for ARK server to start (very long first download)..."
 for i in $(seq 1 36); do
-    if docker logs ark 2>&1 | grep -q "Server listening"; then
+    if docker exec ark arkmanager status 2>/dev/null | grep -qi "listening:.*yes"; then
         info "ARK server is ready. ✅"
         break
     fi

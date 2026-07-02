@@ -2,7 +2,7 @@
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-Garry's Mod is a sandbox physics game with a massive modding ecosystem. Powered by `FragSoc/garrysmod-docker`.
+Garry's Mod is a sandbox physics game with a massive modding ecosystem. Powered by `ceifa/garrysmod`.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 

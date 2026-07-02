@@ -71,32 +71,24 @@ EXISTING=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^terraria$"
 
 section "Step 6: Preparing Directory"
 APP_DIR="/root/docker/terraria"
-mkdir -p "$APP_DIR/world" "$APP_DIR/config"
+mkdir -p "$APP_DIR/world"
 cd "$APP_DIR" || error "Cannot navigate to $APP_DIR"
 info "Directory ready: $APP_DIR"
 
 section "Step 7: Writing docker-compose.yml"
+PASS_ARG=""
+[ -n "$SERVER_PASS" ] && PASS_ARG=" -pass ${SERVER_PASS}"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   terraria:
-    image: linuxserver/terraria:latest
+    image: ryshe/terraria:latest
     container_name: terraria
     restart: unless-stopped
     ports:
       - "7777:7777/tcp"
-    environment:
-      PUID: 1000
-      PGID: 1000
-      TZ: UTC
-      WORLD: /config/world/${WORLD_NAME}.wld
-      AUTOCREATE: "${WORLD_SIZE}"
-      WORLDNAME: "${WORLD_NAME}"
-      MAXPLAYERS: "${MAX_PLAYERS}"
-      PASSWORD: "${SERVER_PASS}"
-      DIFFICULTY: "${DIFFICULTY}"
+    command: -world /root/.local/share/Terraria/Worlds/${WORLD_NAME}.wld -autocreate ${WORLD_SIZE} -worldname ${WORLD_NAME} -maxplayers ${MAX_PLAYERS} -difficulty ${DIFFICULTY}${PASS_ARG}
     volumes:
-      - ./world:/config/world
-      - ./config:/config
+      - ./world:/root/.local/share/Terraria/Worlds
     stdin_open: true
     tty: true
 EOF

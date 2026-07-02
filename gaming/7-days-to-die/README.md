@@ -2,7 +2,7 @@
 
 > ⚠️ **FOR DEMO / TESTING PURPOSES ONLY — NOT INTENDED FOR PRODUCTION USE.**
 
-7 Days to Die is a zombie survival game with tower defense, crafting, and base building. Powered by `linuxserver/7dtd`.
+7 Days to Die is a zombie survival game with tower defense, crafting, and base building. Powered by `vinanrra/7dtd-server`.
 
 **Made by:** Mohammed Ali Elshikh — [prismatechwork.com](https://prismatechwork.com)
 

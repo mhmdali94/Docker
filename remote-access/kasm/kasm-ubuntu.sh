@@ -71,11 +71,14 @@ section "Step 6: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<'EOF'
 services:
   kasm:
-    image: kasmweb/kasm:1.15.0
+    image: lscr.io/linuxserver/kasm:latest
     container_name: kasm
     restart: unless-stopped
     privileged: true
+    environment:
+      KASM_PORT: "443"
     ports:
+      - "3000:3000"
       - "443:443"
     volumes:
       - ./opt:/opt
@@ -97,11 +100,11 @@ for attempt in $(seq 1 $MAX_RETRIES); do
 done
 
 section "Step 8: Health Check"
-info "Waiting for Kasm on port 443 (may take 2-3 min)..."
+info "Waiting for Kasm setup wizard on port 3000 (may take 2-3 min)..."
 HEALTH_OK=0
 for i in $(seq 1 18); do
-    if curl -sk --max-time 5 https://127.0.0.1:443 &>/dev/null; then
-        info "Port 443 is responding. ✅"; HEALTH_OK=1; break
+    if curl -sk --max-time 5 https://127.0.0.1:3000 &>/dev/null; then
+        info "Port 3000 is responding. ✅"; HEALTH_OK=1; break
     fi
     echo -n "  Attempt $i/18 — waiting 10s..."; sleep 10; echo " retrying"
 done
@@ -109,7 +112,7 @@ done
 
 section "Step 9: Opening Firewall"
 if command -v ufw &>/dev/null; then
-    ufw allow 443/tcp; info "UFW: port 443 opened."
+    ufw allow 3000/tcp; ufw allow 443/tcp; info "UFW: ports 3000 and 443 opened."
 else
     warn "UFW not found — skipping."
 fi
@@ -120,11 +123,13 @@ echo "  ╔═══════════════════════
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║  🖥️  Kasm Workspaces (Browser Desktops):           ║"
-echo "  ║      👉  https://$SERVER_IP"
 echo "  ║                                                      ║"
-echo "  ║  🔑  Default login:                                ║"
-echo "  ║      admin@kasm.local / admin                      ║"
-echo "  ║      Change immediately after first login!         ║"
+echo "  ║  1️⃣   Run the setup wizard first:                  ║"
+echo "  ║      👉  https://$SERVER_IP:3000"
+echo "  ║      (admin passwords are set in the wizard)        ║"
+echo "  ║                                                      ║"
+echo "  ║  2️⃣   Then open Kasm at:                           ║"
+echo "  ║      👉  https://$SERVER_IP"
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  Accept the self-signed cert warning.          ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
