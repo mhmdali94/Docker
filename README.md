@@ -23,6 +23,16 @@ A growing collection of one-command Docker installer scripts for self-hosted ser
 - Generates secure credentials on every run
 - Clean reinstall — re-running removes the previous deployment
 - Each service deploys under `/root/docker/<service>`
+- Every Docker image is verified against its registry before release
+
+---
+
+## What's New — July 2026
+
+- **90 new services** added, including Wiki.js, Cal.com, Penpot, Zabbix, UniFi & Omada controllers, MeshCentral, Taiga, Forgejo, NetBox, MISP, TheHive, RabbitMQ, CouchDB, Superset, Windmill, and more
+- **Two new categories:** [Downloads](./downloads/) (qBittorrent, SABnzbd, MeTube…) and [Cameras](./cameras/) (Frigate NVR, go2rtc)
+- All existing scripts audited: dead Docker images replaced, broken configs fixed
+- Services without a public image now **build from official sources** (Medusa, Payload, Faveo, GNU Health, IceHRM)
 
 ---
 
@@ -46,6 +56,13 @@ sudo bash jellyfin-ubuntu.sh
 wget https://raw.githubusercontent.com/mhmdali94/Docker/main/security/vaultwarden/vaultwarden-ubuntu.sh
 chmod +x vaultwarden-ubuntu.sh
 sudo bash vaultwarden-ubuntu.sh
+```
+
+**Example — install Wiki.js:**
+```bash
+wget https://raw.githubusercontent.com/mhmdali94/Docker/main/tools/wikijs/wikijs-ubuntu.sh
+chmod +x wikijs-ubuntu.sh
+sudo bash wikijs-ubuntu.sh
 ```
 
 See the `README.md` inside each service folder for exact ports, credentials, and post-install steps.
@@ -115,10 +132,12 @@ Every script follows the same flow:
 6. Create `/root/docker/<service>` and subdirectories
 7. Generate credentials and write configuration files
 8. Pull images and start the Docker Compose stack
-9. Verify containers are running
-10. Run a basic HTTP health check
-11. Open required firewall ports via UFW (if installed)
+9. Open required firewall ports via UFW (if installed)
+10. Verify containers are running
+11. Run a basic health check (HTTP/TCP/log-based)
 12. Print access URL, credentials, and management tips
+
+A few services with no public Docker image (Medusa, Payload, Faveo, GNU Health, IceHRM) build a local image from official sources — their first install takes several extra minutes.
 
 ---
 
@@ -209,6 +228,7 @@ rm -rf /root/docker/<service>
 - Credentials are generated or set to defaults during installation — change them before exposing services publicly.
 - Some services require additional post-install steps (DNS, SMTP, OAuth, reverse proxy config, client-side setup).
 - Some installers use host networking, Docker socket access, or elevated capabilities where required by the service.
+- Heavy stacks (TheHive, Taiga, MISP, ThingsBoard, UniFi) need 4–8 GB of RAM — check the service README before installing.
 - For production-grade deployments, treat these scripts as starting points and apply proper hardening.
 
 ---
