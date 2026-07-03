@@ -85,7 +85,7 @@ section "Step 7: Writing docker-compose.yml"
 cat > "$APP_DIR/docker-compose.yml" <<EOF
 services:
   hoarder:
-    image: ghcr.io/hoarder-app/hoarder:release
+    image: ghcr.io/karakeep-app/karakeep:release
     container_name: hoarder
     restart: unless-stopped
     ports:
