@@ -1,8 +1,8 @@
 # Docker Self-Hosted Services Collection
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Services](https://img.shields.io/badge/Services-130+-brightgreen)
-![Categories](https://img.shields.io/badge/Categories-28-purple)
+![Services](https://img.shields.io/badge/Services-323+-brightgreen)
+![Categories](https://img.shields.io/badge/Categories-35-purple)
 ![Platform](https://img.shields.io/badge/Platform-Ubuntu%2022.04%20%7C%2024.04-orange)
 ![Made by](https://img.shields.io/badge/Made%20by-Mohammed%20Ali%20Elshikh-blue)
 
@@ -16,7 +16,7 @@ A growing collection of one-command Docker installer scripts for self-hosted ser
 
 ## At a Glance
 
-- **130+ services** across **28 categories**
+- **323+ services** across **35 categories**
 - One-command install — just `wget` and `bash`
 - Ubuntu 22.04 and 24.04 support
 - Auto-installs Docker & Docker Compose V2 if missing
@@ -65,37 +65,41 @@ See the `README.md` inside each service folder for exact ports, credentials, and
 
 | Category | Services |
 |---|---|
-| [AI](./ai/) | Ollama, Open WebUI, AnythingLLM, Flowise, LocalAI, Dify, Langfuse, LibreChat, ComfyUI, Whisper, Qdrant, SearXNG |
-| [Analytics](./analytics/) | Plausible, Umami, Metabase, NocoDB, Baserow, Redash, Matomo |
 | [Accounting](./accounting/) | Akaunting, Invoice Ninja |
-| [Automation](./automation/) | N8N, Node-RED, ActivePieces |
-| [Backup](./backup/) | Duplicati, Kopia, Restic REST Server |
-| [Clinic](./clinic/) | OpenMRS, GNU Health, OpenEMR |
-| [CMS](./cms/) | Directus, Strapi, Payload, PocketBase, WordPress |
-| [Communication](./communication/) | Mattermost, ntfy, Chatwoot, Zulip, Matrix + Element, RocketChat, Jitsi |
-| [CRM](./crm/) | SuiteCRM, EspoCRM |
-| [Databases](./databases/) | PostgreSQL, MariaDB, MongoDB, Redis, MinIO, InfluxDB, Elasticsearch, ClickHouse, Neo4j, MeiliSearch, Adminer, pgAdmin |
-| [Dev](./dev/) | Gitea, GitLab, Harbor, Woodpecker, SonarQube, Infisical, Plane, Nexus, GlitchTip, Code-Server, Verdaccio, Coder, Jenkins, Coolify, Weblate |
+| [AI](./ai/) | AnythingLLM, Chroma, ComfyUI, Dify, Flowise, Langfuse, LibreChat, LiteLLM, LocalAI, Ollama, Open WebUI, Perplexica, Qdrant, SearXNG, Weaviate, Whisper |
+| [Analytics](./analytics/) | Baserow, Matomo, Metabase, NocoDB, Plausible, Redash, Superset, Umami |
+| [Automation](./automation/) | ActivePieces, Automatisch, Huginn, Kestra, N8N, Node-RED, Semaphore, Windmill |
+| [Backup](./backup/) | Duplicati, Kopia, Restic |
+| [Cameras](./cameras/) | Frigate, go2rtc |
+| [Clinic](./clinic/) | GNU Health, OpenEMR, OpenMRS |
+| [CMS](./cms/) | Directus, Drupal, Joomla, Payload, PocketBase, Strapi, WordPress |
+| [Communication](./communication/) | Chatwoot, Gotify, Jitsi, Matrix + Element, Mattermost, MiroTalk, Mumble, ntfy, RocketChat, Zulip |
+| [CRM](./crm/) | EspoCRM, SuiteCRM |
+| [Databases](./databases/) | Adminer, ClickHouse, CouchDB, Elasticsearch, InfluxDB, MariaDB, MeiliSearch, MinIO, MongoDB, NATS, Neo4j, pgAdmin, PostgreSQL, RabbitMQ, Redis, SurrealDB, TimescaleDB |
+| [Dev](./dev/) | Code-Server, Coder, Coolify, Forgejo, Gitea, GitLab, GlitchTip, Harbor, Hoppscotch, Infisical, Jenkins, Nexus, OneDev, Plane, SonarQube, Verdaccio, Weblate, Woodpecker |
+| [Downloads](./downloads/) | Aria2 + AriaNg, MeTube, Pinchflat, qBittorrent, SABnzbd, Transmission |
 | [Ecommerce](./ecommerce/) | Medusa, PrestaShop, Saleor, Shopware |
-| [Education](./education/) | Moodle, Open edX |
-| [Email](./email/) | Listmonk, Mailcow, Mailu, Mautic |
-| [ERP](./erp/) | Odoo 16, Odoo 17, Odoo 18, ERPNext, Dolibarr, iDempiere |
-| [Files](./files/) | FileBrowser, Nextcloud, Paperless-ngx |
-| [Finance](./finance/) | Maybe Finance |
-| [Gaming](./gaming/) | GameVault, Pterodactyl |
-| [HR](./hr/) | OrangeHRM, IceHRM |
-| [Low-Code](./low-code/) | Appsmith, Tooljet |
-| [Management](./management/) | Portainer, Dockge, Watchtower, Dashy, Homarr |
-| [Media](./media/) | Immich, Jellyfin, PhotoPrism, Navidrome, Audiobookshelf, Kavita, Komga, FreshRSS, TubeArchivist, Overseerr, PeerTube, Plex, Sonarr, Radarr, Lidarr, Bazarr, Prowlarr |
-| [Monitoring](./monitoring/) | Grafana, Prometheus, Uptime Kuma, Netdata, Beszel, Graylog, Loki, SigNoz, OpenObserve, VictoriaMetrics, Healthchecks, Cachet, Gatus |
-| [Networking](./networking/) | Nginx Proxy Manager, Traefik, Caddy, AdGuard Home, Pi-hole, Technitium DNS, Cloudflared, FRP, HAProxy, Nginx |
-| [Project Management](./project-management/) | Leantime, OpenProject |
-| [Remote Access](./remote-access/) | Guacamole, RustDesk, Remotely, Kasm |
-| [Security](./security/) | Authelia, Authentik, Vaultwarden, Keycloak, CrowdSec, Wazuh, Passbolt, DefectDojo, OpenVAS, Trivy, Vault, OWASP ZAP |
-| [Social](./social/) | Mastodon, Lemmy, Pixelfed, Misskey, WriteFreely |
-| [Support](./support/) | Zammad, osTicket, Faveo, FreeScout, Peppermint |
-| [Tools](./tools/) | IT-Tools, Stirling-PDF, Excalidraw, Outline, Memos, BookStack, Docmost, Vikunja, Firefly III, Monica, Twenty, Typebot, Ghost, HedgeDoc, Formbricks, Mealie, Tandoor, Kimai, Shlink, Wallabag, Hoarder, LibreTranslate, Docuseal, Actual Budget, Changedetection, Joplin Server, Linkwarden |
-| [VPN](./vpn/) | WireGuard Easy, NetBird, Headscale, 3X-UI, OpenVPN AS, Pritunl, SoftEther, Outline |
+| [Education](./education/) | Moodle |
+| [Email](./email/) | Docker Mailserver, Listmonk, Mailcow, Mailpit, Mailu, Mautic, Roundcube, Stalwart |
+| [ERP](./erp/) | Dolibarr, ERPNext, Grocy, iDempiere, InvenTree, Odoo 16, Odoo 17, Odoo 18, Tryton |
+| [Files](./files/) | FileBrowser, Nextcloud, PairDrop, Paperless-ngx, ProjectSend, Seafile, SFTPGo, Syncthing |
+| [Finance](./finance/) | Ghostfolio, Maybe Finance, Wallos |
+| [Gaming](./gaming/) | 7 Days to Die, ARK, Barotrauma, Core Keeper, CS2, Don't Starve Together, Enshrouded, Factorio, Garry's Mod, Left 4 Dead 2, Minecraft Bedrock, Minecraft Java, Minetest, OpenRA, OpenTTD, Palworld, Project Zomboid, Pterodactyl, Rust, Satisfactory, Terraria, Team Fortress 2, V Rising, Valheim |
+| [HR](./hr/) | Horilla, IceHRM, OrangeHRM |
+| [IoT](./iot/) | ESPHome, Home Assistant, Mosquitto, ThingsBoard, Zigbee2MQTT |
+| [Low-Code](./low-code/) | Appsmith, Budibase, NocoBase, Tooljet |
+| [Management](./management/) | Dashy, Dockge, Glance, Homarr, Homepage, Komodo, Portainer, Watchtower, Yacht |
+| [Media](./media/) | Audiobookshelf, Bazarr, Calibre-Web, FreshRSS, Immich, Jellyfin, Jellyseerr, Kavita, Komga, Lidarr, Navidrome, Overseerr, PeerTube, PhotoPrism, Plex, Prowlarr, Radarr, Sonarr, Tautulli, TubeArchivist |
+| [Monitoring](./monitoring/) | Beszel, Cachet, Checkmk, Dozzle, Gatus, Grafana, Graylog, Healthchecks, LibreNMS, Loki, Netdata, OpenObserve, Prometheus, Scrutiny, SigNoz, Speedtest Tracker, Uptime Kuma, VictoriaMetrics, Zabbix |
+| [Networking](./networking/) | AdGuard Home, Caddy, Cloudflared, FRP, HAProxy, LibreSpeed, Nginx, Nginx Proxy Manager, Omada Controller, Pi-hole, Tailscale, Technitium DNS, Traefik, UniFi Controller, Zoraxy |
+| [POS](./pos/) | OpenSourcePOS |
+| [Project Management](./project-management/) | Kanboard, Leantime, OpenProject, Redmine, Taiga, WeKan |
+| [Remote Access](./remote-access/) | Guacamole, Kasm, MeshCentral, Remotely, RustDesk, Sshwifty |
+| [Security](./security/) | Authelia, Authentik, CrowdSec, DefectDojo, Keycloak, MISP, NetBox, OpenVAS, OWASP ZAP, Passbolt, TheHive, Trivy, Vault, Vaultwarden, Wazuh |
+| [Social](./social/) | Flarum, GoToSocial, Lemmy, Mastodon, Misskey, NodeBB, Pixelfed, WriteFreely |
+| [Support](./support/) | Faveo, FreeScout, osTicket, Peppermint, Zammad |
+| [Tools](./tools/) | Actual Budget, ArchiveBox, BookStack, Cal.com, Changedetection, Docmost, Docuseal, draw.io, Etherpad, Excalidraw, Firefly III, Formbricks, Ghost, HedgeDoc, Hoarder, Homebox, IT-Tools, Joplin Server, Kimai, LibreTranslate, Linkwarden, Mealie, Memos, Monica, OnlyOffice, Outline, Penpot, PrivateBin, Rallly, Shlink, Snipe-IT, Stirling-PDF, Tandoor, Trilium, Twenty, Typebot, Vikunja, Wallabag, Wiki.js |
+| [VPN](./vpn/) | 3X-UI, Headscale, NetBird, OpenVPN AS, Outline, Pritunl, SoftEther, WireGuard Easy, ZTNET |
 
 ---
 
@@ -122,17 +126,19 @@ Every script follows the same flow:
 
 ```
 .
+├── accounting/
 ├── ai/
 ├── analytics/
-├── accounting/
 ├── automation/
 ├── backup/
+├── cameras/
 ├── clinic/
 ├── cms/
 ├── communication/
 ├── crm/
 ├── databases/
 ├── dev/
+├── downloads/
 ├── ecommerce/
 ├── education/
 ├── email/
@@ -141,11 +147,13 @@ Every script follows the same flow:
 ├── finance/
 ├── gaming/
 ├── hr/
+├── iot/
 ├── low-code/
 ├── management/
 ├── media/
 ├── monitoring/
 ├── networking/
+├── pos/
 ├── project-management/
 ├── remote-access/
 ├── security/
