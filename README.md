@@ -82,41 +82,41 @@ See the `README.md` inside each service folder for exact ports, credentials, and
 
 | Category | Services |
 |---|---|
-| [3D Printing](./3d-printing/) | Manyfold, Octoprint, Spoolman |
+| [3D Printing](./3d-printing/) | Manyfold, OctoPrint, Spoolman |
 | [Accounting](./accounting/) | Akaunting, Invoice Ninja, InvoiceShelf |
-| [AI](./ai/) | AnythingLLM, Chroma, ComfyUI, Dify, Flowise, Kokoro, Langflow, Langfuse, LibreChat, LiteLLM, LobeChat, LocalAI, Milvus, Mindsdb, Ollama, Open WebUI, Perplexica, Qdrant, SearXNG, SillyTavern, Speaches, Weaviate, Whisper |
+| [AI](./ai/) | AnythingLLM, Chroma, ComfyUI, Dify, Flowise, Kokoro TTS, Langflow, Langfuse, LibreChat, LiteLLM, LobeChat, LocalAI, Milvus, MindsDB, Ollama, Open WebUI, Perplexica, Qdrant, SearXNG, SillyTavern, Speaches, Weaviate, Whisper |
 | [Analytics](./analytics/) | Baserow, Lightdash, Matomo, Metabase, NocoDB, Plausible, Redash, Shynet, Superset, Swetrix, Umami |
-| [Automation](./automation/) | ActivePieces, Airflow, Automatisch, Huginn, Kestra, N8N, Node-RED, Semaphore, Windmill |
+| [Automation](./automation/) | ActivePieces, Apache Airflow, Automatisch, Huginn, Kestra, N8N, Node-RED, Semaphore, Windmill |
 | [Backup](./backup/) | Backrest, Borgmatic, Duplicati, Kopia, Restic REST Server, UrBackup |
 | [Cameras](./cameras/) | Frigate, go2rtc, Scrypted |
 | [Clinic & Health](./clinic/) | Fasten Health, GNU Health, Nightscout, OpenEMR, OpenMRS, wger |
 | [CMS](./cms/) | Directus, Drupal, Grav, Joomla, Payload, PocketBase, Strapi, WordPress |
-| [Communication](./communication/) | Apprise, Chatwoot, ejabberd, Gotify, Jitsi, LiveKit, Matrix + Element, Mattermost, MiroTalk, Mumble, ntfy, RocketChat, Signal Api, Teamspeak, Zulip |
+| [Communication](./communication/) | Apprise, Chatwoot, ejabberd, Gotify, Jitsi, LiveKit, Matrix + Element, Mattermost, MiroTalk, Mumble, ntfy, RocketChat, Signal REST API, TeamSpeak, Zulip |
 | [CRM](./crm/) | EspoCRM, SuiteCRM |
-| [Databases](./databases/) | Adminer, Arangodb, ClickHouse, Cloudbeaver, CouchDB, Dragonfly, Elasticsearch, InfluxDB, MariaDB, MeiliSearch, MinIO, MongoDB, NATS, Neo4j, Opensearch, pgAdmin, PostgreSQL, Questdb, RabbitMQ, Redis, Surrealdb, TimescaleDB, Typesense, Valkey |
-| [Dev](./dev/) | Appwrite, Atuin, Code-Server, Coder, Coolify, Dokploy, Flagsmith, Forgejo, Gitea, GitLab, Gitness, GlitchTip, Harbor, Hoppscotch, Infisical, Jenkins, Judge0, Localstack, Nexus, OneDev, Opengist, Plane, Registry, Sentry, SonarQube, Supabase, Tolgee, Unleash, Verdaccio, Wakapi, Weblate, Woodpecker |
-| [Downloads](./downloads/) | Aria2 + AriaNg, Deluge, MeTube, Nzbget, Pinchflat, qBittorrent, SABnzbd, Slskd, Transmission |
+| [Databases](./databases/) | Adminer, ArangoDB, ClickHouse, CloudBeaver, CouchDB, DragonflyDB, Elasticsearch, InfluxDB, MariaDB, MeiliSearch, MinIO, MongoDB, NATS, Neo4j, OpenSearch, pgAdmin, PostgreSQL, QuestDB, RabbitMQ, Redis, SurrealDB, TimescaleDB, Typesense, Valkey |
+| [Dev](./dev/) | Appwrite, Atuin, Code-Server, Coder, Coolify, Docker Registry, Dokploy, Flagsmith, Forgejo, Gitea, GitLab, Gitness, GlitchTip, Harbor, Hoppscotch, Infisical, Jenkins, Judge0, LocalStack, Nexus, OneDev, Opengist, Plane, Sentry, SonarQube, Supabase, Tolgee, Unleash, Verdaccio, Wakapi, Weblate, Woodpecker |
+| [Downloads](./downloads/) | Aria2 + AriaNg, Deluge, MeTube, NZBGet, Pinchflat, qBittorrent, SABnzbd, slskd, Transmission |
 | [Ecommerce](./ecommerce/) | Bagisto, EverShop, Medusa, PrestaShop, Saleor, Shopware |
 | [Education](./education/) | Kolibri, Moodle |
-| [Email](./email/) | addy.io, Docker Mailserver, Keila, Listmonk, Mailcow, Mailpit, Mailu, Mautic, Roundcube, Snappymail, Stalwart |
-| [ERP](./erp/) | Dolibarr, ERPNext, Grocy, iDempiere, InvenTree, Odoo 16, Odoo 17, Odoo 18, Part Db, Tryton |
-| [Files](./files/) | copyparty, FileBrowser, Filestash, Nextcloud, OpenCloud, PairDrop, Paperless-ngx, ProjectSend, Seafile, Seaweedfs, SFTPGo, Syncthing |
+| [Email](./email/) | addy.io, Docker Mailserver, Keila, Listmonk, Mailcow, Mailpit, Mailu, Mautic, Roundcube, SnappyMail, Stalwart |
+| [ERP](./erp/) | Dolibarr, ERPNext, Grocy, iDempiere, InvenTree, Odoo 16, Odoo 17, Odoo 18, Part-DB, Tryton |
+| [Files](./files/) | copyparty, FileBrowser, Filestash, Nextcloud, OpenCloud, PairDrop, Paperless-ngx, ProjectSend, Seafile, SeaweedFS, SFTPGo, Syncthing |
 | [Finance](./finance/) | Ghostfolio, Maybe Finance, Wallos |
-| [Gaming](./gaming/) | 7 Days to Die, ARK, Barotrauma, Core Keeper, Crafty, CS2, Don't Starve Together, Enshrouded, Factorio, Foundryvtt, Garry's Mod, Left 4 Dead 2, Minecraft Bedrock, Minecraft Java, Minetest, OpenRA, OpenTTD, Palworld, Project Zomboid, Pterodactyl, Rust, Satisfactory, Team Fortress 2, Terraria, V Rising, Valheim, Vintage Story |
+| [Gaming](./gaming/) | 7 Days to Die, ARK, Barotrauma, Core Keeper, Crafty Controller, CS2, Don't Starve Together, Enshrouded, Factorio, Foundry VTT, Garry's Mod, Left 4 Dead 2, Minecraft Bedrock, Minecraft Java, Minetest, OpenRA, OpenTTD, Palworld, Project Zomboid, Pterodactyl, Rust, Satisfactory, Team Fortress 2, Terraria, V Rising, Valheim, Vintage Story |
 | [HR](./hr/) | Horilla, IceHRM, OrangeHRM |
-| [IoT](./iot/) | EMQX, ESPHome, Evcc, Home Assistant, Mosquitto, openHAB, TeslaMate, ThingsBoard, Traccar, Zigbee2MQTT, Zwave Js Ui |
+| [IoT](./iot/) | EMQX, ESPHome, evcc, Home Assistant, Mosquitto, openHAB, TeslaMate, ThingsBoard, Traccar, Z-Wave JS UI, Zigbee2MQTT |
 | [Low-Code](./low-code/) | Appsmith, Budibase, NocoBase, Tooljet |
 | [Management](./management/) | Dashy, Diun, Dockge, Glance, Homarr, Homepage, Komodo, Portainer, Watchtower, What's Up Docker, Yacht |
-| [Media](./media/) | Audiobookshelf, Bazarr, Calibre-Web, ErsatzTV, FreshRSS, Immich, Jellyfin, Jellyseerr, Jellystat, Kavita, Komga, Lidarr, Maintainerr, Miniflux, Navidrome, Overseerr, PeerTube, PhotoPrism, Plex, Prowlarr, Radarr, RomM, Rss Bridge, Sonarr, Suwayomi, Tautulli, Tdarr, Threadfin, TubeArchivist, Wizarr, Your Spotify |
+| [Media](./media/) | Audiobookshelf, Bazarr, Calibre-Web, ErsatzTV, FreshRSS, Immich, Jellyfin, Jellyseerr, Jellystat, Kavita, Komga, Lidarr, Maintainerr, Miniflux, Navidrome, Overseerr, PeerTube, PhotoPrism, Plex, Prowlarr, Radarr, RomM, RSS-Bridge, Sonarr, Suwayomi, Tautulli, Tdarr, Threadfin, TubeArchivist, Wizarr, Your Spotify |
 | [Monitoring](./monitoring/) | Beszel, Cachet, Checkmk, Dozzle, Gatus, Glances, Grafana, Graylog, Healthchecks, Kener, LibreNMS, Loki, Netdata, ntopng, OpenObserve, Prometheus, Scrutiny, SigNoz, SmokePing, Speedtest Tracker, Uptime Kuma, VictoriaMetrics, Zabbix |
-| [Networking](./networking/) | AdGuard Home, Blocky, Caddy, Cloudflare Ddns, Cloudflared, FRP, HAProxy, LibreSpeed, NetAlertX, Nginx, Nginx Proxy Manager, Omada Controller, Pi-hole, Tailscale, Technitium DNS, Traefik, Unbound, UniFi Controller, Zoraxy |
+| [Networking](./networking/) | AdGuard Home, Blocky, Caddy, Cloudflare DDNS, Cloudflared, FRP, HAProxy, LibreSpeed, NetAlertX, Nginx, Nginx Proxy Manager, Omada Controller, Pi-hole, Tailscale, Technitium DNS, Traefik, Unbound, UniFi Controller, Zoraxy |
 | [POS](./pos/) | OpenSourcePOS |
 | [Project Management](./project-management/) | Kanboard, Leantime, OpenProject, Redmine, Taiga, WeKan |
 | [Remote Access](./remote-access/) | Guacamole, Kasm, MeshCentral, Remotely, RustDesk, Sshwifty |
-| [Security](./security/) | Authelia, Authentik, CrowdSec, Cyberchef, DefectDojo, Keycloak, MISP, NetBox, OpenVAS, OWASP ZAP, Passbolt, Password Pusher, Pocket ID, Step Ca, TheHive, Trivy, Vault, Vaultwarden, Wazuh, Yopass, Zitadel |
+| [Security](./security/) | Authelia, Authentik, CrowdSec, CyberChef, DefectDojo, Keycloak, MISP, NetBox, OpenVAS, OWASP ZAP, Passbolt, Password Pusher, Pocket ID, step-ca, TheHive, Trivy, Vault, Vaultwarden, Wazuh, Yopass, Zitadel |
 | [Social](./social/) | Bluesky PDS, Flarum, GoToSocial, Lemmy, Mastodon, Misskey, NodeBB, Pixelfed, Postiz, WriteFreely |
 | [Support](./support/) | Faveo, FreeScout, osTicket, Peppermint, Zammad |
-| [Tools](./tools/) | Actual Budget, AFFiNE, ArchiveBox, Baby Buddy, Beaverhabits, BookStack, Cal.com, Changedetection, ConvertX, Dawarich, Docmost, Docuseal, draw.io, Etherpad, Excalidraw, Firefly III, Formbricks, Ghost, HedgeDoc, Hoarder, Homebox, IT-Tools, Joplin Server, Kimai, Kitchenowl, LanguageTool, LibreTranslate, Linkding, LinkStack, Linkwarden, Lychee, Mealie, Memos, Monica, OmniTools, OnlyOffice, Outline, Overleaf, Paperless Ai, Penpot, PrivateBin, Rallly, Reactive Resume, Readeck, Shlink, SiYuan, Snipe-IT, Stirling-PDF, Tandoor, Trilium, Twenty, Typebot, Vikunja, Wallabag, Web-Check, Wiki.js, Zipline |
+| [Tools](./tools/) | Actual Budget, AFFiNE, ArchiveBox, Baby Buddy, Beaver Habits, BookStack, Cal.com, Changedetection, ConvertX, Dawarich, Docmost, Docuseal, draw.io, Etherpad, Excalidraw, Firefly III, Formbricks, Ghost, HedgeDoc, Hoarder (Karakeep), Homebox, IT-Tools, Joplin Server, Kimai, KitchenOwl, LanguageTool, LibreTranslate, linkding, LinkStack, Linkwarden, Lychee, Mealie, Memos, Monica, OmniTools, OnlyOffice, Outline, Overleaf, Paperless-AI, Penpot, PrivateBin, Rallly, Reactive Resume, Readeck, Shlink, SiYuan, Snipe-IT, Stirling-PDF, Tandoor, Trilium, Twenty, Typebot, Vikunja, Wallabag, Web-Check, Wiki.js, Zipline |
 | [VPN](./vpn/) | 3X-UI, Gluetun, Headplane, Headscale, NetBird, OpenVPN AS, Outline, Pritunl, SoftEther, WireGuard Easy, ZTNET |
 
 ---
