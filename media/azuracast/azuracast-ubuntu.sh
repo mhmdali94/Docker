@@ -91,6 +91,7 @@ services:
     restart: unless-stopped
     ports:
       - "8281:80"
+      - "8000:8000"
       - "8005:8005"
       - "8006:8006"
     environment:
@@ -114,6 +115,7 @@ done
 section "Step 8: Opening Firewall Ports"
 if command -v ufw &> /dev/null; then
     ufw allow 8281/tcp
+    ufw allow 8000/tcp
     ufw allow 8005/tcp
     ufw allow 8006/tcp
     info "UFW: required ports opened."

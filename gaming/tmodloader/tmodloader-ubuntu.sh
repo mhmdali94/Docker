@@ -82,6 +82,8 @@ info "Directory ready: $SERVICE_DIR"
 
 section "Step 6: Generating Configuration & docker-compose.yml"
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
+SERVER_PASS=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 12)
+info "Server password: $SERVER_PASS"
 
 cat > "$SERVICE_DIR/docker-compose.yml" <<EOF
 services:
@@ -92,9 +94,16 @@ services:
     ports:
       - "7778:7777"
     environment:
-      TML_AUTODOWNLOAD: ""
+      TMOD_PASS: "$SERVER_PASS"
+      TMOD_WORLDNAME: Docker
+      TMOD_WORLDSIZE: 3
+      TMOD_MAXPLAYERS: 8
+      TMOD_MOTD: "A tModLoader server powered by Docker"
+      TMOD_AUTODOWNLOAD: ""
+      TMOD_ENABLEDMODS: ""
+      TMOD_SECURE: "1"
     volumes:
-      - ./data:/home/tmodloader/.local/share/Terraria/tModLoader
+      - ./data:/data
     stdin_open: true
     tty: true
 EOF
@@ -147,7 +156,9 @@ echo "  ╔═══════════════════════
 echo "  ║              ✅  Setup Complete!                     ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║  🌳  tModLoader (modded Terraria) Server:  $SERVER_IP:7778"
-echo "  ║  🔧  Configure mods and world in $SERVICE_DIR/data"
+echo "  ║  🔑  Join password: $SERVER_PASS"
+echo "  ║  🔧  Add Workshop mod IDs to TMOD_AUTODOWNLOAD + TMOD_ENABLEDMODS"
+echo "  ║      in $SERVICE_DIR/docker-compose.yml, then restart."
 echo "  ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️"
 echo "  ║       Made by: Mohammed Ali Elshikh"

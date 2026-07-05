@@ -116,9 +116,9 @@ services:
     depends_on:
       - librephotos-db
       - librephotos-redis
-    environment: &lp-env
+    environment:
       SECRET_KEY: $SECRET_KEY
-      BACKEND_HOST: librephotos
+      BACKEND_HOST: backend
       ADMIN_EMAIL: admin@example.com
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: $ADMIN_PASS
@@ -136,7 +136,9 @@ services:
       - ./photos:/data
       - ./data:/protected_media
     networks:
-      - librephotos-net
+      librephotos-net:
+        aliases:
+          - backend
 
   librephotos-frontend:
     image: reallibrephotos/librephotos-frontend:latest
@@ -145,7 +147,9 @@ services:
     depends_on:
       - librephotos
     networks:
-      - librephotos-net
+      librephotos-net:
+        aliases:
+          - frontend
 
   librephotos-proxy:
     image: reallibrephotos/librephotos-proxy:latest

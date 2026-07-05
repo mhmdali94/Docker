@@ -18,8 +18,9 @@ sudo bash tmodloader-ubuntu.sh
 
 ## 🔑 Credentials
 
-| Setup | Completed on first visit |
-|-------|--------------------------|
+| Field | Value |
+|-------|-------|
+| Join password | Auto-generated (shown at install) |
 
 ## 🌐 Ports
 

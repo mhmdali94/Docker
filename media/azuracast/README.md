@@ -26,7 +26,8 @@ sudo bash azuracast-ubuntu.sh
 | Port | Purpose |
 |------|---------|
 | `8281` | Web UI |
-| `8005-8006` | Radio streams |
+| `8000` | First station stream (listeners connect here) |
+| `8005-8006` | First station secondary mounts |
 
 ## 💻 Connect
 

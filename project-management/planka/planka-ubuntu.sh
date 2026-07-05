@@ -119,7 +119,7 @@ services:
       DEFAULT_ADMIN_NAME: Admin
       DEFAULT_ADMIN_USERNAME: admin
     volumes:
-      - ./data:/app/public/user-avatars
+      - ./data:/app/data
     networks:
       - planka-net
 
