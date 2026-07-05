@@ -115,7 +115,7 @@ services:
       - dawarich-db
       - dawarich-redis
     entrypoint: web-entrypoint.sh
-    command: bin/rails server -p 3000 -b ::
+    command: ["bin/rails", "server", "-p", "3000", "-b", "::"]
     ports:
       - "3057:3000"
     environment: &dawarich-env
