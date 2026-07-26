@@ -142,12 +142,19 @@ while true; do
 done
 
 # Extract the one-time setup token from Portainer container logs
+# Portainer CE prints it as:  setup_token=<value>   (logrus/key=value)
+#                          or: "setup_token":"<value>"  (zerolog/JSON)
 info "Waiting for Portainer setup token in container logs..."
 SETUP_TOKEN=""
 for i in $(seq 1 24); do
-    SETUP_TOKEN=$(docker logs portainer 2>&1 | grep -oP '(?<=token=)[a-zA-Z0-9]+' | tail -1 || true)
+    # Try JSON format first: "setup_token":"abc123"
+    SETUP_TOKEN=$(docker logs portainer 2>&1 | grep -oP '"setup_token"\s*:\s*"\K[^"]+' | tail -1 || true)
+    # Fallback: key=value format: setup_token=abc123
+    if [ -z "$SETUP_TOKEN" ]; then
+        SETUP_TOKEN=$(docker logs portainer 2>&1 | grep -oP '(?<=\bsetup_token=)[a-zA-Z0-9]+' | tail -1 || true)
+    fi
     if [ -n "$SETUP_TOKEN" ]; then
-        info "Setup token found."
+        info "Setup token found: ${SETUP_TOKEN:0:8}... (truncated for security)"
         break
     fi
     echo -n "  Attempt $i/24 — waiting for setup token..."
@@ -156,7 +163,9 @@ for i in $(seq 1 24); do
 done
 
 if [ -z "$SETUP_TOKEN" ]; then
-    warn "Setup token not found in logs. Skipping admin init and token generation."
+    warn "Setup token not found in logs after all retries."
+    warn "Dumping log lines containing 'token' for diagnostics:"
+    docker logs portainer 2>&1 | grep -i "token" | tail -10 || true
     warn "You can still set up Portainer manually at http://$SERVER_IP:9000"
 else
     # Wait until the /api/users/admin/init endpoint is available
