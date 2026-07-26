@@ -139,10 +139,10 @@ info "Reading Portainer setup token from container logs..."
 SETUP_TOKEN=""
 for i in $(seq 1 24); do
     SETUP_TOKEN=$(docker logs portainer 2>&1 \
-        | perl -pe 's/\e\[[0-9;]*[a-zA-Z]//g' \
+        | awk 'BEGIN{ESC=sprintf("%c",27)} {gsub(ESC"[[][0-9;]*[a-zA-Z]",""); print}' \
         | awk -F'setup_token=' 'NF>1{print $2}' \
-        | tr -dc 'a-f0-9' \
-        | cut -c1-64 \
+        | grep -oE '^[a-f0-9]+' \
+        | tail -1 \
         || true)
     if [ -n "$SETUP_TOKEN" ]; then
         info "Setup token retrieved."
