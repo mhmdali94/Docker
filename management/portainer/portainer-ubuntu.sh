@@ -128,6 +128,57 @@ else
     warn "UFW not found — skipping firewall rule."
 fi
 
+section "Step 9: Creating Admin Account & Generating API Token"
+info "Setting up the Portainer admin account via API..."
+
+# Prompt for admin credentials
+read -rp "  Enter admin username [default: admin]: " ADMIN_USER
+ADMIN_USER=${ADMIN_USER:-admin}
+while true; do
+    read -rsp "  Enter admin password (min 12 chars): " ADMIN_PASS
+    echo ""
+    if [ ${#ADMIN_PASS} -ge 12 ]; then break; fi
+    warn "Password must be at least 12 characters. Try again."
+done
+
+# Wait until the /api/users/admin/init endpoint is available
+ADMIN_READY=0
+for i in $(seq 1 12); do
+    HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" http://127.0.0.1:9000/api/users/admin/check 2>/dev/null || echo "000")
+    if [ "$HTTP_CODE" = "404" ] || [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
+        ADMIN_READY=1
+        break
+    fi
+    echo -n "  Waiting for Portainer API (attempt $i/12)..."
+    sleep 5
+    echo " retrying"
+done
+[ "$ADMIN_READY" -eq 0 ] && warn "Portainer API did not respond in time. Skipping token generation."
+
+if [ "$ADMIN_READY" -eq 1 ]; then
+    # Initialize admin account
+    INIT_RESP=$(curl -sk -X POST http://127.0.0.1:9000/api/users/admin/init \
+        -H "Content-Type: application/json" \
+        -d "{\"Username\":\"${ADMIN_USER}\",\"Password\":\"${ADMIN_PASS}\"}" 2>/dev/null)
+    if echo "$INIT_RESP" | grep -qi '"message"'; then
+        warn "Admin init response: $INIT_RESP"
+    else
+        info "Admin account created."
+    fi
+
+    # Authenticate and retrieve JWT token
+    AUTH_RESP=$(curl -sk -X POST http://127.0.0.1:9000/api/auth \
+        -H "Content-Type: application/json" \
+        -d "{\"Username\":\"${ADMIN_USER}\",\"Password\":\"${ADMIN_PASS}\"}" 2>/dev/null)
+    PORTAINER_TOKEN=$(echo "$AUTH_RESP" | grep -oP '(?<="jwt":")[^"]+' || echo "")
+
+    if [ -z "$PORTAINER_TOKEN" ]; then
+        warn "Could not retrieve token. Check credentials or logs: docker logs portainer"
+    else
+        info "API token retrieved successfully."
+    fi
+fi
+
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
 echo "  ║              ✅  Setup Complete!                     ║"
@@ -137,8 +188,17 @@ echo "  ║  🌐  Open Portainer in your browser:                ║"
 echo "  ║      HTTP  👉  http://$SERVER_IP:9000"
 echo "  ║      HTTPS 👉  https://$SERVER_IP:9443"
 echo "  ║                                                      ║"
-echo "  ║  🔑  Create your admin account on first visit.      ║"
-echo "  ║      (You have 5 minutes before the setup expires)  ║"
+echo "  ║  👤  Admin username: $ADMIN_USER"
+echo "  ║                                                      ║"
+if [ -n "$PORTAINER_TOKEN" ]; then
+echo "  ║  🔑  API Token (JWT):                                ║"
+echo "  ╠══════════════════════════════════════════════════════╣"
+echo "  ║  $PORTAINER_TOKEN"
+echo "  ╠══════════════════════════════════════════════════════╣"
+echo "  ║  ⚠️  Save this token — it will NOT be shown again!  ║"
+else
+echo "  ║  ⚠️  Token not generated — see warnings above.      ║"
+fi
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
