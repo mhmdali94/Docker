@@ -138,7 +138,11 @@ info "Reading Portainer setup token from container logs..."
 # Portainer CE log format: | setup_token=<64-char hex>
 SETUP_TOKEN=""
 for i in $(seq 1 24); do
-    SETUP_TOKEN=$(docker logs portainer 2>&1 | grep -oP 'setup_token=\K[0-9a-f]+' | tail -1 || true)
+    SETUP_TOKEN=$(docker logs portainer 2>&1 \
+        | awk -F'setup_token=' 'NF>1{print $2}' \
+        | tr -dc 'a-f0-9' \
+        | cut -c1-64 \
+        || true)
     if [ -n "$SETUP_TOKEN" ]; then
         info "Setup token retrieved."
         break
