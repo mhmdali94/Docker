@@ -141,41 +141,61 @@ while true; do
     warn "Password must be at least 12 characters. Try again."
 done
 
-# Wait until the /api/users/admin/init endpoint is available
-ADMIN_READY=0
-for i in $(seq 1 12); do
-    HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" http://127.0.0.1:9000/api/users/admin/check 2>/dev/null || echo "000")
-    if [ "$HTTP_CODE" = "404" ] || [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
-        ADMIN_READY=1
+# Extract the one-time setup token from Portainer container logs
+info "Waiting for Portainer setup token in container logs..."
+SETUP_TOKEN=""
+for i in $(seq 1 24); do
+    SETUP_TOKEN=$(docker logs portainer 2>&1 | grep -oP '(?<=token=)[a-zA-Z0-9]+' | tail -1 || true)
+    if [ -n "$SETUP_TOKEN" ]; then
+        info "Setup token found."
         break
     fi
-    echo -n "  Waiting for Portainer API (attempt $i/12)..."
+    echo -n "  Attempt $i/24 — waiting for setup token..."
     sleep 5
     echo " retrying"
 done
-[ "$ADMIN_READY" -eq 0 ] && warn "Portainer API did not respond in time. Skipping token generation."
 
-if [ "$ADMIN_READY" -eq 1 ]; then
-    # Initialize admin account
-    INIT_RESP=$(curl -sk -X POST http://127.0.0.1:9000/api/users/admin/init \
-        -H "Content-Type: application/json" \
-        -d "{\"Username\":\"${ADMIN_USER}\",\"Password\":\"${ADMIN_PASS}\"}" 2>/dev/null)
-    if echo "$INIT_RESP" | grep -qi '"message"'; then
-        warn "Admin init response: $INIT_RESP"
-    else
-        info "Admin account created."
-    fi
+if [ -z "$SETUP_TOKEN" ]; then
+    warn "Setup token not found in logs. Skipping admin init and token generation."
+    warn "You can still set up Portainer manually at http://$SERVER_IP:9000"
+else
+    # Wait until the /api/users/admin/init endpoint is available
+    ADMIN_READY=0
+    for i in $(seq 1 12); do
+        HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" http://127.0.0.1:9000/api/users/admin/check 2>/dev/null || echo "000")
+        if [ "$HTTP_CODE" = "404" ] || [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
+            ADMIN_READY=1
+            break
+        fi
+        echo -n "  Waiting for Portainer API (attempt $i/12)..."
+        sleep 5
+        echo " retrying"
+    done
+    [ "$ADMIN_READY" -eq 0 ] && warn "Portainer API did not respond in time. Skipping token generation."
 
-    # Authenticate and retrieve JWT token
-    AUTH_RESP=$(curl -sk -X POST http://127.0.0.1:9000/api/auth \
-        -H "Content-Type: application/json" \
-        -d "{\"Username\":\"${ADMIN_USER}\",\"Password\":\"${ADMIN_PASS}\"}" 2>/dev/null)
-    PORTAINER_TOKEN=$(echo "$AUTH_RESP" | grep -oP '(?<="jwt":")[^"]+' || echo "")
+    if [ "$ADMIN_READY" -eq 1 ]; then
+        # Initialize admin account using the setup token
+        INIT_RESP=$(curl -sk -X POST http://127.0.0.1:9000/api/users/admin/init \
+            -H "Content-Type: application/json" \
+            -H "X-Setup-Token: ${SETUP_TOKEN}" \
+            -d "{\"Username\":\"${ADMIN_USER}\",\"Password\":\"${ADMIN_PASS}\"}" 2>/dev/null)
+        if echo "$INIT_RESP" | grep -qi '"message"'; then
+            warn "Admin init response: $INIT_RESP"
+        else
+            info "Admin account created successfully."
+        fi
 
-    if [ -z "$PORTAINER_TOKEN" ]; then
-        warn "Could not retrieve token. Check credentials or logs: docker logs portainer"
-    else
-        info "API token retrieved successfully."
+        # Authenticate and retrieve JWT token
+        AUTH_RESP=$(curl -sk -X POST http://127.0.0.1:9000/api/auth \
+            -H "Content-Type: application/json" \
+            -d "{\"Username\":\"${ADMIN_USER}\",\"Password\":\"${ADMIN_PASS}\"}" 2>/dev/null)
+        PORTAINER_TOKEN=$(echo "$AUTH_RESP" | grep -oP '(?<="jwt":")[^"]+' || echo "")
+
+        if [ -z "$PORTAINER_TOKEN" ]; then
+            warn "Could not retrieve token. Check credentials or logs: docker logs portainer"
+        else
+            info "API token retrieved successfully."
+        fi
     fi
 fi
 
