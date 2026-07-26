@@ -64,15 +64,19 @@ else
     info "Docker: $(docker --version)"
 fi
 
-section "Step 3: Cleaning Up Existing Container"
+section "Step 3: Cleaning Up Existing Installation"
 if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qE '^portainer$'; then
     warn "Removing existing container: portainer"
     docker rm -f portainer 2>/dev/null || true
 fi
+if docker volume ls --format '{{.Name}}' 2>/dev/null | grep -qE '^portainer_data$'; then
+    warn "Removing existing volume: portainer_data"
+    docker volume rm portainer_data 2>/dev/null || true
+fi
 
-section "Step 4: Creating Volume"
-docker volume create portainer_data &>/dev/null || true
-info "Volume portainer_data ready."
+section "Step 4: Creating Fresh Volume"
+docker volume create portainer_data &>/dev/null
+info "Volume portainer_data created."
 
 section "Step 5: Starting Portainer"
 SERVER_IP=$(hostname -I | tr ' ' '\n' | grep -E '^[0-9]+\.' | head -1)
