@@ -139,6 +139,7 @@ info "Reading Portainer setup token from container logs..."
 SETUP_TOKEN=""
 for i in $(seq 1 24); do
     SETUP_TOKEN=$(docker logs portainer 2>&1 \
+        | sed $'s/\033\[[0-9;]*[a-zA-Z]//g' \
         | awk -F'setup_token=' 'NF>1{print $2}' \
         | tr -dc 'a-f0-9' \
         | cut -c1-64 \
