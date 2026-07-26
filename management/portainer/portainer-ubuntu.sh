@@ -128,85 +128,26 @@ else
     warn "UFW not found — skipping firewall rule."
 fi
 
-section "Step 9: Creating Admin Account & Generating API Token"
-info "Setting up the Portainer admin account via API..."
+section "Step 9: Retrieving Setup Token"
+info "Reading Portainer setup token from container logs..."
 
-# Prompt for admin credentials
-read -rp "  Enter admin username [default: admin]: " ADMIN_USER
-ADMIN_USER=${ADMIN_USER:-admin}
-while true; do
-    read -rsp "  Enter admin password (min 12 chars): " ADMIN_PASS
-    echo ""
-    if [ ${#ADMIN_PASS} -ge 12 ]; then break; fi
-    warn "Password must be at least 12 characters. Try again."
-done
-
-# Extract the one-time setup token from Portainer container logs
-# Portainer CE prints it as:  setup_token=<value>   (logrus/key=value)
-#                          or: "setup_token":"<value>"  (zerolog/JSON)
-info "Waiting for Portainer setup token in container logs..."
+# Portainer CE prints the one-time setup token on first startup
 SETUP_TOKEN=""
 for i in $(seq 1 24); do
-    # Try JSON format first: "setup_token":"abc123"
     SETUP_TOKEN=$(docker logs portainer 2>&1 | grep -oP '"setup_token"\s*:\s*"\K[^"]+' | tail -1 || true)
-    # Fallback: key=value format: setup_token=abc123
     if [ -z "$SETUP_TOKEN" ]; then
         SETUP_TOKEN=$(docker logs portainer 2>&1 | grep -oP '(?<=\bsetup_token=)[a-zA-Z0-9]+' | tail -1 || true)
     fi
     if [ -n "$SETUP_TOKEN" ]; then
-        info "Setup token found: ${SETUP_TOKEN:0:8}... (truncated for security)"
+        info "Setup token retrieved."
         break
     fi
-    echo -n "  Attempt $i/24 — waiting for setup token..."
+    echo -n "  Attempt $i/24 — waiting for token in logs..."
     sleep 5
     echo " retrying"
 done
 
-if [ -z "$SETUP_TOKEN" ]; then
-    warn "Setup token not found in logs after all retries."
-    warn "Dumping log lines containing 'token' for diagnostics:"
-    docker logs portainer 2>&1 | grep -i "token" | tail -10 || true
-    warn "You can still set up Portainer manually at http://$SERVER_IP:9000"
-else
-    # Wait until the /api/users/admin/init endpoint is available
-    ADMIN_READY=0
-    for i in $(seq 1 12); do
-        HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" http://127.0.0.1:9000/api/users/admin/check 2>/dev/null || echo "000")
-        if [ "$HTTP_CODE" = "404" ] || [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
-            ADMIN_READY=1
-            break
-        fi
-        echo -n "  Waiting for Portainer API (attempt $i/12)..."
-        sleep 5
-        echo " retrying"
-    done
-    [ "$ADMIN_READY" -eq 0 ] && warn "Portainer API did not respond in time. Skipping token generation."
-
-    if [ "$ADMIN_READY" -eq 1 ]; then
-        # Initialize admin account using the setup token
-        INIT_RESP=$(curl -sk -X POST http://127.0.0.1:9000/api/users/admin/init \
-            -H "Content-Type: application/json" \
-            -H "X-Setup-Token: ${SETUP_TOKEN}" \
-            -d "{\"Username\":\"${ADMIN_USER}\",\"Password\":\"${ADMIN_PASS}\"}" 2>/dev/null)
-        if echo "$INIT_RESP" | grep -qi '"message"'; then
-            warn "Admin init response: $INIT_RESP"
-        else
-            info "Admin account created successfully."
-        fi
-
-        # Authenticate and retrieve JWT token
-        AUTH_RESP=$(curl -sk -X POST http://127.0.0.1:9000/api/auth \
-            -H "Content-Type: application/json" \
-            -d "{\"Username\":\"${ADMIN_USER}\",\"Password\":\"${ADMIN_PASS}\"}" 2>/dev/null)
-        PORTAINER_TOKEN=$(echo "$AUTH_RESP" | grep -oP '(?<="jwt":")[^"]+' || echo "")
-
-        if [ -z "$PORTAINER_TOKEN" ]; then
-            warn "Could not retrieve token. Check credentials or logs: docker logs portainer"
-        else
-            info "API token retrieved successfully."
-        fi
-    fi
-fi
+[ -z "$SETUP_TOKEN" ] && SETUP_TOKEN="(not found — check: docker logs portainer | grep -i token)"
 
 echo ""
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -217,17 +158,11 @@ echo "  ║  🌐  Open Portainer in your browser:                ║"
 echo "  ║      HTTP  👉  http://$SERVER_IP:9000"
 echo "  ║      HTTPS 👉  https://$SERVER_IP:9443"
 echo "  ║                                                      ║"
-echo "  ║  👤  Admin username: $ADMIN_USER"
-echo "  ║                                                      ║"
-if [ -n "$PORTAINER_TOKEN" ]; then
-echo "  ║  🔑  API Token (JWT):                                ║"
+echo "  ║  🔑  Setup Token (use on first login):              ║"
 echo "  ╠══════════════════════════════════════════════════════╣"
-echo "  ║  $PORTAINER_TOKEN"
+echo "  ║  $SETUP_TOKEN"
 echo "  ╠══════════════════════════════════════════════════════╣"
 echo "  ║  ⚠️  Save this token — it will NOT be shown again!  ║"
-else
-echo "  ║  ⚠️  Token not generated — see warnings above.      ║"
-fi
 echo "  ║                                                      ║"
 echo "  ║  ⚠️  FOR DEMO / TESTING PURPOSES ONLY ⚠️            ║"
 echo "  ║       Made by: Mohammed Ali Elshikh                 ║"
