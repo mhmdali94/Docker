@@ -131,13 +131,10 @@ fi
 section "Step 9: Retrieving Setup Token"
 info "Reading Portainer setup token from container logs..."
 
-# Portainer CE prints the one-time setup token on first startup
+# Portainer CE log format: | setup_token=<64-char hex>
 SETUP_TOKEN=""
 for i in $(seq 1 24); do
-    SETUP_TOKEN=$(docker logs portainer 2>&1 | grep -oP '"setup_token"\s*:\s*"\K[^"]+' | tail -1 || true)
-    if [ -z "$SETUP_TOKEN" ]; then
-        SETUP_TOKEN=$(docker logs portainer 2>&1 | grep -oP '(?<=\bsetup_token=)[a-zA-Z0-9]+' | tail -1 || true)
-    fi
+    SETUP_TOKEN=$(docker logs portainer 2>&1 | grep -oP 'setup_token=\K[0-9a-f]+' | tail -1 || true)
     if [ -n "$SETUP_TOKEN" ]; then
         info "Setup token retrieved."
         break
