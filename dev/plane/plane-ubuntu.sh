@@ -178,6 +178,8 @@ services:
       - "8091:80"
     environment:
       NGINX_PORT: 80
+      FILE_SIZE_LIMIT: 5242880
+      BUCKET_NAME: uploads
     depends_on:
       - plane-web
       - plane-api
