@@ -151,7 +151,11 @@ set_env "APP_RELEASE" "$APP_RELEASE"
 set_env "APP_DOMAIN" "$SERVER_IP:$HTTP_PORT"
 set_env "LISTEN_HTTP_PORT" "$HTTP_PORT"
 set_env "LISTEN_HTTPS_PORT" "$HTTPS_PORT"
-set_env "SITE_ADDRESS" ":$HTTP_PORT"
+# SITE_ADDRESS is Caddy's *internal* listen address inside the container, where
+# the compose file always maps target:80/443 regardless of the external
+# LISTEN_HTTP_PORT/LISTEN_HTTPS_PORT — it must stay :80, not the external port,
+# or Docker forwards to a port nothing is listening on (connection reset).
+set_env "SITE_ADDRESS" ":80"
 set_env "SECRET_KEY" "$SECRET_KEY"
 set_env "LIVE_SERVER_SECRET_KEY" "$LIVE_SECRET_KEY"
 set_env "AWS_ACCESS_KEY_ID" "$MINIO_USER"
